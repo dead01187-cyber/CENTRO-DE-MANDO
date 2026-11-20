@@ -104,6 +104,7 @@ async function enLofty(a, c) {
 const l2n = (l) => [l.firstName, l.lastName].filter(Boolean).join(" ") || `lead ${l.leadId || l.id || ""}`;
 
 // ---------- Revisar ----------
+const fallos3 = new Map(); // Fase 1: intentos fallidos por HECM
 async function revisar(aMano) {
   if (corriendo) return;
   const { loftyKey } = await chrome.storage.local.get("loftyKey");
@@ -123,9 +124,16 @@ async function revisar(aMano) {
       if (motivo) { valor = "filtrada"; detalle = motivo; filt++; }
       else {
         try { detalle = await enLofty(a, c); }
-        catch (e) { if (e.sinKey) break; decir(`No pude revisar en Lofty (${e.message}). Reintento en unos segundos.`, "error"); await sleep(4000); continue; }
-        valor = detalle ? "si" : "no";
-        if (detalle) ya++; else pasan++;
+        catch (e) {
+          if (e.sinKey) break;
+          if (/respondió 40[13]\b/.test(e.message)) { decir(`Lofty rechazó la API key (${e.message}). Me detengo.`, "error"); break; }
+          // Fase 1: máximo 3 intentos por HECM (antes reintentaba para siempre cada 4 s); luego queda "sinRevisar" y NO pasa
+          const n = (fallos3.get(a.key) || 0) + 1; fallos3.set(a.key, n);
+          decir(`No pude revisar en Lofty (${e.message}). ${n >= 3 ? "Ya van 3 intentos: la dejo sin revisar (no pasa)." : "Reintento en unos segundos."}`, "error");
+          if (n < 3) { await sleep(4000); continue; }
+          valor = "sinRevisar"; detalle = "no pude revisar en Lofty: " + e.message;
+        }
+        if (valor !== "sinRevisar") { valor = detalle ? "si" : "no"; if (detalle) ya++; else pasan++; }
       }
       const pr = prioridad(a, c);
       res[a.key] = { dueno, valor, detalle, prioridad: pr.p, por: pr.por, t: Date.now() };
@@ -133,6 +141,7 @@ async function revisar(aMano) {
       await domicilios("lofty", { pares: [{ key: a.key, valor, ...(valor === "no" ? { via: destino() } : {}) }] });
       n++;
       if (valor === "si") decir(`↷ HECM de ${dueno}: ya está en Lofty ${detalle}. No pasa a ${quien()}.`);
+      else if (valor === "sinRevisar") decir(`⚠ HECM de ${dueno}: no la pude revisar en Lofty; NO pasa a ${quien()}. Dale “volver a revisar” cuando Lofty conteste.`, "error");
       else if (valor === "filtrada") decir(`⏭ HECM de ${dueno}: la filtré (${detalle}). Si la quieres, dale “Dejar pasar” en Chequi 3.`);
       else decir(`✔ HECM de ${dueno} pasa a ${quien()} · prioridad ${pr.p}${pr.por.length ? ` (${pr.por.join(", ")})` : ""}.`);
       await cargar();

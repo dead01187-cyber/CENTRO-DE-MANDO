@@ -25,7 +25,7 @@ async function podar() {
   await chrome.storage.local.set(quitados ? { addresses, podaDia: hoy } : { podaDia: hoy });
   if (quitados) await anotar({ t: Date.now(), mod: "sv", nivel: "info", texto: `Limpieza: archivé ${quitados} domicilio(s) ya trabajados de hace más de 60 días (la lista va más rápida).` });
 }
-setTimeout(() => enFila(podar), 5000);
+setTimeout(() => enFila(() => conCandadoDom(podar)), 5000);
 
 chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
   if (!msg) return;
@@ -38,11 +38,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
       const tabId = _sender.tab && _sender.tab.id;
       if (robotsApagados.pw || !propiSesion || tabId !== propiSesion.tab || Date.now() - propiSesion.t > 20 * 60000) return;
       await chrome.storage.local.set({ propiSesion: { ...propiSesion, t: Date.now() } }); // sigue trabajando: se extiende la sesión
-      enFila(() => guardarEncontrados(msg.items || []));
+      enFila(() => conCandadoDom(() => guardarEncontrados(msg.items || [])));
     });
     return;
   }
-  if (msg.type === "domicilios") { enFila(() => cambiar(msg).then(() => responder({ ok: true }))); return true; }
+  if (msg.type === "domicilios") { enFila(() => cambiar(msg).then(() => responder({ ok: true }), (e) => responder({ ok: false, error: String(e && e.message || e) }))); return true; }
   if (msg.type === "zbLeads") { enFila(() => zbCambiar(msg).then(() => responder({ ok: true }))); return true; }
 });
 
@@ -86,45 +86,8 @@ async function guardarEncontrados(items) {
 }
 
 // ---------- Cambios que piden las pestañas ----------
-async function cambiar(msg) {
-  if (msg.accion === "borrar") return chrome.storage.local.set({ addresses: {}, pwCupo: null });
-  if (msg.accion === "actualizar") {
-    const { addresses = {} } = await chrome.storage.local.get("addresses");
-    for (const a of msg.items || []) addresses[keyOf(a)] = paraActualizar(a, addresses[keyOf(a)]);
-    return chrome.storage.local.set({ addresses });
-  }
-  if (msg.accion === "lofty") {
-    const { addresses = {} } = await chrome.storage.local.get("addresses");
-    for (const p of msg.pares || []) if (addresses[p.key]) { if (p.valor) addresses[p.key].lofty = p.valor; else delete addresses[p.key].lofty; if (p.via) addresses[p.key].via = p.via; }
-    return chrome.storage.local.set({ addresses });
-  }
-  if (msg.accion === "hecm") { // domicilios que Heri encontró con HECM (pasan por Chequi → Veri → Owny → Lofti)
-    const { addresses = {} } = await chrome.storage.local.get("addresses");
-    for (const a of msg.items || []) {
-      const k = keyOf(a), prev = addresses[k] || {};
-      if (prev.bvSearched && prev.hecm) continue; // ya se buscó
-      addresses[k] = { ...prev, street: a.street, city: a.city, zip: a.zip || prev.zip || "", state: "CA", county: prev.county || a.county || "",
-        skipTraced: false, found: prev.found || Date.now(), origen: "hecm", hecm: a.hecm }; // Chequi 3 decide si va a Veri 3 o a Wibi 3
-    }
-    return chrome.storage.local.set({ addresses });
-  }
-  if (msg.accion === "hecmInfo") { // Heri corrigió los datos de una HECM que ya está en el brazo: se actualiza su ficha, no se vuelve a buscar
-    const { addresses = {} } = await chrome.storage.local.get("addresses");
-    for (const a of msg.items || []) { const k = keyOf(a); if (addresses[k] && addresses[k].origen === "hecm") addresses[k].hecm = { ...(addresses[k].hecm || {}), ...a.hecm }; }
-    return chrome.storage.local.set({ addresses });
-  }
-  if (msg.accion === "hecmQuitar") { // Heri ahora solo acepta Celink / Compu-Link: se quitan las HECM de otro lender que aún no se buscan
-    const { addresses = {} } = await chrome.storage.local.get("addresses");
-    for (const [k, a] of Object.entries(addresses)) if (a.origen === "hecm" && !a.bvSearched && !/compu[\s-]*link|celink/i.test((a.hecm && a.hecm.lender) || "")) delete addresses[k];
-    return chrome.storage.local.set({ addresses });
-  }
-  if (msg.accion === "marcar") {
-    const { addresses = {} } = await chrome.storage.local.get("addresses");
-    if (!addresses[msg.key]) return;
-    addresses[msg.key].bvSearched = !!msg.bvSearched;
-    return chrome.storage.local.set({ addresses });
-  }
-}
+// Fase 1: la lógica vive en comun.js (cambiarDomicilios) para que el respaldo de las páginas haga exactamente lo mismo.
+const cambiar = (msg) => cambiarDomicilios(msg);
 
 // ---------- Leads de zBuyer: Zeta, Redi y Timi escriben a la vez; aquí se mezclan en orden para que nadie pise al otro ----------
 // msg.cambios = { idDelLead: { campo: valor, … } } · msg.crear = dar de alta el lead si no existe · accion "vaciar" = olvidar la lista

@@ -708,15 +708,18 @@ function itemDe(c) {
 async function mandarAlBrazo() {
   const { hrCasos = {}, hrVistos = {} } = await chrome.storage.local.get(["hrCasos", "hrVistos"]);
   const listas = Object.values(hrCasos).filter((c) => c.estado === "ubicada" && c.street && (!cfg.soloCelink || c.celink));
-  const items = [];
-  for (const c of listas) {
-    c.estado = "brazo"; hrCasos[c.dueno] = c;
-    const it = itemDe(c);
-    items.push(it);
+  const items = listas.map((c) => itemDe(c));
+  if (!items.length) return 0;
+  // Fase 1: primero se entregan al brazo y SOLO si se pudo se marcan "brazo" (antes se marcaban antes y, si fallaba, se perdían)
+  try { await domicilios("hecm", { items }); }
+  catch (e) { svLog && svLog(`Heri: no pude pasar ${items.length} HECM al brazo (${e.message}); se quedan como “ubicada” para el siguiente intento.`, "error"); return 0; }
+  const fresco = (await chrome.storage.local.get("hrCasos")).hrCasos || hrCasos; // releer: otro paso pudo cambiarlo mientras tanto
+  listas.forEach((c, i) => {
+    const it = items[i];
+    fresco[c.dueno] = { ...(fresco[c.dueno] || c), estado: "brazo" };
     hrVistos[c.dueno] = { t: Date.now(), dir: c.dir, lender: it.hecm.lender, hecm: true, doc: c.nod ? "NOD" : "NTS", fecha: c.aviso, monto: c.monto || "", subasta: c.subasta || "", owner: c.dueno, url: c.url || "" };
-  }
-  await chrome.storage.local.set({ hrCasos, hrVistos });
-  if (items.length) await domicilios("hecm", { items });
+  });
+  await chrome.storage.local.set({ hrCasos: fresco, hrVistos });
   if (items.length) svLog && svLog(`Heri: mandé ${items.length} HECM al brazo (Chequi 3): ${items.map((x) => x.hecm.dueno).join(", ")}.`);
   return items.length;
 }

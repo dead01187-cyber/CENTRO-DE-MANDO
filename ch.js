@@ -63,12 +63,15 @@ async function revisar(aMano) {
         } catch (e) {
           falla = e;
           const n = (fallos.get(a.key) || 0) + 1; fallos.set(a.key, n);
-          if (n >= 3) pares.push({ key: a.key, valor: "no", via: destino() }); // Lofty no contesta por este: que pase, para no atorar a Veri/Wibi
+          // Fase 1 · falla cerrada: tras 3 fallos ya NO pasa a Veri/Wibi (antes pasaba como "no está" y podía duplicar el lead
+          // y gastar créditos). Queda "sinRevisar"; con “Volver a revisar todos” se reintenta.
+          if (n >= 3) pares.push({ key: a.key, valor: "sinRevisar" });
         }
       }));
       if (pares.length) { await domicilios("lofty", { pares }); await cargar(); }
       if (falla) {
         if (falla.sinKey) break;
+        if (/respondió 40[13]\b/.test(falla.message)) { decir(`Lofty rechazó la API key (${falla.message}). Me detengo: nada pasa a ${quien()} sin revisar.`, "error"); break; }
         decir(`No pude revisar en Lofty (${falla.message}). Reintento en unos segundos.`, "error");
         await sleep(4000);
       }

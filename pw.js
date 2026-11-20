@@ -161,9 +161,15 @@ $("csv").onclick = () => {
 };
 
 $("clear").onclick = async () => {
-  const r = await domicilios("borrar");
+  // Fase 1: pide confirmación y solo borra la lista de Propi (antes borraba también los de Acti y las HECM de Heri, sin preguntar)
+  const { addresses: antes = {} } = await chrome.storage.local.get("addresses");
+  const mios = Object.values(antes).filter((a) => lineaDe(a) === "").length;
+  if (!mios) { setStatus("La lista de Propi ya está vacía."); return; }
+  if (!(await preguntar(`¿Borrar los ${mios} domicilios de la lista de Propi?\n\nTambién se borran sus marcas (ya buscado, ya en Lofty). Los de Acti y las HECM de Heri no se tocan.`, "Sí, borrar", "Cancelar"))) { setStatus("No borré nada."); return; }
+  const r = await domicilios("borrarPropi");
   const { addresses = {} } = await chrome.storage.local.get("addresses");
-  setStatus(Object.keys(addresses).length ? "No se pudo borrar la lista. Recarga la extensión e intenta otra vez." : "Lista borrada." + (r.sinFondo ? " (El fondo de la extensión no contestó; la borré directo.)" : ""));
+  const quedan = Object.values(addresses).filter((a) => lineaDe(a) === "").length;
+  setStatus(quedan ? "No se pudo borrar la lista. Recarga la extensión e intenta otra vez." : "Lista de Propi borrada." + (r.sinFondo ? " (El fondo de la extensión no contestó; la borré directo.)" : ""));
   revisarFondo();
 };
 
