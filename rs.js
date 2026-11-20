@@ -100,7 +100,7 @@ const guardarCasos = () => chrome.storage.local.set({ rsCasos: casos });
 
 // ---------- Clasificar ----------
 const RE = {
-  baja: /\b(stop|stop all|unsubscribe|remove me|take me off|opt[ -]?out|do ?n[o']?t (text|contact|message)|no (more )?(texts|messages)|no me (escrib|mand|contact)|d[eé]jame de (escribir|mandar)|b[oó]rrame|baja)\b|^\s*(stop|quit|end|cancel)\s*\.?\s*$/i,
+  baja: /\b(stop|stop all|unsubscribe|remove me|take me off|opt[ -]?out|do ?n[o']?t (text|contact|message)|no (more )?(texts|messages)|no me (escrib\w*|mand\w*|contact\w*)|d[eé]jame de (escribir|mandar)|b[oó]rrame|baja)\b|^\s*(stop|quit|end|cancel)\s*\.?\s*$/i,
   enojado: /\b(f+u+c+k|scam(mer)?|harass|report(ing)? you|lawyer|attorney|police|leave me alone|go away|piss off|estaf|acoso|abogado|polic[ií]a)/i,
   equivocado: /\b(wrong (number|person)|not the owner|i'?m not (the owner|\w+)|don'?t own|never owned|sold (it|the house|that) (years|a while)|no soy (el|la) (due[nñ]o|propietari)|n[uú]mero equivocado|ya no (es|vivo)|doesn'?t live here)\b/i,
   mas_tarde: /\b(maybe|not (right )?now|not yet|later|next year|in a (few|couple) (months|years)|someday|thinking about it|tal vez|quiz[aá]s|m[aá]s adelante|despu[eé]s|el pr[oó]ximo a[nñ]o|ahorita no)\b/i,
@@ -109,6 +109,7 @@ const RE = {
   pregunta: /\?|\b(who is this|who'?s this|how did you get|qui[eé]n (es|eres|habla)|c[oó]mo (consigui|obtuvi))/i,
 };
 function porReglas(texto) {
+  if (window.SMS && SMS.RE_BAJA.test(texto)) return "baja"; // Fase 1: también ALTO, PARA, CANCELAR, REVOKE, STOPALL…
   for (const k of ["baja", "enojado", "equivocado", "mas_tarde", "no", "interesado", "pregunta"]) if (RE[k].test(texto)) return k;
   return "otro";
 }
@@ -302,6 +303,12 @@ async function revisar(aMano) {
           borrador: res && res.borrador != null ? res.borrador : borradorBase(cat, c, texto), conIA: !!res, t: ahora, estado: contestado ? "respondido" : (SIN_RESPUESTA.has(cat) ? "atender" : "abierto"),
           proximo: cat === "mas_tarde" ? ultIn.t + ((res && res.seguimientoDias) || 90) * D : 0, avisado: false, texi: !!txEnviados[id] });
         c.conv = conv.slice(-8);
+        // Fase 1: baja PERMANENTE. Aunque después escriba otra cosa, ya no se le vuelve a mandar SMS.
+        if (["baja", "equivocado", "enojado"].includes(cat)) {
+          c.bajaPermanente = c.bajaPermanente || cat;
+          try { await SMS.marcarBaja({ leadId: id, cuenta: "tx", tels: c.telResp ? [c.telResp] : (c.tels || []), motivo: cat, fuente: "Resi" }); }
+          catch (e) { decir(`No pude guardar la baja de ${c.nombre || id}: ${e.message}`, "error"); }
+        }
         if (["no", "mas_tarde"].includes(cat)) c.nextYear = true;
         nuevos++;
         for (const m of desdeUlt) vistos.add(m.id);
@@ -369,8 +376,13 @@ chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch
 
 // Bajas, números equivocados y enojados: Texi ya no les vuelve a escribir
 async function pasarBajasATexi() {
+  // Fase 1: las bajas que ya existían antes de esta versión también quedan permanentes
+  for (const [k, c] of Object.entries(casos)) if (["baja", "equivocado", "enojado"].includes(c.categoria) && !c.bajaPermanente) {
+    c.bajaPermanente = c.categoria;
+    try { await SMS.marcarBaja({ leadId: k, cuenta: "tx", tels: c.telResp ? [c.telResp] : (c.tels || []), motivo: c.categoria, fuente: "Resi" }); } catch (e) {}
+  }
   const no = {};
-  for (const [k, c] of Object.entries(casos)) if (["baja", "equivocado", "enojado"].includes(c.categoria)) no[k] = { t: c.ultimoT || c.t, motivo: c.categoria };
+  for (const [k, c] of Object.entries(casos)) if (["baja", "equivocado", "enojado"].includes(c.categoria) || c.bajaPermanente) no[k] = { t: c.ultimoT || c.t, motivo: c.bajaPermanente || c.categoria };
   const respondieron = Object.fromEntries(Object.entries(casos).map(([k, c]) => [k, { t: c.ultimoT || c.t, categoria: c.categoria }]));
   await chrome.storage.local.set({ rsNoEscribir: no, rsRespondieron: respondieron });
 }
@@ -395,9 +407,14 @@ async function mandar(id) {
   if (!texto) { ver("El mensaje está vacío."); return; }
   if (!num || !esCA(num)) { ver("Este lead no tiene número de California para contestarle."); return; }
   if (SIN_RESPUESTA.has(c.categoria) && !(await preguntar(`${c.nombre} está marcado como “${CAT[c.categoria].txt}”. ¿Seguro que le quieres escribir?`, "Sí, escribirle", "No"))) return;
+  { const b = await SMS.bajaDe({ tel: num, leadId: id, cuenta: "tx" }); if (b || c.bajaPermanente) { ver(`No se puede: ${c.nombre || "este lead"} tiene baja permanente (${(b && b.motivo) || c.bajaPermanente}). No le mandé nada.`); return; } }
   if (!(await preguntar(`Mandar este SMS a ${`${c.nombre} ${c.apellido}`.trim()} · ${bonito(num)}:\n\n“${texto}”\n\nUn SMS mandado ya no se puede borrar.`, "📨 Mandar", "Cancelar"))) { ver("No mandé nada."); return; }
+  const pol = await SMS.puedeMandar({ tel: num, leadId: id, cuenta: "tx", fuente: "Resi" });
+  if (!pol.ok) { await SMS.anotar({ fuente: "Resi", leadId: id, tel: num, estado: "bloqueado", motivo: pol.motivo }); decir(`No mandé el SMS: ${pol.motivo}.`, "error"); return; }
   try {
-    await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(id), content: texto, phoneNumber: num, phoneCode: "1" } });
+    try { await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(id), content: texto, phoneNumber: num, phoneCode: "1" } }); }
+    catch (e) { await SMS.devolverLugar(); await SMS.anotar({ fuente: "Resi", leadId: id, tel: num, estado: "error", motivo: e.message }); throw e; }
+    await SMS.anotar({ fuente: "Resi", leadId: id, tel: num, estado: "enviado", texto });
     Object.assign(c, { estado: "respondido", respondidoT: Date.now(), enviado: texto, borrador: "", seguido: c.categoria === "seguimiento" ? c.seguido : 0 });
     if (c.categoria === "seguimiento") c.categoria = "otro";
     const { rsHoy = {} } = await chrome.storage.local.get("rsHoy");
@@ -513,12 +530,18 @@ async function mandarPersonalizado() {
   const num = $("compoTel").value, texto = personalizar($("compoTxt").value, elegido);
   if (!texto) { ver("Escribe el mensaje."); return; }
   if (!num || !esCA(num)) { ver("Este lead no tiene número de California."); return; }
+  // Fase 1: a una baja ya no se le puede escribir (antes bastaba un clic extra)
   const { rsNoEscribir = {} } = await chrome.storage.local.get("rsNoEscribir");
-  if (rsNoEscribir[elegido.id] && !(await preguntar(`${elegido.nombre} pidió no recibir SMS o es número equivocado (${rsNoEscribir[elegido.id].motivo}). ¿Seguro que le quieres escribir?`, "Sí, escribirle", "No"))) return;
+  const b = await SMS.bajaDe({ tel: num, leadId: elegido.id, cuenta: "tx" });
+  if (b || rsNoEscribir[elegido.id]) { ver(`No se puede: ${elegido.nombre || "este lead"} tiene baja (${(b && b.motivo) || rsNoEscribir[elegido.id].motivo}). No le mandé nada.`); return; }
   if (!(await preguntar(`Mandar este SMS a ${`${elegido.nombre} ${elegido.apellido}`.trim()} · ${bonito(num)}:\n\n“${texto}”\n\nUn SMS mandado ya no se puede borrar.`, "📨 Mandar", "Cancelar"))) { ver("No mandé nada."); return; }
+  const pol = await SMS.puedeMandar({ tel: num, leadId: elegido.id, cuenta: "tx", fuente: "Resi" });
+  if (!pol.ok) { await SMS.anotar({ fuente: "Resi", leadId: elegido.id, tel: num, estado: "bloqueado", motivo: pol.motivo }); decir(`No mandé el SMS: ${pol.motivo}.`, "error"); return; }
   $("compoMandar").disabled = true;
   try {
-    await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(elegido.id), content: texto, phoneNumber: num, phoneCode: "1" } });
+    try { await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(elegido.id), content: texto, phoneNumber: num, phoneCode: "1" } }); }
+    catch (e) { await SMS.devolverLugar(); await SMS.anotar({ fuente: "Resi", leadId: elegido.id, tel: num, estado: "error", motivo: e.message }); throw e; }
+    await SMS.anotar({ fuente: "Resi", leadId: elegido.id, tel: num, estado: "enviado", texto });
     const ahora = Date.now();
     const { rsHoy = {}, txEnviados = {} } = await chrome.storage.local.get(["rsHoy", "txEnviados"]);
     txEnviados[elegido.id] = { ...(txEnviados[elegido.id] || {}), t: ahora, plantilla: "personalizado (Resi)", n: 1 }; // así Resi revisa si contesta

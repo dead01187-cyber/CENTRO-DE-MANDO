@@ -12,7 +12,7 @@ const DEFAULTS = {
   skipPrimary: true,
   smsMode: "first",
   caOnly: true,
-  deleteNonCA: true,
+  deleteNonCA: false, // Fase 1: borrar números de Lofty ya no viene prendido
   messages: [
     { on: true, text: "Hi, this is Mark w/RRE. Are you considering selling/buying residential or commercial property? We can review listing options, compare a cash offer, or holding." },
     { on: false, text: "" },
@@ -224,6 +224,9 @@ async function loadCfg() {
   if (stored.alCfg && stored.alCfg.message && !stored.alCfg.messages) {
     cfg.messages = [{ on: true, text: stored.alCfg.message }, ...DEFAULTS.messages.slice(1)];
   }
+  // Fase 1 (una sola vez): apagar "Borrar del lead los números que no son de California"; si lo quieres, vuelve a prenderlo a mano
+  if (stored.alCfg && !stored.alCfg.fase1) { cfg.deleteNonCA = false; cfg.fase1 = true; await chrome.storage.local.set({ alCfg: cfg }); }
+  cfg.fase1 = true;
   FIELDS.forEach((f) => ($(f).value = cfg[f]));
   CHECKS.forEach((f) => ($(f).checked = !!cfg[f]));
   renderMsgs();
@@ -305,7 +308,7 @@ async function sameMessageSentToday(leadId) {
     );
   } catch (e) {
     log("  No pude leer el historial de SMS: " + e.message);
-    return false;
+    return null; // Fase 1 · falla cerrada: sin historial no se sabe si ya lo recibió, así que no se le manda
   }
 }
 
@@ -432,6 +435,17 @@ async function removeNonCaPhones(lead, keep, drop) {
   log(`  🗑 Borrados (no son de CA): ${drop.map(fmt).join(", ")}`);
 }
 
+// ---------- Fase 1: bajas y DNC por número ----------
+// phoneStatuses (mismo orden que phones): 4 = DNC Number, 5 = DNC Contact · phoneConsentStates: Do Not Text / Unsubscribed
+function numerosOptOutAl(l) {
+  const fuera = new Set(), phones = [].concat(l.phones || []), est = [].concat(l.phoneConsentStates || []), st = [].concat(l.phoneStatuses || []).map(Number);
+  const val = (s) => String(s && typeof s === "object" ? s.state || s.name || s.value || "" : s || "");
+  phones.forEach((p, i) => { if (/unsubscrib|do not (text|call)|opt.?out|dnc/i.test(val(est[i])) || st[i] === 4 || st[i] === 5) fuera.add(d10(p && typeof p === "object" ? p.phone || p.number || p.value : p)); });
+  return fuera;
+}
+// ¿Marki usa la misma cuenta de Lofty que Texi/Resi? (así comparten las bajas por lead; las bajas por número aplican siempre)
+async function cuentaSms() { const { txKey } = await chrome.storage.local.get("txKey"); return txKey && txKey === cfg.apiKey ? "tx" : "al"; }
+
 // ---------- Ciclo principal ----------
 async function processLead(lead) {
   const name = `${lead.firstName || ""} ${lead.lastName || ""}`.trim();
@@ -488,27 +502,53 @@ async function processLead(lead) {
   // 2) SMS
   if (cfg.doSms && activeMessages().length && !lead.cannotText) {
     setStatus(`Mandando SMS a ${name}`);
-    const leadSlot = await nextRot();
-    const primaryDone = cfg.skipPrimary ? await sameMessageSentToday(lead.leadId) : false;
-    for (let i = 0; i < phones.length; i++) {
-      if (stopRequested) break;
-      const p = phones[i];
-      if (borrados.has(d10(p))) { log(`  ↷ ${fmt(p)} — lo borraste, no se le manda SMS`); continue; }
-      if (p === allPhones[0] && primaryDone) { log(`  ✉ ${fmt(p)} — ya lo recibió hoy, no se repite`); continue; }
-      if (await alreadySentLocally(lead.leadId, p)) { log(`  ✉ ${fmt(p)} — ya se lo mandé hoy`); continue; }
-      const msg = pickMessage(leadSlot, i);
-      try {
-        await sendSms(lead.leadId, p, msg.text);
-        await markSentLocally(lead.leadId, p);
-        stats.sms++;
-        log(`  ✉ ${fmt(p)} — SMS ${msg.n} enviado`);
-      } catch (e) {
-        stats.errors++;
-        log(`  ⚠ SMS ${fmt(p)} — ${e.message}`);
+    // Fase 1 · revisión con el lead completo (bajas, DNC, unsubscription). Si no se puede leer, NO se manda.
+    let fresco = null;
+    try { const f = await api(`/v1.0/leads/${lead.leadId}`); fresco = (f && (f.lead || f.data || f)) || null; } catch (e) { log(`  ⚠ No pude revisar en Lofty si ${name} se dio de baja (${e.message}); no le mando SMS.`); }
+    const cuenta = await cuentaSms();
+    const bloqueoLead = !fresco ? "sin revisión" : (fresco.cannotText === true || fresco.unsubscription === true) ? "opt-out en Lofty" : "";
+    if (fresco && bloqueoLead) await SMS.marcarBaja({ leadId: lead.leadId, cuenta, tels: phones, motivo: bloqueoLead, fuente: "Marki" });
+    if (fresco && !bloqueoLead) {
+      const fuera = numerosOptOutAl(fresco);
+      if (fuera.size) await SMS.marcarBaja({ tels: [...fuera], motivo: "Do Not Text / DNC en Lofty", fuente: "Marki" });
+      const { rsNoEscribir = {} } = cuenta === "tx" ? await chrome.storage.local.get("rsNoEscribir") : {};
+      const leadSlot = await nextRot();
+      const primaryDone = cfg.skipPrimary ? await sameMessageSentToday(lead.leadId) : false;
+      if (rsNoEscribir && rsNoEscribir[String(lead.leadId)]) log(`  ✉ Resi lo tiene como “${rsNoEscribir[String(lead.leadId)].motivo}”; no se le manda SMS`);
+      else if (primaryDone === null) log("  ✉ Sin historial de SMS no sé si ya lo recibió hoy; no le mando (falla cerrada)");
+      else for (let i = 0; i < phones.length; i++) {
+        if (stopRequested) break;
+        const p = phones[i];
+        if (borrados.has(d10(p))) { log(`  ↷ ${fmt(p)} — lo borraste, no se le manda SMS`); continue; }
+        if (fuera.has(d10(p))) { log(`  ✉ ${fmt(p)} — marcado Do Not Text / DNC en Lofty, no se le manda`); continue; }
+        if (i === 0 && primaryDone) { log(`  ✉ ${fmt(p)} — ya lo recibió hoy, no se repite`); continue; }
+        if (await alreadySentLocally(lead.leadId, p)) { log(`  ✉ ${fmt(p)} — ya se lo mandé hoy`); continue; }
+        const pol = await SMS.puedeMandar({ tel: p, leadId: lead.leadId, cuenta, fuente: "Marki" });
+        if (!pol.ok) {
+          await SMS.anotar({ fuente: "Marki", leadId: lead.leadId, tel: d10(p), estado: "bloqueado", motivo: pol.motivo });
+          log(`  ✉ ${fmt(p)} — no se manda: ${pol.motivo}`);
+          if (pol.horario || pol.tope || /política/.test(pol.motivo)) { stopRequested = true; log(`■ Me detengo: ${pol.motivo}.`); }
+          continue;
+        }
+        const msg = pickMessage(leadSlot, i);
+        try {
+          await sendSms(lead.leadId, p, msg.text);
+          await markSentLocally(lead.leadId, p);
+          await SMS.anotar({ fuente: "Marki", leadId: lead.leadId, tel: d10(p), estado: "enviado", texto: msg.text });
+          stats.sms++;
+          log(`  ✉ ${fmt(p)} — SMS ${msg.n} enviado`);
+        } catch (e) {
+          await SMS.devolverLugar();
+          await SMS.anotar({ fuente: "Marki", leadId: lead.leadId, tel: d10(p), estado: "error", motivo: e.message });
+          if (/unsubscri|opt.?out|consent|do not (text|call)|cannot text|can'?t text/i.test(e.message)) await SMS.marcarBaja({ tel: p, motivo: "Lofty rechazó por opt-out", fuente: "Marki" });
+          stats.errors++;
+          log(`  ⚠ SMS ${fmt(p)} — ${e.message}`);
+        }
+        setCounts();
+        await sleep(1200);
       }
-      setCounts();
-      await sleep(1200);
-    }
+    } else log(`  ✉ No se le manda SMS a ${name} (${bloqueoLead}).`);
+    if (stopRequested) { log("  ■ Detenido antes de mover el pipeline."); return; }
   } else if (lead.cannotText) {
     log("  (Lead marcado como 'no enviar textos', no se manda SMS)");
   }
@@ -528,6 +568,13 @@ async function run() {
   if (!cfg.removeTag && cfg.filterStage === cfg.targetStage) {
     alert("Sin quitar tag y sin cambiar de pipeline, el agente repetiría los mismos leads. Ajusta uno de los dos.");
     return;
+  }
+  if (cfg.doSms) {
+    // Fase 1: los SMS masivos ya no arrancan con un solo clic
+    let total = "?"; try { total = (await fetchMatchingLeads(1)).total; } catch (e) {}
+    const pol = await SMS.config();
+    const okSms = await preguntar(`Marki va a mandar SMS automáticamente, lead por lead, a los leads de “${cfg.filterStage || "todas las etapas"}”${cfg.filterTag ? ` con el tag “${cfg.filterTag}”` : ""} (Lofty dice ${total}).\n\nMensaje: “${activeMessages()[0].text}”\n\nSolo a números de California, de ${pol.desde}:00 a ${pol.hasta}:00 hora de California, máximo ${pol.tope} SMS al día entre todos los robots, y nunca a bajas ni números DNC. Un SMS mandado no se puede borrar.`, "Sí, mandar SMS", "Cancelar");
+    if (!okSms) { log("Cancelado: no arranqué."); return; }
   }
   running = true; stopRequested = false;
   stats = { done: 0, sms: 0, calls: 0, answered: 0, errors: 0 };
