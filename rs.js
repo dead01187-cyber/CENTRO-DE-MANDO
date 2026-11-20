@@ -143,6 +143,7 @@ Escribe un borrador de respuesta SMS: en el mismo idioma del lead, máximo 280 c
 Contesta SOLO con JSON: {"categoria":"...","resumen":"una línea en español","summary":"the same summary in English (one line)","borrador":"...","urgente":true|false,"seguimientoDias":número o null}`;
   const usuario = `Lead: ${c.nombre} ${c.apellido}${c.calle ? `, dueño de ${c.calle}${c.ciudad ? `, ${c.ciudad}` : ""}` : ""}. Etapa en Lofty: ${c.etapa || "?"}.\n\nConversación:\n${historia}`;
   try {
+    if (window.PRESUPUESTO) { const pr = await PRESUPUESTO.revisar("resi"); if (!pr.ok) return null; } // Fase 3: tope diario (queda la clasificación por reglas)
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": svKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
@@ -150,6 +151,7 @@ Contesta SOLO con JSON: {"categoria":"...","resumen":"una línea en español","s
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) return null;
+    if (window.PRESUPUESTO) await PRESUPUESTO.registrar("resi", d.usage);
     const txt = (d.content || []).map((b) => b.text || "").join("");
     const j = JSON.parse((txt.match(/\{[\s\S]*\}/) || ["{}"])[0]);
     if (!CAT[j.categoria]) return null;
