@@ -160,10 +160,19 @@
   if (document.body) poner(); else document.addEventListener("DOMContentLoaded", poner);
 
   let timer = null;
+  // Fase 5: el estado de cada robot se guarda en storage ("rbEstado_<robot>") para que el tablero lo lea sin tocar las páginas.
+  // Con freno: como mucho una escritura cada 2 s por robot (y siempre la última).
+  let pendienteEst = null, timerEst = null;
+  function guardarEstado(estado, texto) {
+    pendienteEst = { estado, texto: String(texto || bar.querySelector(".txt").textContent || "").slice(0, 200), t: Date.now() };
+    if (timerEst) return;
+    timerEst = setTimeout(() => { timerEst = null; try { chrome.storage.local.set({ ["rbEstado_" + MOD]: pendienteEst }); } catch (e) {} }, 2000);
+  }
   function set(estado, texto) {
     bar.className = "rb " + estado;
     bar.querySelector(".chip").textContent = CHIP[estado] || estado;
     if (texto) bar.querySelector(".txt").textContent = texto;
+    guardarEstado(estado, texto);
     clearTimeout(timer);
     // si deja de haber movimiento, vuelve a descansar
     if (estado === "trabajando") timer = setTimeout(() => set("idle", "Esperando…"), 30000);

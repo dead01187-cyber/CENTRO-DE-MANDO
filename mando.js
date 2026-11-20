@@ -5,8 +5,8 @@
 // =====================================================================
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "rs", "li", "al", "ra", "te", "va", "pu", "cu", "qa", "an", "sv"];
-const NOMBRE = Object.fromEntries(REGISTRO.ids(false).map((m) => [m, REGISTRO.nombre(m)])); // Fase 2: del registro central
+const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "rs", "li", "al", "ra", "te", "va", "pu", "cu", "qa", "an", "tb", "sv"];
+const NOMBRE = { ...Object.fromEntries(REGISTRO.ids(false).map((m) => [m, REGISTRO.nombre(m)])), tb: "Tablero" }; // Fase 2: del registro central · Fase 5: tablero
 const COLOR = { ra: "#ef4444", te: "#f97316", al: "#60a5fa", pr: "#eab308", li: "#fb7185", rs: "#2dd4bf", cp: "#22d3ee", ch3: "#fbbf24", bv3: "#fb923c", ow3: "#facc15", wb3: "#d97706", hr: "#f59e0b", tx: "#34d399", wb: "#facc15", zb: "#22d3ee", rd: "#a78bfa", gm: "#f9a8d4", ti: "#60a5fa", tm: "#818cf8", bv2: "#e879f9", ow2: "#a3e635", ac: "#fb923c", pw: "#2dd4bf", ch: "#f472b6", bv: "#818cf8", ow: "#4ade80", lf: "#38bdf8", sv: "#fbbf24", crm: "#a5b4fc" };
 const CHIP = { idle: "Listo", trabajando: "Trabajando", feliz: "¡Terminé!", error: "Error", ayuda: "Necesito ayuda", pausa: "Pausa", pensando: "Pensando" };
 
@@ -146,6 +146,7 @@ function encuadrar() { // que quepa todo el flujo en la pantalla
   chrome.storage.local.get("mandoCam").then(({ mandoCam }) => { if (mandoCam && mandoCam.s) { cam = mandoCam; aplicarCam(); } else setTimeout(encuadrar, 300); });
 })();
 
+$("b-tablero").onclick = () => mostrar("tb"); // Fase 5
 $("b-tema").onclick = () => { const t = N8N() ? "neon" : "n8n"; chrome.storage.local.set({ mandoTema: t }); ponerTema(t); };
 chrome.storage.local.get("mandoTema").then(({ mandoTema = "n8n" }) => ponerTema(mandoTema));
 

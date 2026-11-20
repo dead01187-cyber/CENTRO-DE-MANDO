@@ -450,7 +450,7 @@ const TOOLS = [
       Object.entries(CAMPOS).map(([m, c]) => `${m}: ${Object.entries(c).map(([id, d]) => `${id} (${d})`).join(", ")}`).join(" | ") + ". Para sí/no usa \"si\" o \"no\".",
     input_schema: { type: "object", properties: { modulo: { type: "string", enum: MODS_CAPI }, campo: { type: "string" }, valor: { type: "string" } }, required: ["modulo", "campo", "valor"] } },
   { name: "mostrar_modulo", description: "Cambia la pestaña visible del panel.",
-    input_schema: { type: "object", properties: { modulo: { type: "string", enum: [...MODS_CAPI, "sv"] } }, required: ["modulo"] } },
+    input_schema: { type: "object", properties: { modulo: { type: "string", enum: [...MODS_CAPI, "tb", "sv"] } }, required: ["modulo"] } },
   { name: "interruptor", description: "Prende o apaga un robot (su interruptor del Centro de Mando). Un robot apagado no trabaja ni revisa nada solo. SOLO úsala cuando el jefe te lo pidió en su último mensaje (ej. 'apaga a Wibi', 'prende a Zeta'). Nunca por un aviso automático.",
     input_schema: { type: "object", properties: { robot: { type: "string", enum: REGISTRO.ids() }, prender: { type: "boolean" } }, required: ["robot", "prender"] } },
   { name: "listar_pestanas", description: "Lista las pestañas abiertas de Chrome.", input_schema: { type: "object", properties: {} } },
@@ -649,6 +649,8 @@ Bus de tareas: algunas acciones (Chequi, Chequi 3, Zeta y Resi "revisar"; Limpi 
 
 Robots de calidad y operación (Fase 4, solo leen): Vali (CRM) valida teléfonos y datos de los lotes antes de subir; Punti (GROW) califica de 0 a 100 a quién atender primero; Cumpli (OPS) audita el cumplimiento de los SMS y ajustes riesgosos; Qai (OPS) revisa la salud técnica; Ana (OPS) saca los números. Se piden con clic (va, pu, cu, qa, an → run) y van por el bus. Si el jefe pregunta "¿cómo vamos?", "¿a quién le hablo primero?" o "¿estamos cumpliendo?", úsalos.
 
+Tablero (Fase 5): el jefe tiene un tablero con el semáforo general, supervisores, robots, tareas, leads, errores, costos de Claude y seguridad. Si pide "enséñame el tablero" o "¿cómo está todo?", usa mostrar_modulo con tb (y ver_estado para contestarle en voz).
+
 Supervisores: tienes 4 supervisores, cada uno con su cerebro y solo sus robots: GEO (dónde buscar y recolectar: Radar, Termi, Propi, Prope, Heri), CRM (calidad de leads: Chequis, Veris, Owns, Wibis, Carpi, Lofti, Acti, Limpi, Zeta, Redi), GROW (seguimiento y SMS: Texi, Resi, Marki, Timi; nunca mandan SMS) y OPS (diagnóstico técnico de todo, solo lectura, incluido el gasto de Claude). Para revisar o arreglar un área completa, o un aviso con varios robots de la misma área, usa supervisor; para un solo robot, delegar. Si un aviso automático trae errores técnicos (robots atorados, "Error de código", sesiones caídas), pásaselo a OPS. Cada supervisor tiene un presupuesto diario de Claude; si se le acaba, díselo al jefe (ver_uso).
 
 Robots pensantes: cada robot tiene su propio cerebro. Si algo falla en una sección, usa delegar para que ese robot lo revise y lo arregle, y luego cuéntale al jefe en una frase.
@@ -812,7 +814,7 @@ const ACCIONES = {
   leer_modulo: (a) => `Leyendo la pestaña ${MODULOS[a.modulo] || a.modulo}`,
   clic: (a) => `Clic en “${((BOTONES[a.modulo] || {})[a.boton] || a.boton)}” (${MODULOS[a.modulo] || a.modulo})`,
   poner_valor: (a) => `Cambio ${((CAMPOS[a.modulo] || {})[a.campo] || a.campo)} → ${a.valor}`,
-  mostrar_modulo: (a) => `Te muestro ${MODULOS[a.modulo] || "a Capi"}`,
+  mostrar_modulo: (a) => `Te muestro ${a.modulo === "tb" ? "el tablero" : MODULOS[a.modulo] || "a Capi"}`,
   listar_pestanas: () => "Viendo las pestañas abiertas",
   leer_pestana: (a) => `Leyendo la pestaña ${a.tabId}`,
   recargar_pestana: (a) => `Recargando la pestaña ${a.tabId}`,

@@ -22,6 +22,10 @@ li:last-child { border-bottom: 0; } li .q { flex: 1; min-width: 0; } li small { 
 .aviso, .dudoso, .media, .medio { background: #fef9c3; color: #854d0e; } .baja, .bajo, .gris { background: #f1f5f9; color: #475569; }
 .empty { padding: 12px; color: var(--m); text-align: center; display: block; }
 .hint { color: var(--m); font-size: 11px; }
-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--b); border-radius: 8px; font-size: 12px; }
-th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--b); } th { color: var(--m); font-weight: 600; }
+/* Tablas: usan los colores del tema (claro, neón o n8n) para que se lean en todos */
+table { width: 100%; border-collapse: collapse; background: var(--vidrio, #fff); color: inherit; border: 1px solid var(--linea, var(--b)); border-radius: 8px; font-size: 12px; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--linea, var(--b)); vertical-align: top; } th { color: var(--tenue, var(--m)); font-weight: 600; }
+/* Que nada ensanche la página: las tablas anchas se desplazan dentro de su caja */
+main { grid-template-columns: minmax(0, 1fr); } main > * { min-width: 0; }
+.wrap-tabla { overflow-x: auto; max-width: 100%; }
 .barra { height: 8px; background: var(--c); border-radius: 4px; min-width: 2px; }

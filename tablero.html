@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="tb">
+<head>
+<meta charset="utf-8">
+<title>Tablero</title>
+<link rel="stylesheet" href="fase4.css">
+<style>
+  :root { --c: #2563eb; }
+  .semaforo { display: flex; align-items: center; gap: 10px; }
+  .luz { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .luz.verde { background: #22c55e; box-shadow: 0 0 10px #22c55e; } .luz.amarillo { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; } .luz.rojo { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+  .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+  .sup h4 { margin: 0 0 4px; font-size: 13px; } .sup .hint { margin-bottom: 4px; }
+  .medidor { height: 6px; border-radius: 3px; background: rgba(127,127,127,.25); overflow: hidden; } .medidor > div { height: 100%; background: var(--c); }
+  .medidor.alto > div { background: #ef4444; }
+  section > h3 { display: flex; justify-content: space-between; align-items: baseline; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .apr { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+  .wrap-tabla { overflow-x: auto; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card semaforo"><span class="luz" id="luz"></span><div style="flex:1"><b id="titulo">Tablero</b><div class="hint" id="sub">Cargando…</div></div><button id="act">↻ Actualizar</button></div>
+  <div class="nums" id="nums"></div>
+  <section id="secAprob" hidden><h3>Esperando tu aprobación</h3><ul id="aprob"></ul></section>
+  <section id="secMision" hidden><h3>Misión</h3><div class="card" id="mision"></div></section>
+  <section><h3>Supervisores</h3><div class="grid4" id="sups"></div></section>
+  <section><h3>Robots <span class="hint">estado que guarda cada robot · éxito y duración de sus tareas del bus</span></h3><div class="wrap-tabla"><table id="robots"></table></div></section>
+  <section><h3>Tareas del bus <span class="hint" id="tareasRes"></span></h3><ul id="tareas"></ul></section>
+  <section><h3>Leads y SMS de hoy</h3><div class="nums" id="leads"></div></section>
+  <section><h3>Costos de Claude hoy <span class="hint" id="costoNota"></span></h3><div class="wrap-tabla"><table id="costos"></table></div></section>
+  <section><h3>Errores (24 h)</h3><ul id="errores"></ul></section>
+  <section><h3>Seguridad y cumplimiento</h3><div class="wrap-tabla"><table id="seguridad"></table></div></section>
+</main>
+<script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
+<script src="presupuesto.js"></script><script src="vista.js"></script><script src="tablero-core.js"></script><script src="tablero.js"></script>
+</body>
+</html>
