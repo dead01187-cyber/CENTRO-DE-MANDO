@@ -1,3 +1,6 @@
 respaldo-original/
 .DS_Store
 .fuse_hidden*
+
+# Respaldos de chrome.storage (contienen API keys y datos personales): nunca subir
+respaldo-*.json
