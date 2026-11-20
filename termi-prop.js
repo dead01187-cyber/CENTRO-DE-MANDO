@@ -118,7 +118,7 @@ $("sacar").onclick = async () => {
     }
     if (!props.size) { decir(`Termi: no saqué propiedades (${hechas} búsquedas${bloqueado ? ", Propwire me frenó" : ""}).`, "error"); window.robot && robot.set("error", "Sin propiedades"); return; }
     // Archivo (mismas columnas que un export de Propwire, para que Carpi lo entienda)
-    const celda = (v) => { const s = String(v ?? ""); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const celda = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; /* Fase 1: sin fórmulas */ return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const cab = ["Address", "City", "State", "Zip", "County", "Lead Types", "Termi Score"];
     const lista = [...props.values()].sort((a, b) => (b.score || 0) - (a.score || 0) || a.zip.localeCompare(b.zip));
     const texto = [cab.join(","), ...lista.map((p) => [p.street, p.city, "CA", p.zip, p.condado, [...p.tipos].join("; "), p.score].map(celda).join(","))].join("\r\n");
@@ -149,7 +149,7 @@ $("doms").addEventListener("click", (e) => { const b = e.target.closest("button.
 $("copiarTodos").onclick = () => { const ls = domsFiltrados(); copiar(ls.map(lineaDom).join("\n"), `Copié ${ls.length} domicilios.`); };
 $("filtroDoms").oninput = pintarDoms;
 $("bajarDoms").onclick = async () => {
-  const celda = (v) => { const s = String(v ?? ""); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const celda = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; /* Fase 1: sin fórmulas */ return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const ls = domsFiltrados();
   const texto = ["Address,City,State,Zip,County,Lead Types,Termi Score", ...ls.map((d) => [d.street, d.city, "CA", d.zip, d.condado, d.tipos.join("; "), d.score].map(celda).join(","))].join("\r\n");
   const url = URL.createObjectURL(new Blob(["\ufeff" + texto], { type: "text/csv;charset=utf-8" }));

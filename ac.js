@@ -107,17 +107,20 @@ async function actualizarLead(f) {
   const telNuevos = (f.phones || []).map((p) => digitos(p.num)).filter((x) => x.length === 10);
   const telViejos = (lead.phones || []).map(digitos).filter((x) => x.length === 10);
   const mismo = mismoDueno(lead, nuevo);
-  // Mismo dueño: se suman los teléfonos nuevos. Dueño nuevo: se ponen los del dueño nuevo (si no trae, se quedan los que había).
-  const phones = [...new Set(mismo ? [...telViejos, ...telNuevos] : (telNuevos.length ? telNuevos : telViejos))].slice(0, 10);
+  // Fase 1: los teléfonos que ya tenía el lead NUNCA se borran ni se cambian de lugar (así sus estados DNC/Bad Number
+  // siguen en el mismo orden); los nuevos se agregan al final. Antes, si cambiaba el dueño, se reemplazaban todos.
+  const phones = [...new Set([...telViejos, ...telNuevos])].slice(0, Math.max(10, telViejos.length));
   const tags = [...new Set([...(lead.tags || []).map((x) => x.tagName || x), cfg().tag])];
   const cuerpo = { phones, tags };
-  if (nuevo.first) { cuerpo.firstName = nuevo.first.slice(0, 30); cuerpo.lastName = (nuevo.last || "").slice(0, 30); }
+  if (nuevo.first) { cuerpo.firstName = nuevo.first.slice(0, 30); if (nuevo.last) cuerpo.lastName = nuevo.last.slice(0, 30); } // sin apellido nuevo, se queda el que había
+  // Respaldo de lo que tenía el lead antes del cambio (se guarda con el trabajo, por si hay que regresarlo a mano)
+  t.antes = { firstName: lead.firstName || "", lastName: lead.lastName || "", phones: lead.phones || [], t: Date.now() };
   await loftyApi(`/leads/${f.leadId}`, { method: "PUT", body: cuerpo });
   const agregados = telNuevos.filter((x) => !telViejos.includes(x)).length;
   t.estado = mismo ? "actualizado" : "cambio";
   t.detalle = mismo
     ? `${nuevo.first} ${nuevo.last}`.trim() + ` · +${agregados} teléfono(s)`
-    : `Antes: ${t.nombre || "(sin nombre)"} → ahora: ${`${nuevo.first} ${nuevo.last}`.trim()} · ${phones.length} teléfono(s)`;
+    : `Antes: ${t.nombre || "(sin nombre)"} → ahora: ${`${nuevo.first} ${nuevo.last}`.trim()} · +${agregados} teléfono(s) (los de antes se conservan)`;
   t.t = Date.now();
   decir(`✔ Actualicé ${t.direccion}: ${t.detalle}. Tag “${cfg().tag}”.`);
 }

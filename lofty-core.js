@@ -5,6 +5,7 @@ var Core = (() => {
   const SUFFIX = { street:'st', st:'st', avenue:'ave', ave:'ave', av:'ave', boulevard:'blvd', blvd:'blvd', drive:'dr', dr:'dr', road:'rd', rd:'rd', lane:'ln', ln:'ln', court:'ct', ct:'ct', circle:'cir', cir:'cir', place:'pl', pl:'pl', terrace:'ter', ter:'ter', way:'way', parkway:'pkwy', pkwy:'pkwy', highway:'hwy', hwy:'hwy', trail:'trl', trl:'trl', square:'sq', north:'n', south:'s', east:'e', west:'w', northeast:'ne', northwest:'nw', southeast:'se', southwest:'sw', apartment:'unit', apt:'unit', suite:'unit', ste:'unit', unit:'unit', '#':'unit' };
 
   const norm = s => String(s ?? '').trim();
+  const DNC_RE = /dnc|do\s*not\s*\d*\s*call/i;
   const low = s => norm(s).toLowerCase();
 
   // ---------- detección de columnas ----------
@@ -32,7 +33,8 @@ var Core = (() => {
       ownerType: pick(headers, /owner\s*type|ownership\s*type|entity\s*type|corporate/, null),
       phones: headers.filter(h => /phone|mobile|cell|wireless|landline/i.test(h) && !/type|dnc|do not call|status|carrier|score|litigator|count|verified|connected|line/i.test(h)),
       emails: headers.filter(h => /e-?mail/i.test(h) && !/type|status|valid|count|opt/i.test(h)),
-      dnc: headers.filter(h => /dnc|do not call/i.test(h)),
+      dnc: headers.filter(h => DNC_RE.test(h)), // Fase 1: también "Do Not 1 Call" (formato de Propwire/Wibi)
+      litigator: pick(headers, /litigator/, null),
     };
     return m;
   }
@@ -92,7 +94,7 @@ var Core = (() => {
     const base = low(phoneCol).replace(/\d+/g, '').replace(/[^a-z]/g, '');
     return dncCols.find(d => {
       const dn = (d.match(/\d+/) || [''])[0];
-      return dn === n && (low(d).includes(base) || /dnc|do not call/i.test(d));
+      return dn === n && (low(d).includes(base) || DNC_RE.test(d));
     }) || '';
   }
 
@@ -140,7 +142,9 @@ var Core = (() => {
       const isEntity = /company|corporat|trust|business|llc|entity|government|bank|estate/i.test(otype) && !/individual|person/i.test(otype) || ENTITY_RE.test(ownerForCheck);
 
       const set = (s, r) => { rec.status = s; rec.reason = r; };
-      if (opts.excludeEntities && isEntity) set('excluded', 'Empresa / trust');
+      const litig = map.litigator && norm(row[map.litigator]) && !/^(no|false|0|n)$/i.test(norm(row[map.litigator]));
+      if (litig) set('excluded', 'Litigator (TCPA)'); // Fase 1: nunca se suben
+      else if (opts.excludeEntities && isEntity) set('excluded', 'Empresa / trust');
       else if (!rec.street) set('excluded', 'Sin dirección');
       else if (!rec.first) set('excluded', 'Sin nombre');
       else if (opts.onlyCA && rec.state && rec.state !== 'CA') set('excluded', 'Fuera de CA');
@@ -190,7 +194,9 @@ var Core = (() => {
   }
 
   // ---------- CSV de salida ----------
-  function csvCell(v) { const s = String(v ?? ''); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  // Fase 1: una celda que empieza con = + - @ (o tab/CR) se neutraliza con ' para que Excel/Sheets no la ejecute como fórmula
+  const sinFormula = (s) => /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+  function csvCell(v) { const s = sinFormula(String(v ?? '')); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
   function buildCsv(records, cfg) {
     const ok = records.filter(r => r.status === 'ok');
     const maxP = Math.min(cfg.maxPhones || 10, Math.max(1, ...ok.map(r => r.phones.length)));
@@ -218,7 +224,7 @@ var Core = (() => {
     return [r.street, r.city, tail].filter(Boolean).join(', ');
   }
 
-  return { detect, processRows, indexLofty, buildCsv, fullAddress, fmtPhone, addrKey, streetKey, ENTITY_RE };
+  return { detect, processRows, indexLofty, buildCsv, csvCell, sinFormula, fullAddress, fmtPhone, addrKey, streetKey, ENTITY_RE };
 })();
 if (typeof module !== 'undefined') module.exports = Core;
 

@@ -281,7 +281,7 @@ $("bajarSkip").onclick = async () => {
   const ls = leads.filter(faltaSkip);
   if (!ls.length) { decir("Wibi: no hay domicilios sin teléfono para skip trace."); return; }
   const vistos = new Set(), unicos = ls.filter((l) => { const k = l.key || Core.addrKey(l.street, l.city); if (vistos.has(k)) return false; vistos.add(k); return true; });
-  const celda = (v) => { const s = String(v ?? ""); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const celda = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; /* Fase 1: sin fórmulas */ return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const texto = ["Address,City,State,Zip,First Name,Last Name", ...unicos.map((l) => [l.street, tc(l.city), l.state || "CA", l.zip || "", l.first || "", l.last || ""].map(celda).join(","))].join("\r\n");
   const ciudades = [...new Set(unicos.map((l) => tc(l.city)).filter(Boolean))].slice(0, 2).join(", ");
   const nombre = `Wibi/${new Date().toLocaleDateString("en-CA")} ${ciudades || "domicilios"} para skip trace.csv`.replace(/[:*?"<>|]+/g, "-");
@@ -298,7 +298,7 @@ $("bajarLimpio").onclick = async () => {
   if (!ls.length) { decir("Wibi: no hay leads limpios para bajar."); return; }
   const nT = Math.max(1, ...ls.map((l) => l.phones.length)), nE = Math.max(1, ...ls.map((l) => (l.emails || []).length));
   const cab = ["First Name", "Last Name", ...Array.from({ length: nT }, (_, i) => `Phone ${i + 1}`), ...Array.from({ length: nE }, (_, i) => `Email ${i + 1}`), "Address", "City", "State", "Zip", "Tags", "Source"];
-  const celda = (v) => { const s = String(v ?? ""); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const celda = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; /* Fase 1: sin fórmulas */ return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const filasCsv = ls.map((l) => [l.first, l.last, ...Array.from({ length: nT }, (_, i) => l.phones[i] || ""), ...Array.from({ length: nE }, (_, i) => (l.emails || [])[i] || ""), l.street, tc(l.city), l.state || "CA", l.zip || "", `${tc(l.city)}, propwire`, "Propwire"].map(celda).join(","));
   const texto = [cab.map(celda).join(","), ...filasCsv].join("\r\n");
   const ciudades = [...new Set(ls.map((l) => tc(l.city)).filter(Boolean))].slice(0, 2).join(", ");

@@ -31,7 +31,8 @@ async function extractor(opts) {
         }
       }
     }
-    const duenos = tarjetas.filter((t) => /owner/i.test(t.rol));
+    // Fase 1: solo dueños actuales; "Previous Owner", "Former Owner", "Prior Owner" ya no cuentan (antes se tomaban sus teléfonos)
+    const duenos = tarjetas.filter((t) => /owner/i.test(t.rol) && !/\b(previous|former|prior|past|ex)[\s-]*owner/i.test(t.rol));
     const owners = duenos.length ? duenos.map((t) => ({ nombre: t.nombre, phones: t.phones }))
       : (nombreOwnership && !/^\$|^\d/.test(nombreOwnership) ? [{ nombre: nombreOwnership, phones: [] }] : []);
     const m2 = [L[0], document.title].join("\n").match(/\d{1,6}[A-Z]?\s+[^,\n]+?\s+[A-Za-z .'-]+,\s*[A-Z]{2}\s+\d{5}/);
@@ -520,7 +521,13 @@ async function revisarResultados(tabId, address) {
 function esperarPestanaNueva(tabId, windowId, ms) {
   let listener, t;
   const promesa = new Promise((resolve) => {
-    listener = (tab) => { if (tab.openerTabId === tabId || tab.windowId === windowId) { fin(); resolve(tab); } };
+    // Fase 1: en la misma ventana solo se acepta si Chrome no dijo de dónde salió Y ya va a BeenVerified
+    // (Veri abre ahí pestañas en blanco para otros domicilios; antes Owny podía quedarse con una de esas)
+    listener = (tab) => {
+      const deEsta = tab.openerTabId === tabId;
+      const mismaVentanaBV = tab.openerTabId == null && tab.windowId === windowId && /beenverified\.com/i.test(tab.pendingUrl || tab.url || "");
+      if (deEsta || mismaVentanaBV) { fin(); resolve(tab); }
+    };
     const fin = () => { clearTimeout(t); chrome.tabs.onCreated.removeListener(listener); };
     t = setTimeout(() => { fin(); resolve(null); }, ms);
     chrome.tabs.onCreated.addListener(listener);
@@ -736,7 +743,7 @@ function ciudad(dir) {
   return m ? m[1].trim().toLowerCase() : "";
 }
 
-const csvCelda = (v) => (/[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v);
+const csvCelda = (v0) => { const v = /^[=+\-@\t\r]/.test(String(v0 ?? "")) ? "'" + v0 : v0; return /[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v; }; // Fase 1: sin fórmulas
 
 $("btnCsv").onclick = () => {
   if (!lote.length) return estado("El lote está vacío.", true);

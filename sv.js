@@ -141,7 +141,7 @@ async function estadoFlujo() {
     },
     lofty: {
       listosParaSubir: st.loftyListos || 0, ciudades: val("lf", "cities"), resumen: txt("lf", "stats").replace(/\n+/g, " · ").slice(0, 300),
-      tieneApiKeyDeLofty: !!st.loftyKey, subidaAutomatica: st.loftyAuto !== false, subidosEnTotal: st.loftySubidos || 0, mensajeEnvio: txt("lf", "smsg"),
+      tieneApiKeyDeLofty: !!st.loftyKey, subidaAutomatica: st.loftyAuto === true, subidosEnTotal: st.loftySubidos || 0, mensajeEnvio: txt("lf", "smsg"),
     },
     ultimosEventos: (st.svEventos || []).slice(-15).map((e) => `${new Date(e.t).toLocaleTimeString("es-MX")} [${ROBOT_DE[e.mod] || e.mod}]${e.nivel === "error" ? " ⚠" : ""} ${e.texto}`),
   };
@@ -158,7 +158,7 @@ const listos = async () => {
   const { loftyListos = 0, loftySubidos = 0 } = await chrome.storage.local.get(["loftyListos", "loftySubidos"]);
   return loftyListos + Math.max(0, loftySubidos - ((mision && mision.subidosBase) || 0));
 };
-const autoSube = async () => (await chrome.storage.local.get("loftyAuto")).loftyAuto !== false;
+const autoSube = async () => (await chrome.storage.local.get("loftyAuto")).loftyAuto === true; // Fase 1: apagada salvo que el jefe la prenda
 
 function guardarMision() { chrome.storage.local.set({ mision }); pintarMision(); }
 function pintarMision() {

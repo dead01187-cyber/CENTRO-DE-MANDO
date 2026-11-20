@@ -150,7 +150,7 @@ $("copy").onclick = async () => {
 
 $("csv").onclick = () => {
   const rows = filtered();
-  const q = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
+  const q = (s) => `"${String(s ?? "").replace(/^([=+\-@\t\r])/, "'$1").replace(/"/g, '""')}"`; // Fase 1: sin fórmulas
   const csv = ["Street,City,State,Zip,Full Address", ...rows.map((a) =>
     [a.street, a.city, "CA", a.zip, line(a)].map(q).join(","))].join("\n");
   const name = (zones()[0] || "zona").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
