@@ -10,7 +10,7 @@ En esta fase **no se cambia ninguna función de la extensión**. Solo se protege
 | 0.2 | Huella SHA-256 de los 92 archivos de la línea base | ✅ `docs/auditoria/linea-base-sha256.txt` |
 | 0.3 | Informe de auditoría guardado en el repo | ✅ `docs/auditoria/MISION-01-auditoria.md` |
 | 0.4 | Evitar que un respaldo con llaves se suba a git por accidente | ✅ `.gitignore` → `respaldo-*.json` |
-| 0.5 | **Recuperar `bv.html`** (Veri, Veri 2 y Veri 3) | ⏳ **Lo tienes que hacer tú** (ver abajo) |
+| 0.5 | **Recuperar `bv.html`** (Veri, Veri 2 y Veri 3) | ✅ Agregado desde la instalación local del propietario; tiene los 22 `id` que usa `bv.js` |
 | 0.6 | **Respaldo de los datos guardados** (`chrome.storage`) | ⏳ **Lo tienes que hacer tú** (ver abajo) |
 | 0.7 | Confirmar qué versión tienes instalada | ⏳ **Lo tienes que hacer tú** (ver abajo) |
 
