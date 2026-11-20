@@ -565,6 +565,12 @@ function programar() {
 }
 setInterval(vigilar, 5 * 60e3);
 $("run").onclick = () => revisar(true);
+// ---------- Fase 2: acciones que se pueden pedir por el bus de tareas (registro.js) ----------
+window.Tareas && Tareas.atender("revisar", async () => {
+  await Tareas.esperarLibre(() => corriendo);
+  await revisar(true);
+  return $("status").textContent.trim() || "Revisión terminada.";
+});
 chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.rsCasos && !corriendo) { casos = ch.rsCasos.newValue || {}; pintar(); } });
 (async () => {
   await cargar(); pintar(); programar(); quitarLimpiados();

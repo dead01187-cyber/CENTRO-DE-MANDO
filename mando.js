@@ -6,7 +6,7 @@
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "rs", "li", "al", "ra", "te", "sv"];
-const NOMBRE = { ra: "Radar", te: "Termi", al: "Marki", pr: "Prope", li: "Limpi", rs: "Resi", cp: "Carpi", ch3: "Chequi 3", bv3: "Veri 3", ow3: "Owny 3", wb3: "Wibi 3", hr: "Heri", tx: "Texi", wb: "Wibi", zb: "Zeta", rd: "Redi", ti: "Timi", bv2: "Veri 2", ow2: "Owny 2", ac: "Acti", pw: "Propi", ch: "Chequi", bv: "Veri", ow: "Owny", lf: "Lofti", sv: "Capi" };
+const NOMBRE = Object.fromEntries(REGISTRO.ids(false).map((m) => [m, REGISTRO.nombre(m)])); // Fase 2: del registro central
 const COLOR = { ra: "#ef4444", te: "#f97316", al: "#60a5fa", pr: "#eab308", li: "#fb7185", rs: "#2dd4bf", cp: "#22d3ee", ch3: "#fbbf24", bv3: "#fb923c", ow3: "#facc15", wb3: "#d97706", hr: "#f59e0b", tx: "#34d399", wb: "#facc15", zb: "#22d3ee", rd: "#a78bfa", gm: "#f9a8d4", ti: "#60a5fa", tm: "#818cf8", bv2: "#e879f9", ow2: "#a3e635", ac: "#fb923c", pw: "#2dd4bf", ch: "#f472b6", bv: "#818cf8", ow: "#4ade80", lf: "#38bdf8", sv: "#fbbf24", crm: "#a5b4fc" };
 const CHIP = { idle: "Listo", trabajando: "Trabajando", feliz: "¡Terminé!", error: "Error", ayuda: "Necesito ayuda", pausa: "Pausa", pensando: "Pensando" };
 

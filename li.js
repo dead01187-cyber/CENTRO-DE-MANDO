@@ -321,6 +321,13 @@ function botones() {
 
 // ---------- Botones ----------
 $("run").onclick = () => correr();
+// ---------- Fase 2: acciones que se pueden pedir por el bus de tareas (registro.js) ----------
+// "limpiar" mueve leads de etapa: el bus solo la entrega después de que el jefe la aprobó
+window.Tareas && Tareas.atender("limpiar", async () => {
+  await Tareas.esperarLibre(() => corriendo);
+  await correr();
+  return $("status").textContent.trim() || "Limpieza terminada.";
+});
 $("completa").onclick = () => { if (confirm("La revisión completa recorre TODOS los leads " + (cfg.etapa ? "de " + cfg.etapa : "del CRM (todas las etapas, ~20,000)") + " y tarda bastante. ¿Seguir?")) correr({ completa: true }); };
 $("stopBtn").onclick = () => { parar = true; ver("Parando…"); };
 $("moverPend").onclick = async () => {

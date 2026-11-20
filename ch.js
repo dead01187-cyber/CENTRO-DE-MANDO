@@ -90,6 +90,12 @@ const quien = () => (destino() === "wb" ? "Wibi" : "Veri") + (LINEA === "hr" ? "
 function pintarDestino() { $("libresTxt").textContent = `pasan a ${quien()}`; }
 $("destino").onchange = () => { chrome.storage.local.set({ [K("chDestino")]: destino() }); pintarDestino(); svLog && svLog(`Desde ahora lo que apruebo va a ${quien()}.`); };
 $("run").onclick = () => revisar(true);
+// ---------- Fase 2: acciones que se pueden pedir por el bus de tareas (registro.js) ----------
+window.Tareas && Tareas.atender("revisar", async () => {
+  await Tareas.esperarLibre(() => corriendo);
+  await revisar(true);
+  return $("status").textContent.trim() || "Revisión terminada.";
+});
 $("reset").onclick = async () => {
   const pares = deZona().filter((a) => a.lofty && a.lofty !== "actualizar" && !a.bvSearched).map((a) => ({ key: a.key, valor: null }));
   fallos.clear();

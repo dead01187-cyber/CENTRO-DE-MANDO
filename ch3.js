@@ -187,6 +187,12 @@ function pintar() {
 }
 
 $("run").onclick = () => revisar(true);
+// ---------- Fase 2: acciones que se pueden pedir por el bus de tareas (registro.js) ----------
+window.Tareas && Tareas.atender("revisar", async () => {
+  await Tareas.esperarLibre(() => corriendo);
+  await revisar(true);
+  return $("status").textContent.trim() || "Revisión terminada.";
+});
 $("reset").onclick = async () => {
   const pares = hecms.filter((a) => a.lofty && !a.bvSearched).map((a) => ({ key: a.key, valor: null }));
   if (pares.length) await domicilios("lofty", { pares });

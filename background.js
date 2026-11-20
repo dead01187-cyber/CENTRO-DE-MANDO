@@ -1,7 +1,7 @@
 // Agente Geo Farming — background.
 // Abre el panel al dar clic al ícono y es el ÚNICO que escribe la lista de domicilios
 // ("addresses"), los leads de zBuyer ("zbLeads") y la bitácora ("svEventos"). Todo pasa por una sola fila, en orden.
-importScripts("comun.js");
+importScripts("comun.js", "registro.js", "tareas.js"); // Fase 2: registro central y bus de tareas
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 chrome.runtime.onInstalled.addListener(() => {
@@ -43,6 +43,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
     return;
   }
   if (msg.type === "domicilios") { enFila(() => cambiar(msg).then(() => responder({ ok: true }), (e) => responder({ ok: false, error: String(e && e.message || e) }))); return true; }
+  if (msg.type === "tarea") { // Fase 2: bus de tareas. Solo páginas de la propia extensión (nunca content scripts de sitios web).
+    if (!String((_sender && _sender.url) || "").startsWith(chrome.runtime.getURL(""))) { responder({ ok: false, error: "origen no permitido" }); return; }
+    BUS.atenderMensaje(msg).then((r) => responder({ ok: true, r }), (e) => responder({ ok: false, error: String((e && e.message) || e) }));
+    return true;
+  }
   if (msg.type === "zbLeads") { enFila(() => zbCambiar(msg).then(() => responder({ ok: true }))); return true; }
 });
 
@@ -108,3 +113,8 @@ async function zbCambiar(msg) {
 
 // Si se cierra la pestaña de Propi, su sesión termina (ya no junta nada de Propwire)
 chrome.tabs.onRemoved.addListener((tabId) => { chrome.storage.local.get("propiSesion").then(({ propiSesion }) => { if (propiSesion && propiSesion.tab === tabId) chrome.storage.local.set({ propiSesion: null }); }); });
+
+// ---------- Fase 2: vigía del bus de tareas (cada minuto, aunque el panel esté cerrado) ----------
+// Suelta las tareas de robots que dejaron de responder y vence aprobaciones viejas.
+chrome.alarms.create("tareas-vigia", { periodInMinutes: 1 });
+chrome.alarms.onAlarm.addListener((a) => { if (a.name === "tareas-vigia") BUS.vigilar().catch(() => {}); });

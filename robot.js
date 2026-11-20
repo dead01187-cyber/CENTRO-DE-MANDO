@@ -87,6 +87,9 @@
   ROBOTS.bv2 = { ...ROBOTS.bv, nombre: "Veri 2", rol: "Busca en BeenVerified los leads de Acti", color: "#c026d3", claro: "#f5d0fe", oscuro: "#701a75" };
   ROBOTS.ow2 = { ...ROBOTS.ow, nombre: "Owny 2", rol: "Lee los reportes de los leads de Acti", color: "#65a30d", claro: "#d9f99d", oscuro: "#365314" };
 
+  // Fase 2: nombre y rol salen del registro central (registro.js); aquí solo vive el dibujo
+  if (window.REGISTRO) for (const [k, r] of Object.entries(ROBOTS)) { const x = REGISTRO.ROBOTS[k]; if (x) { r.nombre = x.nombre; r.rol = x.rol; } }
+
   function robotSVG(mod) {
     const r = ROBOTS[mod]; if (!r) return "";
     const col = { X: r.color, L: r.claro, R: r.oscuro, D: "#0f172a", W: "#ffffff", A: "#fde047" };

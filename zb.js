@@ -340,6 +340,12 @@ $("olvidar").onclick = async () => {
 chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.zbLeads) pintar(); });
 
 window.zbRevisar = revisar; // Capi
+// ---------- Fase 2: acciones que se pueden pedir por el bus de tareas (registro.js) ----------
+window.Tareas && Tareas.atender("revisar", async () => {
+  await Tareas.esperarLibre(() => corriendo);
+  await revisar(true);
+  return $("status").textContent.trim() || "Revisión terminada.";
+});
 (async () => {
   await cargarCfg(); await aplicarRegla(); await pintar(); programar();
   if (cfg.auto) setTimeout(() => revisar(false), 4000);
