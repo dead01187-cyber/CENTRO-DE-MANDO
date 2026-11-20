@@ -102,38 +102,9 @@ async function zbCambiar(msg) {
 }
 
 
-// ---------- Resi: envío programado ----------
-// Resi guarda la hora en rsConfig.prog. A esa hora, si la pestaña de Resi no está abierta, la abre (en segundo plano);
-// Resi revisa las respuestas y manda los borradores. Si ya está abierta, ella sola lo hace.
-function proximaHoraResi(prog) {
-  if (!prog || !prog.activo || !(prog.dias || []).length) return null;
-  const [h, m] = String(prog.hora || "10:00").split(":").map(Number), ahora = new Date();
-  for (let i = 0; i < 8; i++) {
-    const d = new Date(ahora); d.setDate(d.getDate() + i); d.setHours(h, m || 0, 0, 0);
-    if (d > ahora && prog.dias.includes(d.getDay())) return d.getTime();
-  }
-  return null;
-}
-async function programarResi() {
-  if (!chrome.alarms) return;
-  const { rsConfig = {} } = await chrome.storage.local.get("rsConfig");
-  await chrome.alarms.clear("rsProg");
-  const t = proximaHoraResi(rsConfig.prog);
-  if (t) chrome.alarms.create("rsProg", { when: t + 30e3 });
-}
-if (chrome.alarms) {
-  chrome.alarms.onAlarm.addListener(async (al) => {
-    if (al.name !== "rsProg") return;
-    const url = chrome.runtime.getURL("rs.html");
-    const abiertas = await chrome.tabs.query({ url });
-    if (!abiertas.length) await chrome.tabs.create({ url, active: false });
-    await anotar({ t: Date.now(), mod: "rs", nivel: "info", texto: "Resi: es la hora del envío programado de SMS." });
-    programarResi();
-  });
-  chrome.runtime.onMessage.addListener((msg) => { if (msg && msg.type === "rsProg") programarResi(); });
-  chrome.runtime.onStartup.addListener(programarResi);
-  setTimeout(programarResi, 3000);
-}
+// Fase 1: aquí había un "envío programado de Resi" con chrome.alarms, pero el manifest no pide el permiso "alarms"
+// (chrome.alarms no existe) y Resi no tiene lógica de envío programado: nunca funcionó. Se quitó para no confundir.
+// Mandar SMS siempre lo aprueba el jefe en Resi o en Texi.
 
 // Si se cierra la pestaña de Propi, su sesión termina (ya no junta nada de Propwire)
 chrome.tabs.onRemoved.addListener((tabId) => { chrome.storage.local.get("propiSesion").then(({ propiSesion }) => { if (propiSesion && propiSesion.tab === tabId) chrome.storage.local.set({ propiSesion: null }); }); });

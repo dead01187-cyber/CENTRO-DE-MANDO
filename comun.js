@@ -183,6 +183,7 @@
         method: opts.method || "GET",
         headers: { Authorization: "token " + loftyKey, "X-Error-Status": "true", ...(opts.body ? { "Content-Type": "application/json" } : {}) },
         ...(opts.body ? { body: JSON.stringify(opts.body) } : {}),
+        ...(typeof AbortSignal !== "undefined" && AbortSignal.timeout ? { signal: AbortSignal.timeout(opts.timeout || 30000) } : {}), // Fase 1: sin respuesta en 30 s = error (antes podía colgarse para siempre)
       }));
       if ((r.status !== 429 && r.status !== 503) || intento >= 4) break;
       const ra = parseInt(r.headers.get("Retry-After") || "", 10);

@@ -48,16 +48,19 @@ const CAMPOS = {
   zb: { dias: "Correos de los últimos N días", cadaMin: "Revisar cada N minutos", margenMin: "Margen en minutos (el lead de Lofty debe ser al menos así de anterior al correo)", auto: "Revisar solo cada cierto tiempo (sí/no)" },
   li: { auto: "Correr la limpieza solo una vez al día (sí/no)", soloRevisar: "Solo revisar sin mover (sí/no)", dias: "Leads nuevos de los últimos N días", horas: "SMS de las últimas N horas" },
   rs: { cadaMin: "Revisar respuestas cada N minutos", diasSeg: "Días sin respuesta para poner al lead en Seguimiento", auto: "Revisar solo (sí/no)" },
-  cp: { dias: "Borrar las listas ya leídas de más de N días", auto: "Limpiar solo cada 6 horas (sí/no; borra sin preguntar)" },
+  cp: { dias: "Borrar las listas ya leídas de más de N días" },
   pr: { max: "Máximo de propiedades de Properant a revisar por vuelta", pausa: "Segundos de pausa entre fichas", pasarHeri: "Pasarle los casos a Heri al terminar (sí/no)", conRuido: "Incluir también los que ejecuta un banco normal (sí/no)", auto: "Buscar solo cada 3 días (sí/no)" },
   hr: { muertes: "Buscar también muertes recientes en el registro (antes del NOD) (sí/no)", diasMuertes: "Documentos de muerte de los últimos N días", dias: "Avisos de ejecución de los últimos N días (ej. 60)", tope: "Máximo de dueños a buscar en BeenVerified por vuelta", soloCelink: "Pasar solo las que tengan Celink/Compu-Link confirmado (sí/no)", auto: "Buscar solo una vez al día (sí/no)" },
   tx: { etapa: "Etapa del pipeline de la otra cuenta de Lofty (ej. Warm)", tag: "Tag de los leads a los que se manda" },
-  wb: { auto: "Trabajar solo cuando Chequi le mande domicilios (sí/no)", tope: "Tope de skip trace pagados por día en Propwire (0 = sin tope)", sinEmpresas: "No gastar skip trace en compañías (sí/no)" },
-  ti: { auto: "Mandar sola a Teams la captura de cada borrador (sí/no)", activo: "Tomar captura de cada borrador para Teams (sí/no)", chat: "Chat de Teams al que se mandan" },
-  rd: { auto: "Hacer el borrador solo en cuanto haya un repetido (sí/no)", capturas: "Pegar en el borrador las capturas de la ficha de Lofty y del correo de zBuyer (sí/no)", para: "Correo de zBuyer (Para)", cc: "CC" },
-  ch: { activo: "Revisar solo en Lofty cada domicilio nuevo (sí/no). Apagado = todo pasa directo a Veri", destino: "A quién manda Chequi lo aprobado: bv = Veri (BeenVerified) o wb = Wibi (skip trace en Propwire)" },
-  bv: { maxTabs: "Máximo de pestañas por ciclo", wait: "Segundos de espera tras buscar", startUrl: "Página de búsqueda de BeenVerified",
-        template: "Link directo de búsqueda con {address}", directo: "Abrir reporte con link directo (sí/no)", humano: "Ritmo humano: esperas al azar y pausas (sí/no)",
+  // Fase 1: Capi ya NO puede cambiar ajustes sensibles (solo el jefe, a mano): tope de skip trace pagado (wb.tope),
+  // envío automático y chat de Teams (ti.auto, ti.chat), destinatarios del reclamo (rd.para, rd.cc), borrado automático
+  // de Carpi (cp.auto), apagar el filtro de Lofty (ch.activo) y las direcciones de búsqueda de BeenVerified (bv.startUrl, bv.template).
+  wb: { auto: "Trabajar solo cuando Chequi le mande domicilios (sí/no)", sinEmpresas: "No gastar skip trace en compañías (sí/no)" },
+  ti: { activo: "Tomar captura de cada borrador para Teams (sí/no)" },
+  rd: { auto: "Hacer el borrador solo en cuanto haya un repetido (sí/no)", capturas: "Pegar en el borrador las capturas de la ficha de Lofty y del correo de zBuyer (sí/no)" },
+  ch: { destino: "A quién manda Chequi lo aprobado: bv = Veri (BeenVerified) o wb = Wibi (skip trace en Propwire)" },
+  bv: { maxTabs: "Máximo de pestañas por ciclo", wait: "Segundos de espera tras buscar",
+        directo: "Abrir reporte con link directo (sí/no)", humano: "Ritmo humano: esperas al azar y pausas (sí/no)",
         onlyZone: "Solo la zona actual (sí/no)", hideDone: "Ocultar ya buscados (sí/no)" },
   ow: { tag1: "TAG 1", sinEmpresas: "Quitar trusts y compañías (sí/no)", cerrarLeidas: "Cerrar pestañas ya leídas (sí/no)",
         bvAuto: "Leer solos los resultados al terminar el ciclo (sí/no)" },
@@ -389,6 +392,8 @@ const TOOLS = [
     input_schema: { type: "object", properties: { segundos: { type: "integer" } }, required: ["segundos"] } },
 ];
 
+// Fase 1: Capi y los robots solo leen pestañas de los sitios de trabajo (antes leían CUALQUIER pestaña, incluida la del banco)
+const SITIOS_LEIBLES = /^https:\/\/([a-z0-9-]+\.)*(propwire\.com|beenverified\.com|lofty\.com|properant\.com|occlerkrecorder\.gov|mail\.google\.com|teams\.live\.com|teams\.microsoft\.com|zillow\.com|redfin\.com|realtor\.com)\//i;
 const esPWoBV = (u) => /^https:\/\/([a-z0-9-]+\.)?(propwire|beenverified)\.com\//i.test(u || "");
 const siNo = (v) => /^(s[ií]|true|1|yes|on)$/i.test(String(v).trim());
 let turnoAutomatico = false;
@@ -399,6 +404,10 @@ async function subirLeads(soloUno) {
   if (!n) return "No hay leads listos para subir.";
   const { loftyKey } = await chrome.storage.local.get("loftyKey");
   if (!loftyKey) return "Falta la API key de Lofty en la pestaña Lofty.";
+  // Fase 1: confirmación en pantalla que el modelo NO puede pulsar (antes bastaba con que Claude interpretara un "sí")
+  try { parent.mostrar && parent.mostrar("sv"); } catch (e) {}
+  const okJefe = await preguntar(`Capi quiere subir a Lofty ${soloUno ? "1 lead de prueba" : `${n} lead(s)`}. Se crean como Seller en tu CRM y no se pueden deshacer desde aquí.\n\n¿Lo autorizas?`, soloUno ? "Sí, subir 1" : `Sí, subir ${n}`, "No");
+  if (!okJefe) return "El jefe no autorizó la subida en la pantalla de confirmación. No subí nada.";
   const antes = txt("lf", "smsg");
   el("lf", "send").click();
   const ok = await (async () => { for (let i = 0; i < 20; i++) { await sleep(500); const b = el("lf", soloUno ? "test" : "go"); if (b) return b; if (txt("lf", "smsg") !== antes && /falta|rechaz|No hay/i.test(txt("lf", "smsg"))) return null; } return null; })();
@@ -473,7 +482,7 @@ async function ejecutar(nombre, a, deRobot = false) {
     }
     case "leer_pestana": {
       const t = await chrome.tabs.get(a.tabId);
-      if (!/^https?:/.test(t.url || "")) return "Esa pestaña no se puede leer.";
+      if (!SITIOS_LEIBLES.test(t.url || "")) return "Por seguridad solo leo pestañas de los sitios de trabajo (Propwire, BeenVerified, Lofty, Properant, el registro del condado, Gmail, Teams, Zillow, Redfin, Realtor).";
       const [r] = await chrome.scripting.executeScript({ target: { tabId: a.tabId }, func: () => document.body ? document.body.innerText : "" });
       return { url: t.url, titulo: t.title, texto: String(r.result || "").replace(/\n{3,}/g, "\n\n").slice(0, 3500) };
     }
@@ -491,7 +500,7 @@ async function ejecutar(nombre, a, deRobot = false) {
 
 const SISTEMA = `Eres Capi, el supervisor del flujo de trabajo de Christopher en su extensión de Chrome "Agente Geo Farming". A Christopher le dices "jefe" (por ejemplo: "Jefe, ya tengo 100 propiedades"). Hablas español de México, natural, breve y con buena onda, como compañero de trabajo. Todo lo que escribes se lee en voz alta: frases cortas, sin markdown, sin listas ni símbolos raros, sin leer links.
 
-Coordinas a 16 robots, cada uno con su sección:
+Coordinas a 25 robots, cada uno con su sección:
 0. Acti (Actualizar Lofty): otra fuente de trabajo. Trae leads que YA están en Lofty (de una etapa, ej. Cold, sin cierto tag), los pasa a Veri y Owny, y les actualiza owner, teléfonos y tag. Si el jefe pide "actualiza los leads cold y ponles el tag X", usa poner_valor en ac (etapa y tag) y clic en ac "traer".
 Brazo central, reclamos a zBuyer: Zeta (zb) lee los correos de leads de zBuyer en Gmail y los compara con Lofty; si el lead ya existía en Lofty antes del correo y su fuente (Source) es zBuyer, Redi (rd) deja un BORRADOR de reclamo en Gmail con las capturas; si ya existía pero venía de otra fuente, no se reclama. Después Timi (ti) manda la captura de ese borrador al chat de Teams “Replacement Leads”. Nadie envía correos: el jefe revisa y envía. Si el jefe pregunta por zBuyer o reclamos, usa ver_estado (sección zBuyer) y, si pide revisar, clic en zb "run".
 0.5. Heri (HECM): otra fuente de leads nuevos. Busca en Propwire propiedades con Notice of Default cuya hipoteca inversa administra Celink o Compu-Link (casi siempre herederos). Tiene su propio brazo (ventana aparte): Chequi 3 → Veri 3 → Owny 3, o Wibi 3 si en Chequi 3 está "Mandar a: Wibi" (skip trace en Propwire). Lofti las deja listas con tags preforeclosure y celink y espera el OK del jefe (no se suben solas).
@@ -516,7 +525,7 @@ Robots pensantes: cada robot tiene su propio cerebro. Si algo falla en una secci
 Reglas:
 - Captcha o verificación: nunca intentes resolverlo ni saltarlo. El robot ya pausó y puso la pestaña al frente; dile al jefe que lo resuelva y que todo sigue solo.
 - Login de BeenVerified o Propwire: pídele que inicie sesión.
-- Subir a Lofty SOLO con subir_leads y SOLO si el jefe lo autorizó en su último mensaje. Nunca por un aviso automático. Si falta la API key de Lofty, dile que la pegue en la pestaña Lofty.
+- Subir a Lofty SOLO con subir_leads y SOLO si el jefe lo autorizó en su último mensaje. Además el jefe tiene que confirmar en una ventana; si dice que no, no insistas. Nunca por un aviso automático. Si falta la API key de Lofty, dile que la pegue en la pestaña Lofty.
 - Interruptores: cada robot tiene un interruptor en el Centro de Mando. Si uno está apagado (lo ves en ver_estado como robotsApagados), no trabaja: no lo prendas por tu cuenta; si hace falta, dile al jefe. Solo usa interruptor cuando él te lo pide.
 - No reintentes lo mismo más de 2 veces. No borres datos. Solo cierras pestañas de Propwire o BeenVerified.
 - "Error de código": explícale qué archivo falló para que se lo pase a Claude en el chat.
@@ -616,7 +625,7 @@ function cargarVoces() {
 
 // ---------- Micrófono: siempre escuchando "Capi, ..." ----------
 let rec = null, micOn = false, micVivo = false;
-const WAKE = /^\s*(?:oye\s+|hey\s+|ok\s+)?(capi|kapi|cappi|capy|kapy|capí|cap y|happy|capri|campi|copi)\b[\s,.:!¡¿?-]*/i;
+const WAKE = /^\s*(?:oye\s+|hey\s+|ok\s+)?(capi|kapi|cappi|capy|kapy|capí|cap y)\b[\s,.:!¡¿?-]*/i;
 function arrancarMic() {
   if (!micOn || hablando || micVivo || !rec) return;
   try { rec.start(); micVivo = true; } catch (e) {}
@@ -708,6 +717,7 @@ async function llamarClaude(sistema, tools, mensajes, maxTokens = 1024) {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": svKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
     body: JSON.stringify({ model: $("modelo").value, max_tokens: maxTokens, system: sistema, tools, messages: msgs }),
+    signal: AbortSignal.timeout(120000), // Fase 1: si Claude no contesta en 2 min, error (antes Capi podía quedarse "pensando" para siempre)
   });
   let r = await pedir(sinPensamientos(mensajes));
   let data = await r.json().catch(() => ({}));
