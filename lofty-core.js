@@ -121,7 +121,7 @@ var Core = (() => {
       if (street.includes(',') && !city) { const p = parseFull(street); street = p.street; city = p.city; state = state || p.state; zip = zip || p.zip; }
       zip = (zip.match(/\d{5}/) || [''])[0];
 
-      const rec = { first, last, street: titleCase(street), city: titleCase(city), state: (state || '').toUpperCase().replace('CALIFORNIA', 'CA'), zip, phones: [], emails: [], dncDropped: 0, status: 'ok', reason: '', merged: 0 };
+      const rec = { first, last, street: titleCase(street), city: titleCase(city), state: (state || '').toUpperCase().replace('CALIFORNIA', 'CA'), zip, phones: [], emails: [], dncDropped: 0, falsosDropped: 0, status: 'ok', reason: '', merged: 0 };
 
       // teléfonos
       for (const pc of map.phones || []) {
@@ -131,6 +131,7 @@ var Core = (() => {
           const { dnc, num } = cleanPhone(raw);
           if (!num) continue;
           if ((dnc || colDnc) && opts.dropDnc) { rec.dncDropped++; continue; }
+          if (opts.validarTel && opts.validarTel(num).nivel === 'malo') { rec.falsosDropped++; continue; } // Fase 4: Vali quita números imposibles o de mentira
           if (!rec.phones.includes(num)) rec.phones.push(num);
         }
       }

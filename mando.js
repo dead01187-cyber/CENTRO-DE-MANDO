@@ -5,7 +5,7 @@
 // =====================================================================
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "rs", "li", "al", "ra", "te", "sv"];
+const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "rs", "li", "al", "ra", "te", "va", "pu", "cu", "qa", "an", "sv"];
 const NOMBRE = Object.fromEntries(REGISTRO.ids(false).map((m) => [m, REGISTRO.nombre(m)])); // Fase 2: del registro central
 const COLOR = { ra: "#ef4444", te: "#f97316", al: "#60a5fa", pr: "#eab308", li: "#fb7185", rs: "#2dd4bf", cp: "#22d3ee", ch3: "#fbbf24", bv3: "#fb923c", ow3: "#facc15", wb3: "#d97706", hr: "#f59e0b", tx: "#34d399", wb: "#facc15", zb: "#22d3ee", rd: "#a78bfa", gm: "#f9a8d4", ti: "#60a5fa", tm: "#818cf8", bv2: "#e879f9", ow2: "#a3e635", ac: "#fb923c", pw: "#2dd4bf", ch: "#f472b6", bv: "#818cf8", ow: "#4ade80", lf: "#38bdf8", sv: "#fbbf24", crm: "#a5b4fc" };
 const CHIP = { idle: "Listo", trabajando: "Trabajando", feliz: "¡Terminé!", error: "Error", ayuda: "Necesito ayuda", pausa: "Pausa", pensando: "Pensando" };
@@ -434,6 +434,14 @@ async function contar() {
   $("e-te").querySelector(".cuenta").innerHTML = `<b>${n.teCalientes || 0}</b> calientes` + (n.teTop ? ` · top <b>${n.teTop}</b>` : "");
   $("e-li").querySelector(".cuenta").innerHTML = `<b>${n.liMovidos || 0}</b> movidos hoy` + (n.liRevisar ? ` · <b>${n.liRevisar}</b> revisar` : "");
   $("e-rs").querySelector(".cuenta").innerHTML = `<b>${n.rsAbiertos || 0}</b> por atender · <b>${n.rsInteresados || 0}</b> interesados`;
+  // Fase 4: robots de calidad y operación (lo que dejó cada uno en su última revisión)
+  const { vaRes = {}, puRes = {}, cuRes = {}, qaRes = {}, anRes = {} } = await chrome.storage.local.get(["vaRes", "puRes", "cuRes", "qaRes", "anRes"]);
+  const cta = (id, txt) => { const e = $("e-" + id); if (e) e.querySelector(".cuenta").textContent = txt; };
+  cta("va", vaRes.t ? `${vaRes.malos || 0} no sirven · ${vaRes.dudosos || 0} revisar` : "sin revisar");
+  cta("pu", puRes.t ? `${puRes.altos || 0} prioridad alta de ${puRes.total || 0}` : "sin calificar");
+  cta("cu", cuRes.t ? `${cuRes.altas || 0} graves · ${cuRes.medias || 0} medios` : "sin auditar");
+  cta("qa", qaRes.t ? `${qaRes.fallas || 0} fallas · ${qaRes.avisos || 0} avisos` : "sin revisar");
+  cta("an", anRes.t ? `${anRes.sms || 0} SMS · ${anRes.respuesta || 0}% contestó` : "sin calcular");
   $("e-bv").classList.toggle("apagada", n.destino === "wb"); $("e-ow").classList.toggle("apagada", n.destino === "wb");
 
   if (prev) { // datos que se movieron → partículas
@@ -564,7 +572,7 @@ setInterval(() => ($("reloj").textContent = new Date().toLocaleTimeString("es-MX
 chrome.storage.onChanged.addListener((ch, area) => {
   if (area !== "local") return;
   if (ch.zone || ch.chActivo || ch.loftyKey || ch.chDestino || ch.chDestino_hr) prev = null; // cambiar un ajuste no es mandar nada: sin pulsos
-  if (ch.prCasos || ch.prResumen || ch.hrVistos || ch.hrCasos || ch.hrPasos || ch.cpResumen || ch.rsResumen || ch.liResumen || ch.alResumen || ch.carpiRes || ch.wibiRes || ch.radarRes || ch.termiRes || ch.ch3Res || ch.chDestino_hr || ch.lote_hr || ch.lote_wb_hr || ch.bvPendientes_hr || ch.txHoy || ch.zbLeads || ch.lote_wb || ch.chDestino || ch.addresses || ch.acTrabajos || ch.lote_ac || ch.bvPendientes_ac || ch.zone || ch.chActivo || ch.loftyKey || ch.bvState || ch.lote || ch.bvPendientes || ch.loftyListos || ch.svEventos) contarPronto();
+  if (ch.prCasos || ch.prResumen || ch.hrVistos || ch.hrCasos || ch.hrPasos || ch.cpResumen || ch.rsResumen || ch.liResumen || ch.alResumen || ch.carpiRes || ch.wibiRes || ch.radarRes || ch.termiRes || ch.ch3Res || ch.chDestino_hr || ch.lote_hr || ch.lote_wb_hr || ch.bvPendientes_hr || ch.txHoy || ch.zbLeads || ch.lote_wb || ch.chDestino || ch.addresses || ch.acTrabajos || ch.lote_ac || ch.bvPendientes_ac || ch.zone || ch.chActivo || ch.loftyKey || ch.bvState || ch.lote || ch.bvPendientes || ch.loftyListos || ch.svEventos || ch.vaRes || ch.puRes || ch.cuRes || ch.qaRes || ch.anRes) contarPronto();
   if (ch.mision || ch.loftySubidos || ch.loftyListos) pintarMision();
 });
 addEventListener("resize", () => { tamEstrellas(); medir(); });

@@ -47,3 +47,9 @@ test("teléfonos: 10 dígitos y lada que no empieza con 0/1", () => {
   const [r] = correr([fila({ "Phone 1": "0123456789", "Phone 2": "1 (949) 555-1234" })]);
   assert.deepEqual(r.phones, ["9495551234"]);
 });
+test("Fase 4: con Vali, los números imposibles o de mentira no pasan", () => {
+  const VALI = require("../vali-core.js");
+  const filas = [fila({ "Phone 1": "800-372-8811", "Phone 2": "949-555-0123", "Phone 3": "949-372-8811" })];
+  const [r] = C.processRows(filas, C.detect(Object.keys(filas[0])), { dropDnc: true, requirePhone: true, validarTel: VALI.telefono });
+  assert.deepEqual(r.phones, ["9493728811"]); assert.equal(r.falsosDropped, 2);
+});

@@ -62,6 +62,17 @@
       [{ id: "revisar", desc: "Revisar las respuestas a los SMS (no manda nada; deja notas en Lofty si están prendidas)", aprobacion: false, boton: "run" }]),
     al: R("Marki", "Agente Lofty: marca a los leads, manda SMS y mueve el pipeline", "GROW", "al.html", ["lee_crm", "escribe_crm", "envia_sms"]),
     ti: R("Timi", "Manda a Teams la captura del reclamo", "GROW", "ti.html", ["publica"]),
+    // ---- Fase 4: robots nuevos (todos SOLO LEEN; ninguno escribe en Lofty ni manda nada) ----
+    va: R("Vali", "Valida teléfonos y datos de los leads antes de subirlos", "CRM", "va.html", [],
+      [{ id: "revisar", desc: "Revisar los lotes listos para Lofti (números falsos, repetidos, datos faltantes)", aprobacion: false, boton: "run" }]),
+    pu: R("Punti", "Califica de 0 a 100 a qué leads atender primero", "GROW", "pu.html", [],
+      [{ id: "puntuar", desc: "Calificar los leads por subir y los que contestaron SMS", aprobacion: false, boton: "run" }]),
+    cu: R("Cumpli", "Audita el cumplimiento de los SMS y los ajustes riesgosos", "OPS", "cu.html", [],
+      [{ id: "auditar", desc: "Auditar los SMS de los últimos días y los ajustes actuales", aprobacion: false, boton: "run" }]),
+    qa: R("Qai", "Revisa la salud técnica de la extensión", "OPS", "qa.html", [],
+      [{ id: "revisar", desc: "Revisar almacenamiento, tareas, llaves, errores y robots", aprobacion: false, boton: "run" }]),
+    an: R("Ana", "Saca los números: SMS, respuestas, leads, tareas y errores", "OPS", "an.html", [],
+      [{ id: "calcular", desc: "Calcular las métricas de los últimos días", aprobacion: false, boton: "run" }]),
     // ---- Supervisor principal ----
     sv: R("Capi", "Coordina a los robots y te habla", "capi", "sv.html", []),
   };

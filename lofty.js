@@ -180,7 +180,7 @@
     steps(has);
     if (!has) { chrome.storage.local.set({ loftyListos: 0 }); return; }
     S.records = Core.processRows(S.rows, S.map, {
-      excludeEntities: $('oEnt').checked, requirePhone: $('oPhone').checked, dropDnc: $('oDnc').checked,
+      excludeEntities: $('oEnt').checked, requirePhone: $('oPhone').checked, dropDnc: $('oDnc').checked, validarTel: window.VALI ? VALI.telefono : null, // Fase 4: Vali
       onlyCA: $('oCA').checked, cities: (() => { const c = $('cities').value.split(',').map(x => x.trim()).filter(Boolean); return c.length ? [...c, ...Object.values(hecmMap).map(h => h.ciudad)] : c; })(), /* las HECM de Heri traen su propia zona */ useHistory: $('oHist').checked,
       history: S.history, lofty: S.lofty
     });
@@ -199,10 +199,10 @@
     const R = S.records, ok = R.filter(r => r.status === 'ok');
     const reasons = {};
     R.filter(r => r.status !== 'ok').forEach(r => { const k = r.reason.startsWith('Ya exportado') ? 'Ya exportado antes' : r.reason; reasons[k] = (reasons[k] || 0) + 1; });
-    const phones = ok.reduce((a, r) => a + r.phones.length, 0), dnc = R.reduce((a, r) => a + r.dncDropped, 0);
+    const phones = ok.reduce((a, r) => a + r.phones.length, 0), dnc = R.reduce((a, r) => a + r.dncDropped, 0), falsos = R.reduce((a, r) => a + (r.falsosDropped || 0), 0);
     $('stats').innerHTML =
       stat(R.length, 'Filas leídas') + stat(ok.length, 'Listos para Lofty', 'ok') + stat(phones, 'Teléfonos') +
-      (dnc ? stat(dnc, 'Números DNC quitados') : '') +
+      (dnc ? stat(dnc, 'Números DNC quitados') : '') + (falsos ? stat(falsos, 'Números falsos quitados (Vali)') : '') +
       Object.entries(reasons).sort((a, b) => b[1] - a[1]).map(([k, n]) => stat(n, k)).join('');
     const tabs = [['ok', `Listos (${ok.length})`], ['ex', `Excluidos (${R.length - ok.length})`]];
     $('tabs').innerHTML = `<div class="seg">${tabs.map(([k, l]) => `<button data-t="${k}" class="${S.tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;

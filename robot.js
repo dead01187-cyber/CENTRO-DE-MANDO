@@ -83,6 +83,12 @@
   ROBOTS.bv3 = { ...ROBOTS.bv, nombre: "Veri 3", rol: "Busca en BeenVerified a los herederos (HECM)", color: "#ea580c", claro: "#fed7aa", oscuro: "#7c2d12" };
   ROBOTS.ow3 = { ...ROBOTS.ow, nombre: "Owny 3", rol: "Lee los reportes de las HECM", color: "#ca8a04", claro: "#fef08a", oscuro: "#713f12" };
   ROBOTS.wb3 = { ...ROBOTS.wb, nombre: "Wibi 3", rol: "Skip trace en Propwire de las HECM", color: "#a16207", claro: "#fde68a", oscuro: "#422006" };
+  // Fase 4: robots nuevos (mismo cuerpo, su propio color)
+  ROBOTS.va = { ...ROBOTS.ch, nombre: "Vali", rol: "", color: "#0891b2", claro: "#a5f3fc", oscuro: "#164e63" };
+  ROBOTS.cu = { ...ROBOTS.rd, nombre: "Cumpli", rol: "", color: "#7c3aed", claro: "#ddd6fe", oscuro: "#4c1d95" };
+  ROBOTS.qa = { ...ROBOTS.te, nombre: "Qai", rol: "", color: "#0f766e", claro: "#99f6e4", oscuro: "#134e4a" };
+  ROBOTS.pu = { ...ROBOTS.wb, nombre: "Punti", rol: "", color: "#ca8a04", claro: "#fef08a", oscuro: "#713f12" };
+  ROBOTS.an = { ...ROBOTS.ra, nombre: "Ana", rol: "", color: "#db2777", claro: "#fbcfe8", oscuro: "#831843" };
   // Clones de la línea de Acti: mismo robot, otro color
   ROBOTS.bv2 = { ...ROBOTS.bv, nombre: "Veri 2", rol: "Busca en BeenVerified los leads de Acti", color: "#c026d3", claro: "#f5d0fe", oscuro: "#701a75" };
   ROBOTS.ow2 = { ...ROBOTS.ow, nombre: "Owny 2", rol: "Lee los reportes de los leads de Acti", color: "#65a30d", claro: "#d9f99d", oscuro: "#365314" };
