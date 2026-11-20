@@ -1,0 +1,33 @@
+# Pruebas automáticas (Fase 6). No usa llaves ni cuentas: las pruebas de punta a punta
+# corren contra un Lofty FALSO dentro de un Chromium aislado, sin salida a internet.
+name: Pruebas
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unitarias:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Revisión de sintaxis de todos los .js
+        run: for f in *.js; do node --check "$f"; done
+      - name: Pruebas unitarias
+        run: npm test
+  punta-a-punta:
+    runs-on: ubuntu-latest
+    needs: unitarias
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Regresión contra Lofty falso
+        run: npm run test:e2e

@@ -4,3 +4,6 @@ respaldo-original/
 
 # Respaldos de chrome.storage (contienen API keys y datos personales): nunca subir
 respaldo-*.json
+
+# Solo para las pruebas (npm install); nunca dentro de la extensión que carga Chrome
+node_modules/

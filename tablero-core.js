@@ -102,6 +102,28 @@
       costos: { porQuien: costos, total: { ...totalTok, dolares: precio ? Math.round(costos.reduce((a, c) => a + (c.dolares || 0), 0) * 100) / 100 : null }, conPrecios: !!precio }, seguridad };
   }
 
-  g.TABLERO = { construir };
+  // ---- Fase 6: lanzamiento gradual por etapas (según los permisos del registro) ----
+  const NIVEL = { lee_web: 1, lee_crm: 1, lee_correo: 1, escribe_correo: 2, escribe_crm: 2, borra: 2, gasta: 3, envia_sms: 4, publica: 4 };
+  const ETAPAS = [
+    { n: 1, nombre: "Solo lectura", desc: "Robots que solo leen: zonas (Radar, Termi), Propwire (Propi), Lofty (Chequi), Gmail (Zeta), reportes ya abiertos (Owny), Wibi sin cobrar y los de calidad. No cambian nada en ningún sistema." },
+    { n: 2, nombre: "Escriben con tu control", desc: "Además: crean o cambian leads en Lofty (Lofti, Acti, Limpi), borradores en Gmail (Redi) y limpieza de archivos (Carpi)." },
+    { n: 3, nombre: "Gastan créditos", desc: "Además: BeenVerified, skip trace de Propwire, Properant y Heri (consultas con tope o con costo)." },
+    { n: 4, nombre: "Contacto", desc: "Además: SMS (Texi, Resi, Marki; siempre con la política de SMS y tu OK) y publicar en Teams (Timi)." },
+  ];
+  const etapaDe = (permisos = []) => Math.max(1, ...permisos.map((p) => NIVEL[p] || 1));
+  function lanzamiento(st, registro) {
+    const apagados = st.robotsApagados || {};
+    const robots = registro.ids().map((id) => ({ id, nombre: registro.nombre(id), etapa: etapaDe(registro.ROBOTS[id].permisos), prendido: !apagados[id] }));
+    const prendidos = robots.filter((r) => r.prendido);
+    const actual = prendidos.length ? Math.max(...prendidos.map((r) => r.etapa)) : 0;
+    return { etapas: ETAPAS.map((e) => ({ ...e, robots: robots.filter((r) => r.etapa === e.n) })), actual, robots };
+  }
+  // Qué cambia si el jefe elige la etapa n: se prenden los de etapa ≤ n y se apagan los de etapa > n (Capi nunca se apaga)
+  function planEtapa(st, registro, n) {
+    const l = lanzamiento(st, registro);
+    return { prender: l.robots.filter((r) => r.etapa <= n && !r.prendido), apagar: l.robots.filter((r) => r.etapa > n && r.prendido) };
+  }
+
+  g.TABLERO = { construir, lanzamiento, planEtapa, etapaDe, ETAPAS };
   if (typeof module !== "undefined") module.exports = g.TABLERO;
 })(globalThis);

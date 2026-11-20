@@ -56,3 +56,20 @@ test("seguridad y semáforo", () => {
   const limpio = T.construir({}, REGISTRO, { ahora });
   assert.equal(limpio.semaforo, "verde"); assert.equal(limpio.mision, null);
 });
+
+test("Fase 6: etapas de lanzamiento según permisos", () => {
+  const l = T.lanzamiento({}, REGISTRO);
+  const etapa = (id) => l.robots.find((r) => r.id === id).etapa;
+  assert.equal(etapa("cu"), 1); assert.equal(etapa("ch"), 1); assert.equal(etapa("lf"), 2); assert.equal(etapa("rd"), 2);
+  assert.equal(etapa("bv"), 3); assert.equal(etapa("wb3"), 3); assert.equal(etapa("tx"), 4); assert.equal(etapa("ti"), 4);
+  assert.equal(l.actual, 4); // todos prendidos
+  assert.ok(!l.robots.some((r) => r.id === "sv")); // Capi no entra (nunca se apaga)
+});
+test("Fase 6: plan de etapa prende ≤ n y apaga > n", () => {
+  const p = T.planEtapa({ robotsApagados: { cu: true } }, REGISTRO, 1);
+  assert.ok(p.prender.some((r) => r.id === "cu"));
+  assert.ok(p.apagar.some((r) => r.id === "tx") && p.apagar.some((r) => r.id === "lf"));
+  assert.ok(!p.apagar.some((r) => r.id === "ch"));
+  const todosApag = Object.fromEntries(REGISTRO.ids().map((id) => [id, true]));
+  assert.equal(T.lanzamiento({ robotsApagados: todosApag }, REGISTRO).actual, 0);
+});

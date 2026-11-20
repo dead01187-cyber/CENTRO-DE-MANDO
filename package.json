@@ -1,0 +1,14 @@
+{
+  "name": "agente-geo-farming",
+  "version": "1.66.0",
+  "private": true,
+  "description": "Extensión de Chrome (MV3) Agente Geo Farming · Centro de Mando. Este archivo solo sirve para correr las pruebas; la extensión no usa npm.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node --test --test-concurrency=1 tests/e2e/*.e2e.js",
+    "test:todo": "npm test && npm run test:e2e"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

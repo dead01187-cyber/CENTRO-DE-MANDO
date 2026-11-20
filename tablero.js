@@ -73,8 +73,30 @@ async function pintar() {
     ["Pueden escribir en Lofty", S.escribenCrm.join(", "), "gris"], ["Pueden mandar SMS (con tu OK)", S.mandanSms.join(", "), "gris"],
     ["Gastan créditos", S.gastan.join(", "), "gris"], ["Publican fuera (Teams)", S.publican.join(", ") || "—", "gris"],
   ];
+  pintarEtapas(st);
   llenar("seguridad", filasS.map(([k, v, c]) => h("tr", {}, h("th", { text: k }), h("td", { text: v }), h("td", {}, etiqueta(c, c === "ok" ? "bien" : c === "gris" ? "info" : c)))));
 }
+// ---- Fase 6: lanzamiento gradual. Solo el jefe, con clic y confirmación, cambia de etapa. ----
+function pintarEtapas(st) {
+  const l = TABLERO.lanzamiento(st, REGISTRO);
+  $("etapaActual").textContent = l.actual ? `hoy estás en la etapa ${l.actual} (${TABLERO.ETAPAS[l.actual - 1].nombre})` : "todos los robots están apagados";
+  llenar("etapas", l.etapas.map((e) => h("div", { class: "card sup" }, h("h4", {}, `${e.n}. ${e.nombre} `, e.n === l.actual ? etiqueta("ok", "actual") : null), h("div", { class: "hint", text: e.desc }),
+    h("small", { text: e.robots.map((r) => `${r.prendido ? "●" : "○"} ${r.nombre}`).join("  ") }),
+    h("div", { class: "row", style: "margin-top:6px" }, h("button", { class: "mini", text: e.n === l.actual ? "Volver a aplicar" : `Pasar a etapa ${e.n}`, onclick: () => cambiarEtapa(e.n) })))));
+}
+async function cambiarEtapa(n) {
+  const st = await chrome.storage.local.get(null), plan = TABLERO.planEtapa(st, REGISTRO, n);
+  if (!plan.prender.length && !plan.apagar.length) { $("sub").textContent = `Ya estás en la etapa ${n}: no hay nada que cambiar.`; return; }
+  const txt = `Etapa ${n}: ${TABLERO.ETAPAS[n - 1].nombre}.\n\n` + (plan.prender.length ? `Se PRENDEN: ${plan.prender.map((r) => r.nombre).join(", ")}.\n` : "") + (plan.apagar.length ? `Se APAGAN: ${plan.apagar.map((r) => r.nombre).join(", ")}.\n` : "") + "\nCapi siempre queda prendido.";
+  if (!(await preguntar(txt, `Sí, etapa ${n}`, "Cancelar"))) return;
+  const { robotsApagados = {} } = await chrome.storage.local.get("robotsApagados");
+  for (const r of plan.prender) delete robotsApagados[r.id];
+  for (const r of plan.apagar) robotsApagados[r.id] = true;
+  await chrome.storage.local.set({ robotsApagados, lanzamientoEtapa: { n, t: Date.now() } });
+  window.svLog && svLog(`Tablero: el jefe pasó el lanzamiento a la etapa ${n} (${TABLERO.ETAPAS[n - 1].nombre}).`);
+  pintarPronto();
+}
+
 let timer = null;
 const pintarPronto = () => { clearTimeout(timer); timer = setTimeout(() => pintar().catch((e) => { $("sub").textContent = "No pude actualizar: " + e.message; }), 800); };
 chrome.storage.onChanged.addListener((ch, area) => { if (area === "local") pintarPronto(); });
