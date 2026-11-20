@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Mascota original de Agente Lofty: robotcito con audífonos -->
+  <!-- antena -->
+  <line x1="64" y1="14" x2="64" y2="30" stroke="#3b5bdb" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="64" cy="12" r="7" fill="#2f9e44"/>
+  <!-- diadema de audífonos -->
+  <path d="M26 66 C26 34 102 34 102 66" fill="none" stroke="#1d2433" stroke-width="7" stroke-linecap="round"/>
+  <!-- cabeza -->
+  <rect x="30" y="32" width="68" height="62" rx="22" fill="#5c7cfa"/>
+  <!-- cara -->
+  <rect x="40" y="44" width="48" height="36" rx="14" fill="#e7ecff"/>
+  <circle cx="54" cy="60" r="6" fill="#1d2433"/>
+  <circle cx="74" cy="60" r="6" fill="#1d2433"/>
+  <circle cx="56" cy="58" r="2" fill="#fff"/>
+  <circle cx="76" cy="58" r="2" fill="#fff"/>
+  <path d="M55 70 Q64 77 73 70" fill="none" stroke="#1d2433" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="46" cy="70" r="3.5" fill="#ff8fa3" opacity=".7"/>
+  <circle cx="82" cy="70" r="3.5" fill="#ff8fa3" opacity=".7"/>
+  <!-- audífonos -->
+  <rect x="18" y="54" width="16" height="26" rx="7" fill="#1d2433"/>
+  <rect x="94" y="54" width="16" height="26" rx="7" fill="#1d2433"/>
+  <!-- micrófono -->
+  <path d="M26 80 C26 98 40 104 54 102" fill="none" stroke="#1d2433" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="57" cy="102" r="6" fill="#2f9e44"/>
+  <!-- cuerpo -->
+  <rect x="42" y="96" width="44" height="24" rx="10" fill="#4263eb"/>
+  <rect x="56" y="102" width="16" height="10" rx="3" fill="#e7ecff"/>
+</svg>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="ti">
+<head>
+<meta charset="utf-8">
+<title>Captura a Teams</title>
+<style>
+  :root { --c: #2563eb; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; }
+  textarea { min-height: 150px; resize: vertical; font-size: 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 36vh; overflow: auto; }
+  li { padding: 7px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: center; }
+  li:last-child { border-bottom: 0; } li .addr { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  .mini { padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  #vista { white-space: pre-wrap; font: 11.5px/1.45 ui-monospace, Menlo, monospace; max-height: 220px; overflow: auto; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+  .acc { display: flex; flex-direction: column; gap: 4px; }
+  #vista { position: fixed; inset: 0; z-index: 99; background: rgba(2,6,23,.85); display: flex; flex-direction: column; padding: 10px; gap: 8px; }
+  #vista[hidden] { display: none; }
+  #vista .top { display: flex; align-items: center; gap: 8px; color: #fff; }
+  #vista .top b { flex: 1; }
+  #vista .img { flex: 1; overflow: auto; background: #fff; border-radius: 8px; }
+  #vista img { display: block; width: 100%; height: auto; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card grid">
+    <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="activo" checked> <span><b>Tomar captura</b> de cada borrador que deje Redi (la ventana de redactar completa: texto, capturas y firma)</span></label>
+    <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="auto" checked> <span><b>Mandarla sola a Teams</b> en cuanto esté lista</span></label>
+    <label class="f">Chat de Teams<input type="text" id="chat" placeholder="Replacement Leads"></label>
+    <label class="f">Teams<input type="text" id="url" placeholder="https://teams.live.com/v2/"></label>
+    <div class="hint" style="grid-column:1/-1">Uso tu Teams ya abierto en Chrome: abro el chat, pego la captura y le doy Enviar. Cada captura se manda <b>una sola vez</b>; si algo queda dudoso no la repito y te aviso. El correo a zBuyer sigue siendo solo borrador.</div>
+  </div>
+  <div class="row">
+    <button id="run" class="primary">📤 Mandar pendientes a Teams</button>
+    <button id="stop" class="stop">Parar</button>
+    <button id="abrir">Abrir Teams</button>
+  </div>
+  <div id="status" class="card">Listo.</div>
+  <div class="nums">
+    <div class="card"><span id="nPen" class="count">0</span><small>por mandar</small></div>
+    <div class="card"><span id="nEnv" class="count">0</span><small>en Teams</small></div>
+    <div class="card"><span id="nErr" class="count">0</span><small>fallaron / revisar</small></div>
+  </div>
+  <ul id="list"><li class="empty">Cuando Redi deje un borrador listo, aquí aparece su captura.</li></ul>
+</main>
+<div id="vista" hidden><div class="top"><b id="vistaTit"></b><button id="vistaCerrar">Cerrar</button></div><div class="img"><img id="vistaImg" alt="Captura"></div></div>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="fotos.js"></script>
+<script src="ti.js"></script>
+</body>
+</html>

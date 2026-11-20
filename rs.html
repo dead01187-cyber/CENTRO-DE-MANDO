@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="rs">
+<head>
+<meta charset="utf-8">
+<title>Resi · Respuestas de SMS</title>
+<style>
+  :root { --c: #0d9488; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], input[type=number], select, textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; background: #fff; }
+  textarea { min-height: 64px; resize: vertical; margin-top: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .row select { width: auto; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; }
+  #run { flex: 1; }
+  .mini { padding: 4px 8px; font-size: 12px; white-space: nowrap; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  .filtros button { padding: 4px 9px; font-size: 12px; } .filtros button.sel { background: var(--c); border-color: var(--c); color: #fff; }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; }
+  li { padding: 8px 10px; border-bottom: 1px solid var(--b); }
+  li:last-child { border-bottom: 0; } li small { color: var(--m); display: block; }
+  .cab { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; } .cab .hint { margin-left: auto; }
+  .conv { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
+  .b { max-width: 88%; padding: 4px 8px; border-radius: 10px; font-size: 12px; white-space: pre-wrap; }
+  .b small { font-size: 10px; }
+  .b.in { background: #f1f5f9 !important; color: #0f172a !important; align-self: flex-start; } .b.out { background: #ccfbf1 !important; color: #134e4a !important; align-self: flex-end; }
+  .b small, li .b small { color: #475569 !important; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .ok { background: #dcfce7; color: #166534; } .bad { background: #fee2e2; color: #991b1b; } .wait { background: #fef9c3; color: #854d0e; }
+  .seg { background: #e0e7ff; color: #3730a3; } .gris { background: #e2e8f0; color: #334155; } .ia { background: #f3e8ff; color: #6b21a8; }
+  #compo[hidden] { display: none !important; }
+  .b .num { display: block; font-size: 10.5px; font-weight: 700; color: #0f766e !important; margin-bottom: 2px; }
+  .barra { margin-top: 6px; } .barra textarea.sms { min-height: 44px; } .barra .aviso { color: #b45309 !important; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <details class="card" id="ajustes">
+    <summary>⚙️ Ajustes de Resi</summary>
+    <div class="grid" style="margin-top:8px">
+      <label class="chk"><input type="checkbox" id="auto"> <span><b>Revisar solo</b></span></label>
+      <label class="f">Cada (minutos)<input type="number" id="cadaMin" min="5" max="240" value="10"></label>
+      <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="ia"> <span>Usar a Claude (la API key de Capi) para clasificar y escribir el borrador</span></label>
+      <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="verNumero"> <span>Ver solo de qué número contestó cada lead (abre su página de Lofty en una pestaña aparte y va cambiando de lead). Apagado: solo lo hago cuando le das el botón a un lead.</span></label>
+      <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="notas"> <span>Dejar una nota en Lofty con lo que contestó cada lead</span></label>
+      <label class="f">Seguimiento si no vuelve a escribir en (días)<input type="number" id="diasSeg" min="1" max="30" value="3"></label>
+      <label class="f">Etapa para bajas (STOP / no interesa)<input type="text" id="etapaBaja" placeholder="Ej. No Active Plans"></label>
+      <div class="hint" style="grid-column:1/-1">Uso la <b>misma cuenta de Lofty que Texi</b>. Leo los SMS que te contestan, los clasifico y te dejo un borrador. <b>Nunca mando nada sin tu OK.</b> A las bajas, números equivocados y enojados no les escribo, y Texi ya no les vuelve a mandar.</div>
+    </div>
+  </details>
+  <details class="card" id="nuevo">
+    <summary>✉️ Mandar un SMS personalizado a un lead</summary>
+    <div class="row" style="margin-top:8px"><input type="text" id="qLead" placeholder="Nombre, teléfono o correo del lead (cuenta de Texi)" style="flex:1"><button id="buscarLead" class="mini">Buscar</button></div>
+    <ul id="resLeads" style="margin-top:6px"></ul>
+    <div id="compo" hidden style="margin-top:8px">
+      <div id="compoLead" class="hint"></div>
+      <div class="row"><label class="f" style="flex:1">Número<select id="compoTel"></select></label></div>
+      <label class="f" style="margin-top:6px">Mensaje <span class="hint">Puedes usar {nombre}, {apellido}, {direccion} y {ciudad}. <span id="compoLargo"></span></span><textarea id="compoTxt" placeholder="Hi {nombre}, this is Christopher with Rubio Real Estate…"></textarea></label>
+      <div id="compoVista" class="hint" style="white-space:pre-wrap;margin-top:4px"></div>
+      <div class="row"><button id="compoMandar" class="primary" style="flex:1">📨 Mandar (te pregunto antes)</button><button id="compoCerrar" class="mini">Cerrar</button></div>
+    </div>
+  </details>
+  <div class="row"><button id="run" class="primary">💬 Revisar respuestas de SMS</button></div>
+  <div id="status" class="card">Listo.</div>
+  <div class="nums">
+    <div class="card"><span id="nAbiertos" class="count">0</span><small>por atender</small></div>
+    <div class="card"><span id="nInteresados" class="count">0</span><small>interesados</small></div>
+    <div class="card"><span id="nSeg" class="count">0</span><small>seguimiento hoy</small></div>
+    <div class="card"><span id="nBajas" class="count">0</span><small>bajas (ocultas)</small></div>
+  </div>
+  <div class="row filtros"><button data-f="abiertos" class="sel">Por atender</button><button data-f="respondidos">Respondidos</button><button data-f="cerrados">Cerrados</button><button data-f="todos">Todos</button></div>
+  <ul id="lista"><li class="empty">Dale “Revisar respuestas de SMS”.</li></ul>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="rs.js"></script>
+</body>
+</html>

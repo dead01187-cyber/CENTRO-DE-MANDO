@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="wb">
+<head>
+<meta charset="utf-8">
+<title>Skip trace Propwire</title>
+<style>
+  :root { --c: #ca8a04; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; }
+  textarea { min-height: 150px; resize: vertical; font-size: 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 36vh; overflow: auto; }
+  li { padding: 7px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: center; }
+  li:last-child { border-bottom: 0; } li .addr { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  .mini { padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  #vista { white-space: pre-wrap; font: 11.5px/1.45 ui-monospace, Menlo, monospace; max-height: 220px; overflow: auto; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+  #pregunta { border: 2px solid #f59e0b; }
+  #pregunta[hidden] { display: none; }
+  #pregTxt { font-size: 12px; margin: 6px 0; white-space: pre-wrap; }
+  #pregBotones { display: flex; flex-direction: column; gap: 6px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div id="pregunta" class="card" hidden>
+    <b>⚠ Propwire pide confirmar el cobro del skip trace</b>
+    <div id="pregTxt"></div>
+    <div class="hint">Si lo apruebas, Wibi aceptará esta misma ventana en cada propiedad (hasta el tope del día). Si el texto o el precio cambian, te vuelvo a preguntar.</div>
+    <div id="pregBotones" style="margin-top:6px"></div>
+  </div>
+  <div class="card grid">
+    <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="auto" checked> <span><b>Trabajar solo</b>: hacer skip trace en cuanto Chequi me mande domicilios</span></label>
+    <label class="f">Cómo trabaja<select id="modo"><option value="lista">Por lista (tandas)</option><option value="una">Una por una</option></select></label>
+    <label class="f">Domicilios por tanda<input type="number" id="tanda" min="2" max="200" value="25"></label>
+    <label class="f">Minutos entre tandas<input type="number" id="minEntre" min="1" max="240" value="10" title="Solo en modo lista y 'Trabajar solo'"></label>
+    <label class="f">Tope de skip trace por día<input type="number" id="tope" min="0" max="2000" value="20" title="0 = sin tope"></label>
+    <div class="hint"><b>Por lista:</b> junto una tanda, la importo a Propwire como lista, le doy Skip Trace a toda la lista de un jalón y leo el archivo de resultados en My Activity (mucho menos movimiento en Propwire). <b>Una por una:</b> espera de 30 a 75 segundos entre propiedades y máximo 12 por hora. Si Propwire muestra “acceso restringido”, Wibi se detiene 3 horas.</div>
+    <label class="chk" style="align-self:end"><input type="checkbox" id="sinEmpresas" checked> <span>No gastar en compañías (LLC, Inc…)</span></label>
+    <div class="hint" style="grid-column:1/-1">Recibo los domicilios que Chequi aprueba cuando en Chequi escoges <b>“Mandar a: Wibi”</b>. En Propwire abro la propiedad → Owner → <b>Skip Trace</b>, saco owner y teléfonos (incluidos los DNC) y los mando a Lofti. El skip trace se cobra de tu saldo de Propwire. <span id="aprobado"></span> <a href="#" id="olvidarOk">Volver a preguntar</a></div>
+  </div>
+  <div class="row">
+    <button id="run" class="primary">🔎 Hacer skip trace</button>
+    <button id="stop" class="stop">Parar</button>
+  </div>
+  <div id="status" class="card">Listo.</div>
+  <div class="nums">
+    <div class="card"><span id="nPen" class="count">0</span><small>por hacer</small></div>
+    <div class="card"><span id="nHoy" class="count">0</span><small>skip trace hoy</small></div>
+    <div class="card"><span id="nLote" class="count">0</span><small>en lote → Lofti</small></div>
+  </div>
+  <div class="row"><span class="hint" style="flex:1">Lo último que hice:</span><button id="vaciar" class="mini">Vaciar lote</button></div>
+  <ul id="list"><li class="empty">Todavía no hago ningún skip trace.</li></ul>
+</main>
+<script src="linea.js"></script><script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="wb.js"></script>
+</body>
+</html>

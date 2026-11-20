@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="ac">
+<head>
+<meta charset="utf-8">
+<title>Actualizar leads</title>
+<style>
+  :root { --c: #ea580c; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 42vh; overflow: auto; }
+  li { padding: 6px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: center; }
+  li:last-child { border-bottom: 0; } li .addr { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card grid">
+    <label class="f">Etapa del pipeline<input type="text" id="etapa" list="etapas" placeholder="Cold 12 Month +"></label>
+    <label class="f">Ciudad (opcional)<input type="text" id="ciudad" placeholder="Todas"></label>
+    <label class="f">Tag al actualizar<input type="text" id="tag" placeholder="Actualizado"></label>
+    <label class="f">Leads por tanda<input type="number" id="tanda" min="1" max="200" value="20"></label>
+    <datalist id="etapas"><option value="Cold 12 Month +"><option value="Cold"><option value="Attempted Contact"><option value="No Active Plans"><option value="Warm"><option value="Warm 3-6 Months"></datalist>
+    <div class="hint" style="grid-column:1/-1">Agarro leads de esa etapa que <b>no</b> tengan el tag, busco su domicilio en BeenVerified con mi propia línea (Veri 2 → Owny 2) y les pongo el owner actual, los teléfonos nuevos y el tag. Si el dueño cambió, pongo los datos del dueño nuevo. Lofti no crea leads con estos.</div>
+  </div>
+  <div class="row">
+    <button id="traer" class="primary">⟳ Traer leads y actualizar</button>
+    <button id="parar" class="stop">Parar</button>
+  </div>
+  <label class="chk"><input type="checkbox" id="veriSolo" checked> Arrancar a Veri 2 solo cuando traiga leads</label>
+  <div id="status" class="card">Listo. Pon la etapa y el tag, y dale “Traer leads”.</div>
+  <div class="nums">
+    <div class="card"><span id="nBus" class="count">0</span><small>buscando</small></div>
+    <div class="card"><span id="nAct" class="count">0</span><small>actualizados</small></div>
+    <div class="card"><span id="nCam" class="count">0</span><small>dueño cambió</small></div>
+    <div class="card"><span id="nSin" class="count">0</span><small>sin datos</small></div>
+  </div>
+  <ul id="list"><li class="empty">Todavía no actualizo ningún lead.</li></ul>
+  <div class="row"><button id="limpiar" title="Olvida los leads ya procesados de esta lista (no toca Lofty)">Limpiar lista</button><span class="hint">Los “sin datos” se pueden volver a traer después de limpiar.</span></div>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="ac.js"></script>
+</body>
+</html>

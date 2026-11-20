@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="hr">
+<head>
+<meta charset="utf-8">
+<title>Heri · Hipotecas inversas</title>
+<style>
+  :root { --c: #b45309; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  .mini { padding: 3px 7px; font-size: 12px; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 40vh; overflow: auto; }
+  li { padding: 7px 10px; border-bottom: 1px solid var(--b); }
+  li:last-child { border-bottom: 0; } li small { color: var(--m); display: block; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; background: #fef3c7; color: #92400e; }
+  .nums .card.activo { border-color: var(--c); box-shadow: 0 0 0 2px #fde68a; }
+  .tag.gris { background: #e2e8f0; color: #334155; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card grid">
+    <label class="f">Avisos de los últimos (días)<input type="number" id="dias" min="1" max="365" value="60"></label>
+    <label class="f">Máximo de dueños a buscar en BeenVerified por vuelta<input type="number" id="tope" min="1" max="200" value="20"></label>
+    <label class="chk"><input type="checkbox" id="soloCelink"> <span>Pasar <b>solo</b> las de Celink / Compu-Link</span></label>
+    <label class="chk"><input type="checkbox" id="muertes" checked> <span>Buscar también <b>muertes recientes</b> en el registro (Affidavit, Letters): hipotecas inversas que vencieron <b>antes del NOD</b></span></label>
+    <label class="f">Documentos de muerte de los últimos (días)<input type="number" id="diasMuertes" min="7" max="180" value="30"></label>
+    <label class="chk"><input type="checkbox" id="herederos" checked> <span>Si el dueño <b>falleció</b>, buscar a sus familiares (cónyuge, hijos, hermanos) y sus teléfonos</span></label>
+    <label class="f">Familiares a abrir por dueño (reportes de BeenVerified)<input type="number" id="maxParientes" min="1" max="6" value="3"></label>
+    <label class="chk"><input type="checkbox" id="auto"> <span><b>Buscar solo</b> una vez al día</span></label>
+    <div class="hint" style="grid-column:1/-1"><b>Orange County.</b> Paso 1: en el registro del condado saco los avisos de ejecución (Notice of Default y de remate) y busco a cada dueño por nombre: es hipoteca inversa si tiene un trust deed a favor de HUD o de un lender de hipotecas inversas. Es de <b>Celink / Compu-Link</b> (misma empresa) si aparece en el registro, si la HECM pasó a HUD (Celink administra las de HUD) o, probable, si el lender es Finance of America o Mutual of Omaha. Paso 2: busco al dueño por nombre en BeenVerified y saco el domicilio de su casa en Orange County (queda <b>confirmado ✓</b> cuando la casa se transfirió el mismo día que se registró la hipoteca inversa). Paso 3: pasan al brazo HECM (Chequi 3 → Veri 3 / Wibi 3 → Owny 3) y Lofti las deja con tags <b>preforeclosure</b> y <b>celink</b> y una nota con los números de documento; <b>no se suben solas</b>: Capi te avisa y espera tu “súbelo”.</div>
+  </div>
+  <div class="row">
+    <button id="run" class="primary">🔎 Buscar hipotecas inversas en ejecución</button>
+    <button id="stop" class="stop">Parar</button>
+  </div>
+  <div id="status" class="card">Listo.</div>
+  <div class="nums">
+    <div class="card" data-paso="1"><span id="nAvisos" class="count">0</span><small>1 · avisos en el registro</small></div>
+    <div class="card" data-paso="1"><span id="nRev" class="count">0</span><small>1 · dueños revisados</small></div>
+    <div class="card" data-paso="1"><span id="nHecm" class="count">0</span><small>1 · hipotecas inversas</small></div>
+    <div class="card" data-paso="2"><span id="nDom" class="count">0</span><small>2 · con domicilio</small></div>
+    <div class="card" data-paso="2"><span id="nCelink" class="count">0</span><small>Celink / Compu-Link</small></div>
+    <div class="card" data-paso="3"><span id="nBrazo" class="count">0</span><small>3 · al brazo HECM</small></div>
+  </div>
+  <ul id="lista"><li class="empty">Aquí salen las hipotecas inversas con aviso de ejecución que encuentre.</li></ul>
+  <details class="card">
+    <summary>💡 Qué decirle a los herederos</summary>
+    <div class="hint" style="margin-top:6px">Una HECM es <b>non-recourse</b>: si la casa vale menos que la deuda, los herederos <b>no deben la diferencia</b>. Para quedarse con la casa basta con pagar lo que sea menor: la deuda o el 95% del avalúo. Después del aviso de que el préstamo venció tienen unos 30 días para decir qué van a hacer y, por lo general, hasta 6 meses para vender o pagar (el servicer puede dar extensiones). Si venden por más de la deuda, lo que sobra es de ellos.</div>
+  </details>
+  <div class="row"><button id="olvidar" class="mini">Volver a buscar a todos en el registro</button></div>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="pr-clasif.js"></script>
+<script src="hr.js"></script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="ch">
+<head>
+<meta charset="utf-8">
+<title>Filtro Lofty</title>
+<style>
+  :root { --c: #db2777; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+  .nums .card small { display: block; color: var(--m); font-size: 11px; }
+  .count { font-size: 22px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 46vh; overflow: auto; }
+  li { padding: 6px 10px; border-bottom: 1px solid var(--b); display: flex; align-items: center; gap: 6px; }
+  li:last-child { border-bottom: 0; }
+  li .addr { flex: 1; min-width: 0; } li small { color: var(--m); }
+  .mini { padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card">
+    <label class="chk"><input type="checkbox" id="activo" checked> <b>Revisar solo cada domicilio que junte Propi</b></label>
+    <label class="f" style="margin-top:8px;display:flex;gap:8px;align-items:center;font-size:12px;font-weight:600">Mandar a:
+      <select id="destino" style="flex:1;padding:6px 8px;border:1px solid var(--b);border-radius:8px;font:inherit">
+        <option value="bv">Veri → Owny (BeenVerified)</option><option value="wb">Wibi (skip trace en Propwire)</option>
+      </select></label>
+    <div class="hint" style="margin-top:4px">Busco cada domicilio en Lofty (con la API key de la pestaña Lofty). Si ya existe ese lead, no pasa a Veri y no gasta crédito de BeenVerified. Si lo apagas, todo pasa directo a Veri.</div>
+  </div>
+  <div class="row">
+    <button id="run" class="primary">Revisar ahora</button>
+    <button id="reset" title="Borra lo que ya revisé de esta zona y lo vuelve a revisar">↻ Revisar todo otra vez</button>
+  </div>
+  <div id="status" class="card">Listo. Cuando Propi junte domicilios, los reviso.</div>
+  <div class="nums">
+    <div class="card"><span id="count" class="count">0</span><small>por revisar</small></div>
+    <div class="card"><span id="libres" class="count">0</span><small id="libresTxt">pasan a Veri</small></div>
+    <div class="card"><span id="enLofty" class="count">0</span><small>ya en Lofty</small></div>
+  </div>
+  <div class="hint">Ya están en Lofty (no se buscan). Si alguno sí lo quieres buscar, dale “Dejar pasar”.</div>
+  <ul id="list"><li class="empty">Ninguno todavía.</li></ul>
+</main>
+<script src="linea.js"></script><script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="ch.js"></script>
+</body>
+</html>

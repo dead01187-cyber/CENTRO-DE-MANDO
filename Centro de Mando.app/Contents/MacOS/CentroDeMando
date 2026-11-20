@@ -1,0 +1,11 @@
+#!/bin/bash
+# Abre el Centro de Mando del "Agente Geo Farming" como app (ventana sin pestañas ni barra de direcciones).
+# Si Chrome muestra error, cambia el ID por el que sale en chrome://extensions (Agente Geo Farming → ID).
+ID="ocapgeanpaepjfokihcaicpoankbdfad"
+URL="chrome-extension://$ID/mando.html"
+CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+if pgrep -xq "Google Chrome"; then
+  "$CHROME" --app="$URL" >/dev/null 2>&1 &
+else
+  open -a "Google Chrome" --args --app="$URL"
+fi

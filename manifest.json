@@ -1,0 +1,82 @@
+{
+  "manifest_version": 3,
+  "name": "Agente Geo Farming",
+  "version": "1.60.0",
+  "description": "Todo en uno: saca domicilios de Propwire, los busca en BeenVerified, lee owner y teléfonos, los limpia y exporta el CSV para Lofty. Saca de Properant las hipotecas inversas en ejecución (Prope). Revisa los leads de zBuyer contra Lofty y deja borradores de reclamo, y manda su captura a Teams. Con Capi, un supervisor de Claude que coordina a los robots y te habla.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "sidePanel",
+    "downloads",
+    "activeTab",
+    "tts"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "action": {
+    "default_title": "Agente Geo Farming",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://propwire.com/*",
+        "https://*.propwire.com/*"
+      ],
+      "js": [
+        "hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://propwire.com/*",
+        "https://*.propwire.com/*"
+      ],
+      "js": [
+        "pw-content.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://beenverified.com/*",
+        "https://*.beenverified.com/*"
+      ],
+      "js": [
+        "bv-content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://crm.lofty.com/*"
+      ],
+      "js": [
+        "al-content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}

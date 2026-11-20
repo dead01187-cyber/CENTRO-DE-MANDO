@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="tx">
+<head>
+<meta charset="utf-8">
+<title>SMS a leads</title>
+<style>
+  :root { --c: #059669; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], input[type=password], input[type=number], select, textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; background: #fff; }
+  textarea { min-height: 90px; resize: vertical; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  .mini { padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 42vh; overflow: auto; }
+  li { padding: 7px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: flex-start; }
+  li:last-child { border-bottom: 0; } li .addr { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  li .sms { font-size: 11.5px; color: #334155; background: #f1f5f9; border-radius: 8px; padding: 4px 7px; margin-top: 3px; white-space: pre-wrap; }
+  .vistas button.on { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .ok { background: #dcfce7; color: #166534; } .bad { background: #fee2e2; color: #991b1b; } .wait { background: #fef9c3; color: #854d0e; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+  #confirma { border: 2px solid var(--c); background: #ecfdf5; }
+  #confirma[hidden] { display: none; }
+  #largo.mal { color: #b91c1c; font-weight: 600; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <details class="card" id="cuenta">
+    <summary>🔑 Cuenta de Lofty para los SMS <span id="cuentaTxt" class="hint"></span></summary>
+    <div class="grid" style="margin-top:8px">
+      <label class="f" style="grid-column:1/-1">API key de la OTRA cuenta de Lofty<input type="password" id="key" placeholder="Pega aquí la API key (Settings → Integrations → API)" autocomplete="off"></label>
+      <div class="row" style="grid-column:1/-1"><button id="guardarKey" class="mini">Guardar y probar</button><button id="quitarKey" class="mini">Quitar</button></div>
+      <div class="hint" style="grid-column:1/-1">Esta API key es solo de Texi: Lofti, Chequi y Acti siguen usando la de la pestaña Lofty. La cuenta necesita un número virtual activo en Lofty para mandar SMS.</div>
+    </div>
+  </details>
+
+  <div class="card grid">
+    <label class="f">Etapa del pipeline<input type="text" id="etapa" placeholder="Ej. Warm (opcional)"></label>
+    <label class="f">Tag<input type="text" id="tag" placeholder="Ej. Irvine (opcional)"></label>
+    <label class="f" style="grid-column:1/-1">Orden de envío<select id="orden">
+      <option value="viejos">Más viejos primero (los que tienen más tiempo en Lofty)</option>
+      <option value="nuevos">Más nuevos primero</option>
+    </select></label>
+    <div class="hint" style="grid-column:1/-1">Escribe una etapa, un tag o los dos. Si pones los dos, solo entran los leads que cumplen ambos. Solo entran leads <b>Seller</b>.</div>
+  </div>
+
+  <div class="card grid">
+    <label class="f">Plantilla<select id="plantilla"></select></label>
+    <div class="row" style="align-self:end"><button id="nueva" class="mini">+ Nueva</button><button id="borrarPl" class="mini">Borrar</button></div>
+    <label class="f" style="grid-column:1/-1">Nombre de la plantilla<input type="text" id="plNombre"></label>
+    <label class="f" style="grid-column:1/-1">Mensaje <span class="hint">Puedes usar {nombre}, {apellido}, {direccion} y {ciudad}. <span id="largo"></span></span><textarea id="plTexto"></textarea></label>
+    <div class="hint" style="grid-column:1/-1">Se manda a <b>todos</b> los números de California de cada lead.</div>
+  </div>
+
+  <div class="row">
+    <button id="buscar" class="primary">🔎 Buscar leads y armar la lista</button>
+    <button id="stop" class="stop">Parar</button>
+  </div>
+  <div id="status" class="card">Listo.</div>
+
+  <div id="confirma" class="card" hidden>
+    <div id="confTxt"></div>
+    <div class="row" style="margin-top:8px"><button id="si" class="primary">📨 Sí, mandar</button><button id="no">Cancelar</button></div>
+  </div>
+
+  <div class="nums">
+    <div class="card"><span id="nLista" class="count">0</span><small>faltan por mandar</small></div>
+    <div class="card"><span id="nMarcados" class="count">0</span><small>marcados para mandar</small></div>
+    <div class="card"><span id="nHoy" class="count">0</span><small>SMS mandados hoy</small></div>
+  </div>
+  <div class="row"><button id="mandar" class="primary" disabled>📨 Revisar y mandar los marcados</button><button id="marcarTodos" class="mini">Marcar todos</button><button id="desmarcar" class="mini">Ninguno</button></div>
+  <div class="row vistas"><button id="vFaltan" class="mini on">⏳ Faltan</button><button id="vMandados" class="mini">✅ Ya mandados</button><button id="vProblema" class="mini">⚠️ Opt-out / error</button></div>
+  <ul id="lista"><li class="empty">Escribe una etapa o un tag y dale “Buscar leads”. Te enseño a quién le voy a mandar y qué dice el mensaje antes de mandar nada.</li></ul>
+  <div class="hint">Solo mando a leads Seller y a números de California. Un SMS mandado ya no se puede borrar, por eso nada sale sin tu OK.</div>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="tx.js"></script>
+</body>
+</html>

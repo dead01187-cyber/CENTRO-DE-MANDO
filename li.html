@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="li">
+<head>
+<meta charset="utf-8">
+<title>Limpieza del CRM</title>
+<style>
+  :root { --c: #e11d48; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], input[type=number], select { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; background: #fff; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  .mini { padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+  #status { color: var(--m); min-height: 34px; white-space: pre-wrap; }
+  .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  h3 { margin: 4px 0 2px; font-size: 12.5px; }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 32vh; overflow: auto; }
+  li { padding: 6px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: flex-start; }
+  li:last-child { border-bottom: 0; } li .q { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .ok { background: #dcfce7; color: #166534; } .bad { background: #fee2e2; color: #991b1b; } .wait { background: #fef9c3; color: #854d0e; } .gris { background: #f1f5f9; color: #475569; }
+  .empty { padding: 12px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+  a { color: inherit; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card hint">Limpi revisa <b>todo el CRM</b> (todas las etapas, sellers y buyers) y pasa a la etapa destino a los que dijeron <b>STOP / unsubscribe</b> (o Lofty los tiene marcados) o <b>no tienen número</b>. A los <b>sellers</b> también los mueve si <b>no tienen propiedad</b> (a los buyers no). No cambia tags ni borra nada.</div>
+
+  <details class="card" id="ajustes">
+    <summary>⚙️ Ajustes</summary>
+    <div class="grid" style="margin-top:8px">
+      <label class="f">Cuenta de Lofty<select id="cuenta">
+        <option value="lofty">La de Lofti (pestaña Lofty)</option>
+        <option value="tx">La de Texi (SMS)</option>
+      </select></label>
+      <label class="f">Correr solo a partir de las<select id="hora"></select></label>
+      <label class="f">Etapa a limpiar (vacío = todas)<input type="text" id="etapa" placeholder="Todas las etapas"></label>
+      <label class="f">Mover a la etapa<input type="text" id="destino"></label>
+      <label class="f">SMS de las últimas (horas) · 0 = todo<input type="number" id="horas" min="0"></label>
+      <label class="f">Leads de los últimos (días) · 0 = todos<input type="number" id="dias" min="0"></label>
+      <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="auto"> Correr solo una vez al día (mientras el Centro de Mando esté abierto)</label>
+      <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="soloRevisar"> Solo revisar: no mover, dejar la lista para que yo le dé “Mover”</label>
+    </div>
+  </details>
+
+  <div class="row">
+    <button id="run" class="primary">🧹 Correr limpieza ahora</button>
+    <button id="stopBtn" class="stop" hidden>Parar</button>
+  </div>
+  <div class="row">
+    <button id="completa" class="mini" title="Revisa TODOS los leads de la etapa (puede tardar mucho). La diaria solo revisa los nuevos.">Revisión completa (todos)</button>
+    <button id="moverPend" class="mini" hidden>Mover pendientes</button>
+  </div>
+
+  <div class="nums">
+    <div class="card"><div class="count" id="nRev">0</div><small>revisados</small></div>
+    <div class="card"><div class="count" id="nStop">0</div><small>por STOP</small></div>
+    <div class="card"><div class="count" id="nProp">0</div><small>sin propiedad</small></div>
+    <div class="card"><div class="count" id="nNum">0</div><small>sin número</small></div>
+  </div>
+
+  <div id="status" class="card">Listo.</div>
+
+  <h3>Movidos en la última corrida</h3>
+  <ul id="movidos"><span class="empty">Todavía nada.</span></ul>
+  <h3>Para revisar a mano</h3>
+  <ul id="revisar"><span class="empty">Nada pendiente.</span></ul>
+  <details class="card"><summary>📜 Corridas anteriores</summary><ul id="historial" style="margin-top:6px"></ul></details>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="li.js"></script>
+</body>
+</html>

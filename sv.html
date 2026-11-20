@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="sv">
+<head>
+<meta charset="utf-8">
+<title>Capi</title>
+<style>
+  :root { --c: #b45309; --c2: #fef3c7; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; font: 13px/1.45 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  .barra { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #fff; border-bottom: 1px solid var(--b); flex-wrap: wrap; }
+  .barra .titulo { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #cbd5e1; }
+  .dot.on { background: #16a34a; box-shadow: 0 0 0 3px #dcfce7; }
+  .dot.mic.on { background: #dc2626; box-shadow: 0 0 0 3px #fee2e2; animation: lat 1.4s infinite; }
+  .mision { margin: 8px 10px 0; padding: 8px 10px; border: 1px solid #fcd34d; background: #fffbeb; border-radius: 10px; font-size: 12px; }
+  .mision .fila { display: flex; align-items: center; gap: 6px; }
+  .mision b { flex: 1; }
+  .mision button { font: inherit; font-size: 11px; padding: 3px 8px; border: 1px solid #fcd34d; background: #fff; border-radius: 99px; cursor: pointer; }
+  .mision .barra { height: 7px; background: #fde68a; border-radius: 99px; overflow: hidden; margin-top: 6px; }
+  .mision .barra div { height: 100%; width: 0; background: var(--c); transition: width .4s; }
+  .mision small { color: #92400e; }
+  #micEstado { font-size: 11px; color: var(--m); padding: 0 10px; }
+  #micEstado a { color: var(--c); } .dot.trabaja { background: var(--c); box-shadow: 0 0 0 3px var(--c2); animation: lat 1s infinite; }
+  @keyframes lat { 50% { opacity: .4; } }
+  .sw { display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; margin-left: auto; }
+  .sw + .sw { margin-left: 0; }
+  input[type=checkbox] { accent-color: var(--c); }
+  details.ajustes { padding: 0 10px; background: #fff; border-bottom: 1px solid var(--b); }
+  details.ajustes summary { cursor: pointer; font-size: 12px; font-weight: 600; padding: 7px 0; color: var(--m); }
+  details.ajustes label { display: block; font-size: 12px; margin: 4px 0 8px; }
+  details.ajustes input[type=password], details.ajustes select { width: 100%; padding: 6px 8px; border: 1px solid var(--b); border-radius: 6px; font: inherit; margin-top: 3px; }
+  .hint { color: var(--m); font-size: 11px; }
+  #chat { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .m { max-width: 92%; padding: 8px 10px; border-radius: 12px; white-space: pre-wrap; word-wrap: break-word; }
+  .m.yo { align-self: flex-end; background: var(--c); color: #fff; border-bottom-right-radius: 4px; }
+  .m.sv { align-self: flex-start; background: #fff; border: 1px solid var(--b); border-bottom-left-radius: 4px; }
+  .m.aviso { align-self: center; background: var(--c2); color: #78350f; font-size: 12px; border-radius: 8px; }
+  .m.err { align-self: center; background: #fee2e2; color: #991b1b; font-size: 12px; border-radius: 8px; }
+  .acc { align-self: flex-start; font-size: 11px; color: var(--m); padding-left: 4px; }
+  .rapidos { display: flex; gap: 6px; padding: 6px 10px 0; flex-wrap: wrap; }
+  .rapidos button { font: inherit; font-size: 12px; padding: 4px 9px; border: 1px solid var(--b); border-radius: 99px; background: #fff; cursor: pointer; }
+  form { display: flex; gap: 6px; padding: 8px 10px 10px; }
+  form textarea { flex: 1; resize: none; height: 40px; padding: 8px 10px; border: 1px solid var(--b); border-radius: 10px; font: inherit; }
+  form button { border: 0; background: var(--c); color: #fff; font-weight: 600; border-radius: 10px; padding: 0 14px; cursor: pointer; }
+  form button:disabled { opacity: .5; cursor: default; }
+  .pie { font-size: 10.5px; color: var(--m); padding: 0 10px 6px; display: flex; justify-content: space-between; }
+  .pie a { color: var(--m); }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+  <div class="barra">
+    <span class="titulo"><span id="dot" class="dot"></span>Vigilancia</span>
+    <label class="sw" title="Revisa solo los errores y avances del flujo"><input type="checkbox" id="auto" checked> Vigilar</label>
+    <label class="sw" title="Capi te habla en voz alta"><input type="checkbox" id="voz" checked> Voz</label>
+    <label class="sw" title="Siempre escuchando: dile “Capi, …”"><span id="micDot" class="dot mic"></span><input type="checkbox" id="mic"> 🎤 Escuchar</label>
+  </div>
+  <details class="ajustes" id="ajustes">
+    <summary>Ajustes de Capi</summary>
+    <label>Voz de ElevenLabs (la voz de Capi)
+      <input type="password" id="elKey" placeholder="API key de ElevenLabs" autocomplete="off">
+      <input type="text" id="elVoz" placeholder="ID de la voz" style="width:100%;padding:6px 8px;border:1px solid var(--b);border-radius:6px;font:inherit;margin-top:3px">
+      <select id="elModo">
+        <option value="todo">Usarla siempre</option>
+        <option value="avisos">Solo en avisos y preguntas (ahorra créditos)</option>
+        <option value="nunca">No usarla (voz de la Mac)</option>
+      </select>
+      <span class="hint" id="elHint">Pega tu API key de ElevenLabs (elevenlabs.io → tu perfil → API Keys). Si ElevenLabs falla, Capi usa la voz de la Mac.</span>
+    </label>
+    <label>Voz de la Mac (respaldo)
+      <select id="vozNombre"></select>
+      <span class="hint" id="vozHint"></span>
+    </label>
+    <label>Velocidad de la voz
+      <select id="velocidad"><option value="0.9">Lenta</option><option value="1" selected>Normal</option><option value="1.1">Rápida</option></select>
+      <a href="#" id="probarVoz" class="hint">▶ Probar voz</a>
+    </label>
+    <label>API key de Anthropic
+      <input type="password" id="key" placeholder="sk-ant-…" autocomplete="off">
+      <span class="hint">Se guarda solo en este Chrome. La sacas en console.anthropic.com → API Keys. Cada revisión cuesta centavos.</span>
+    </label>
+    <label>Modelo
+      <select id="modelo">
+        <option value="claude-sonnet-5-5">Claude Sonnet 5.5 (recomendado)</option>
+        <option value="claude-haiku-5-5">Claude Haiku 5.5 (más barato)</option>
+        <option value="claude-opus-5-5">Claude Opus 5.5 (el más listo, más caro)</option>
+      </select>
+    </label>
+    <label>Revisiones automáticas máximas por hora
+      <select id="limite"><option>6</option><option selected>12</option><option>30</option></select>
+    </label>
+  </details>
+  <div id="micEstado"></div>
+  <div class="mision" id="mision" hidden>
+    <div class="fila"><span>🎯</span><b id="misionTxt"></b><button id="misionPausa">Pausar</button><button id="misionCancelar">Cancelar</button></div>
+    <div class="barra"><div id="misionBarra"></div></div>
+    <small id="misionNum"></small>
+  </div>
+  <div id="chat"></div>
+  <div class="rapidos">
+    <button data-q="¿Cómo vamos?">¿Cómo vamos?</button>
+    <button data-q="Revisa si hay errores y arréglalos.">Revisa errores</button>
+    <button data-q="Quiero 50 propiedades de la zona que tengo puesta en Propwire.">Misión con mi zona</button>
+  </div>
+  <form id="f"><textarea id="txt" placeholder="Ej. quiero 100 propiedades de Irvine"></textarea><button id="enviar">Enviar</button></form>
+  <div class="pie"><span id="uso"></span><a href="#" id="borrar">Borrar plática</a></div>
+  <script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+  <script src="sv.js"></script>
+</body>
+</html>

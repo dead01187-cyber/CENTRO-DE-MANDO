@@ -1,0 +1,124 @@
+/* =====================================================================
+   Tema "n8n" del Centro de Mando (oscuro, como el editor de n8n).
+   Solo aplica con body.n8n; el tema neón queda intacto.
+   ===================================================================== */
+body.n8n {
+  --bg: #1e1e1e; --panel: #2b2b2b; --borde: #3d3d3d; --t: #e4e4e4; --m: #9a9a9a;
+  --n8n: #ff6d5a; --ok: #43b05c; --nodo: #2e2e2e; --nodo-b: #4a4a4a;
+  background: #1e1e1e;
+  font-family: "Open Sans", -apple-system, system-ui, sans-serif;
+}
+body.n8n #estrellas { display: none; }
+body.n8n .rejilla { opacity: 1; animation: none;
+  background-image: radial-gradient(circle, #3a3a3a 1.2px, transparent 1.3px); background-size: 22px 22px; background-position: 0 0; }
+
+/* Barra de arriba: como la barra del workflow en n8n */
+body.n8n .hud { background: #262626; border-bottom: 1px solid #333; box-shadow: none; backdrop-filter: none; padding: 10px 18px; }
+body.n8n .logo { font: 600 15px/1 "Open Sans", -apple-system, system-ui, sans-serif; letter-spacing: 0; text-shadow: none; color: #e4e4e4; }
+body.n8n .logo small { color: #8a8a8a; }
+body.n8n .pulso { background: var(--ok); box-shadow: none; }
+body.n8n .met { background: #2e2e2e; border: 1px solid #3d3d3d; border-radius: 6px; padding: 4px 12px; min-width: 96px; box-shadow: none; }
+body.n8n .met b { font: 600 18px/1.2 "Open Sans", -apple-system, system-ui, sans-serif; color: #e4e4e4 !important; text-shadow: none !important; }
+body.n8n .met span { letter-spacing: .02em; text-transform: none; font-size: 11px; color: #8a8a8a; }
+body.n8n .chipbtn, body.n8n button { border-radius: 6px; }
+body.n8n .chipbtn { background: #2e2e2e; border-color: #4a4a4a; color: #d4d4d4; box-shadow: none; }
+body.n8n #reloj { color: #8a8a8a; font-family: "Open Sans", -apple-system, system-ui, sans-serif; }
+
+/* Nodos: tarjeta rectangular gris con ícono a la izquierda, como los nodos anchos de n8n */
+body.n8n .arbol { row-gap: 15px; column-gap: 22px; }
+body.n8n .escena { padding-top: 10px; padding-bottom: 10px; }
+body.n8n .arbol .estacion { width: 210px; padding: 6px 10px 6px 6px; gap: 10px; background: var(--nodo); border: 1.5px solid var(--nodo-b);
+  border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.4); transition: border-color .2s, box-shadow .2s, transform .15s; }
+body.n8n .arbol .estacion:hover { transform: none; border-color: #6a6a6a; }
+body.n8n .arbol .estacion.nube { background: #262626; border-style: dashed; }
+body.n8n .arbol .aro { width: 38px; height: 38px; border-radius: 6px; background: #3a3a3a; box-shadow: none !important; animation: none !important; opacity: 1 !important; }
+body.n8n .arbol .aro::before, body.n8n .arbol .aro::after { display: none; }
+body.n8n .arbol .robot svg { filter: none; }
+body.n8n .arbol .capi { width: 240px; }
+body.n8n .arbol .capi .aro { width: 42px; height: 42px; }
+body.n8n .arbol .robot { width: 28px; height: 26px; }
+body.n8n .arbol .fila-chip { margin-top: 2px; }
+body.n8n .arbol .cuenta { margin-top: 1px; line-height: 1.25; }
+body.n8n .nombre { color: #e4e4e4; text-shadow: none; font-weight: 600; }
+body.n8n .rol { color: #8a8a8a; letter-spacing: .02em; text-transform: none; font-size: 10.5px; }
+body.n8n .cuenta { color: #9a9a9a; }
+body.n8n .cuenta b { color: #e4e4e4; font-family: "Open Sans", -apple-system, system-ui, sans-serif; }
+body.n8n .chip { border-radius: 4px; text-shadow: none; box-shadow: none; background: #3a3a3a !important; color: #bdbdbd !important; border: 0 !important; letter-spacing: .02em; }
+body.n8n .msg { color: #8a8a8a; }
+
+/* Estados, como n8n: trabajando = borde naranja animado; terminó = verde con palomita; error = rojo */
+body.n8n .estacion.trabajando, body.n8n .estacion.pensando { border-color: var(--n8n); box-shadow: 0 0 0 3px rgba(255,109,90,.18); }
+body.n8n .estacion.trabajando .chip, body.n8n .estacion.pensando .chip { background: rgba(255,109,90,.18) !important; color: #ff8f80 !important; }
+body.n8n .estacion.feliz { border-color: var(--ok); }
+body.n8n .estacion.feliz::after { content: "✓"; position: absolute; top: -9px; right: -9px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--ok); color: #fff; font: 700 11px/18px -apple-system, system-ui; text-align: center; }
+body.n8n .estacion.feliz .chip { background: rgba(67,176,92,.18) !important; color: #7fd493 !important; }
+body.n8n .estacion.error, body.n8n .estacion.ayuda { border-color: #ea4b4b; box-shadow: 0 0 0 3px rgba(234,75,75,.18); }
+body.n8n .estacion.error::after, body.n8n .estacion.ayuda::after { content: "!"; position: absolute; top: -9px; right: -9px; width: 18px; height: 18px; border-radius: 50%;
+  background: #ea4b4b; color: #fff; font: 700 12px/18px -apple-system, system-ui; text-align: center; }
+body.n8n .estacion.error .chip, body.n8n .estacion.ayuda .chip { background: rgba(234,75,75,.18) !important; color: #ff8d8d !important; }
+body.n8n .estacion.pausa { border-color: #d4a72c; }
+body.n8n .estacion.off, body.n8n .arbol .estacion.apagada { opacity: .45; }
+body.n8n .estacion .interruptor { top: -8px; left: -8px; }
+
+/* Títulos de columna = notas adhesivas de n8n */
+body.n8n .etq-col { background: #3b3522; color: #e8d9a8; border: 1px solid #5a5132; border-radius: 4px; padding: 3px 10px; letter-spacing: .04em; text-transform: none; font-size: 11px; font-weight: 600; text-shadow: none; }
+
+/* Burbuja de Capi y paneles */
+body.n8n .burbuja { background: #2e2e2e; border: 1px solid #4a4a4a; color: #e4e4e4; box-shadow: 0 4px 14px rgba(0,0,0,.4); border-radius: 8px; }
+body.n8n .tarjeta { background: #262626; border: 1px solid #3d3d3d; border-radius: 8px; box-shadow: none; backdrop-filter: none; }
+body.n8n .tarjeta .t { color: #bdbdbd; letter-spacing: .02em; text-transform: none; text-shadow: none; }
+body.n8n input { background: #1e1e1e; border-color: #4a4a4a; border-radius: 6px; }
+body.n8n .mision .primario { background: var(--n8n); border-color: var(--n8n); color: #fff; box-shadow: none; }
+body.n8n #log .ev { border-color: #333; }
+body.n8n .cajon { background: #232323; border-left: 1px solid #3d3d3d; box-shadow: -6px 0 18px rgba(0,0,0,.4); }
+body.n8n .cajon-top { background: #262626; border-bottom: 1px solid #3d3d3d; }
+body.n8n #cajonMenuBtn { background: #2e2e2e; border-color: #4a4a4a; border-radius: 6px; }
+body.n8n .cajon-top nav { background: #2b2b2b; border-color: #4a4a4a; border-radius: 8px; }
+body.n8n .cajon-top nav button.on { background: rgba(255,109,90,.18); color: #ff8f80; }
+
+/* El lienzo baja con scroll (como el canvas de n8n) en vez de cortar arriba y abajo */
+body.n8n .escena { justify-content: flex-start; overflow: hidden; cursor: grab; }
+body.n8n.arrastrando .escena, body.n8n.arrastrando .escena * { cursor: grabbing !important; user-select: none; }
+body.n8n .arbol { will-change: transform; }
+body.n8n #lazos { bottom: auto; }
+body.n8n .escena::-webkit-scrollbar { width: 8px; } body.n8n .escena::-webkit-scrollbar-thumb { background: #3d3d3d; border-radius: 4px; }
+
+/* Controles de cámara (abajo a la izquierda, como en n8n) */
+#camara { display: none; }
+body.n8n #camara { display: flex; position: absolute; left: 14px; bottom: 14px; z-index: 5; gap: 4px; align-items: center;
+  background: #2b2b2b; border: 1px solid #3d3d3d; border-radius: 8px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.35); cursor: default; }
+body.n8n #camara button { width: 28px; height: 28px; padding: 0; display: grid; place-items: center; font: 600 15px/1 -apple-system, system-ui, sans-serif;
+  color: #d4d4d4; background: #333; border: 1px solid #4a4a4a; border-radius: 6px; cursor: pointer; }
+body.n8n #camara button[data-c=uno] { width: 34px; font-size: 11px; }
+body.n8n #camara button:hover { background: #3d3d3d; border-color: #ff6d5a; color: #fff; }
+body.n8n #camZoom { min-width: 40px; text-align: center; font: 600 11px -apple-system, system-ui, sans-serif; color: #9a9a9a; }
+
+/* =====================================================================
+   Efectos visuales (estilo n8n): cada nodo usa el color de su robot (--rc)
+   ===================================================================== */
+body.n8n .rejilla { background-image: radial-gradient(circle, #3a3a3a 1.2px, transparent 1.3px), radial-gradient(ellipse at 50% 25%, rgba(255,109,90,.07), transparent 60%), radial-gradient(ellipse at 80% 90%, rgba(56,189,248,.05), transparent 55%);
+  background-size: 22px 22px, 100% 100%, 100% 100%; }
+body.n8n .arbol .estacion:hover { border-color: var(--rc, #6a6a6a); box-shadow: 0 0 0 1px var(--rc, #6a6a6a), 0 8px 24px -8px var(--rc, #000); transform: translateY(-1px); }
+body.n8n .arbol .estacion .aro { background: linear-gradient(145deg, #3f3f3f, #2d2d2d); }
+body.n8n .arbol .estacion:hover .aro { box-shadow: inset 0 0 0 1px var(--rc), 0 0 14px -3px var(--rc) !important; }
+/* trabajando: latido de luz con el color del robot + barrido de luz + robot que se mueve */
+@keyframes n8nLatido { 0%, 100% { box-shadow: 0 0 0 2px rgba(255,109,90,.20), 0 0 12px -4px var(--rc, #ff6d5a); } 50% { box-shadow: 0 0 0 4px rgba(255,109,90,.08), 0 0 28px 0 var(--rc, #ff6d5a); } }
+body.n8n .estacion.trabajando, body.n8n .estacion.pensando { animation: n8nLatido 1.6s ease-in-out infinite; }
+body.n8n .estacion.trabajando::before, body.n8n .estacion.pensando::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.06) 45%, rgba(255,255,255,.13) 50%, rgba(255,255,255,.06) 55%, transparent 65%) no-repeat;
+  background-size: 260% 100%; animation: n8nBarrido 2.4s linear infinite; }
+@keyframes n8nBarrido { from { background-position: 160% 0; } to { background-position: -160% 0; } }
+@keyframes n8nBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+body.n8n .estacion.trabajando .robot, body.n8n .estacion.pensando .robot { animation: n8nBob .9s ease-in-out infinite; }
+/* terminó: destello verde; error: latido rojo; las insignias entran con un "pop" */
+@keyframes n8nOk { 0% { box-shadow: 0 0 0 0 rgba(67,176,92,.65); } 100% { box-shadow: 0 0 0 14px rgba(67,176,92,0); } }
+body.n8n .estacion.feliz { animation: n8nOk 1.1s ease-out 3; }
+@keyframes n8nMal { 0%, 100% { box-shadow: 0 0 0 3px rgba(234,75,75,.18); } 50% { box-shadow: 0 0 0 5px rgba(234,75,75,.06), 0 0 22px -2px rgba(234,75,75,.7); } }
+body.n8n .estacion.error, body.n8n .estacion.ayuda { animation: n8nMal 1.8s ease-in-out infinite; }
+@keyframes n8nPop { 0% { transform: scale(0); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
+body.n8n .estacion.feliz::after, body.n8n .estacion.error::after, body.n8n .estacion.ayuda::after { animation: n8nPop .35s ease-out; }
+/* Capi brilla un poco siempre (es el jefe) */
+@keyframes n8nCapi { 0%, 100% { box-shadow: 0 0 0 1px rgba(251,191,36,.25), 0 0 18px -8px #fbbf24; } 50% { box-shadow: 0 0 0 1px rgba(251,191,36,.45), 0 0 26px -6px #fbbf24; } }
+body.n8n .arbol .capi:not(.trabajando):not(.pensando):not(.error):not(.ayuda) { animation: n8nCapi 3.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { body.n8n .estacion, body.n8n .estacion::before, body.n8n .estacion .robot { animation: none !important; } }

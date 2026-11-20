@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="wb">
+<head>
+<meta charset="utf-8">
+<title>Wibi · Sube a Lofty los leads de Propwire</title>
+<style>
+  :root { --c: #ca8a04; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=file], select, input[type=text] { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; background: #fff; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  #status { color: var(--m); min-height: 34px; white-space: pre-wrap; }
+  .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  h3 { margin: 4px 0 2px; font-size: 12.5px; }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 40vh; overflow: auto; }
+  li { padding: 6px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: flex-start; }
+  li:last-child { border-bottom: 0; } li .q { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .ok { background: #dcfce7; color: #166534; } .bad { background: #fee2e2; color: #991b1b; } .wait { background: #fef9c3; color: #854d0e; } .gris { background: #f1f5f9; color: #475569; }
+  .empty { padding: 12px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  .src { display: grid; gap: 6px; }
+  .src b { font-size: 12px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card hint">Preparo los leads de Propwire (owner y teléfonos del skip trace), reviso que no estén ya en Lofty y se los paso a <b>Lofti</b>. Lofti los sube con el tag <b>propwire</b> y el de su <b>ciudad</b>, para distinguirlos de los de BeenVerified. Si en Lofti tienes prendido <b>“Subir solo a Lofty”</b>, los sube en automático; si no, esperan tu OK.</div>
+
+  <div class="card src">
+    <b>Opción A · Archivo</b>
+    <label class="f">CSV de Propwire con el skip trace hecho<input type="file" id="archivo" accept=".csv,text/csv"></label>
+    <div class="row"><button id="leerArchivo" class="primary">📄 Leer el archivo</button></div>
+  </div>
+
+  <div class="card src">
+    <b>Opción B · Directo de Propwire</b>
+    <label class="f">Lista que limpió Carpi (y que importaste a Propwire con skip trace)<select id="carpeta"></select></label>
+    <div class="hint">Abro cada propiedad en Propwire (pestaña Owner) y leo el owner y sus teléfonos. Voy despacio (6 a 12 s por propiedad) para no levantar sospechas. No doy skip trace ni gasto créditos.</div>
+    <div class="row"><button id="run" class="primary">🌐 Leer de Propwire</button><button id="stopBtn" class="stop" hidden>Parar</button></div>
+  </div>
+
+  <div class="card grid">
+    <label class="chk"><input type="checkbox" id="sinDnc" checked> Quitar números DNC</label>
+    <label class="chk"><input type="checkbox" id="soloCA" checked> Solo números de California</label>
+    <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="pasarTrust"> <span><b>Dejar pasar los trusts</b> (el lead va a nombre de la persona del skip trace)</span></label>
+    <select id="agent" hidden><option value="347370063537680">Daniel Rubio-Novack</option></select>
+  </div>
+
+  <div class="nums">
+    <div class="card"><div class="count" id="nLeidos">0</div><small>leídos</small></div>
+    <div class="card"><div class="count" id="nListos">0</div><small>listos para subir</small></div>
+    <div class="card"><div class="count" id="nYa">0</div><small>ya en Lofty</small></div>
+    <div class="card"><div class="count" id="nHoy">0</div><small>a Lofti hoy</small></div>
+  </div>
+
+  <div class="row"><button id="subir" class="primary" disabled>➡️ Pasar a Lofti</button><button id="bajarSkip" disabled title="Baja los domicilios que no tienen teléfono (Address, City, State, Zip) para importarlos a Propwire y hacerles skip trace">⬇️ Para skip trace</button><button id="bajarLimpio" disabled title="Baja un CSV con los leads limpios (owner, teléfonos, emails, domicilio y tags)">⬇️ Archivo limpio</button></div>
+  <div id="status" class="card">Listo. Dame el archivo con skip trace o escoge la lista de Carpi.</div>
+
+  <h3>Leads</h3>
+  <ul id="lista"><span class="empty">Todavía nada.</span></ul>
+</main>
+<script src="papaparse.min.js"></script>
+<script src="lofty-core.js"></script>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="wibi.js"></script>
+</body>
+</html>

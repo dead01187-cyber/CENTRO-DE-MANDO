@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="te">
+<head>
+<meta charset="utf-8">
+<title>Termi · Zonas calientes</title>
+<style>
+  :root { --c: #ea580c; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], input[type=number], select { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; background: #fff; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  .mini { padding: 4px 8px; font-size: 12px; white-space: nowrap; }
+  #status { color: var(--m); min-height: 20px; }
+  .nums { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 58vh; overflow: auto; }
+  li { padding: 7px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 10px; align-items: center; }
+  li:last-child { border-bottom: 0; } li .q { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  .rank { width: 22px; text-align: right; color: var(--m); font-size: 12px; }
+  .score { font-size: 22px; font-weight: 800; min-width: 38px; text-align: right; }
+  .empty { padding: 12px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card hint">Califico cada ZIP de 0 a 100 con lo que juntó Radar (pre-foreclosure, probate, absentee, equity, vacantes, dueños de muchos años, bajas de precio, inventario y qué tan lento está el mercado). Cada señal se compara contra todos los ZIP. <b>→ Propi</b> arranca una misión en esa zona (te pregunto antes).</div>
+  <div class="nums">
+    <div class="card"><div class="count" id="nZonas">0</div><small>ZIP calificados</small></div>
+    <div class="card"><div class="count" id="nCalientes">0</div><small>calientes (75+)</small></div>
+  </div>
+  <div class="card grid">
+    <label class="f">Condado<select id="condado"><option value="">Los dos</option><option>Orange</option><option>Los Angeles</option></select></label>
+    <label class="f">Buscar ZIP o ciudad<input type="text" id="buscar" placeholder="92620, Irvine…"></label>
+    <label class="f">Leads por misión<input type="number" id="meta" min="5" max="500" value="50"></label>
+    <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="soloCompletos" checked> Solo zonas con suficientes datos</label>
+  </div>
+  <div class="row"><button id="run" class="primary">🌡️ Recalificar</button></div>
+  <div id="status" class="card">…</div>
+  <div class="card" id="cajaProp">
+    <div style="font-weight:700;margin-bottom:4px">🏠 Sacar propiedades de las zonas marcadas</div>
+    <div class="hint" style="margin-bottom:6px">Marca los ZIP en la lista (☑️) y los tipos de seller. Abro Propwire con ritmo humano, leo las direcciones de la lista (no exporto ni gasto créditos) y te dejo <b>la lista de domicilios</b> aquí abajo para que tú los busques.</div>
+    <div class="row" id="tipos" style="margin-bottom:6px"></div>
+    <div class="grid">
+      <label class="f">Páginas por búsqueda<input type="number" id="maxPag" min="1" max="10" value="2"></label>
+      <label class="f" style="grid-column:2/-1">Marcadas<div class="row"><b id="nSel">0</b> ZIP <button class="mini" id="marcarCal" type="button">Marcar calientes</button><button class="mini" id="quitarSel" type="button">Quitar marcas</button></div></label>
+    </div>
+    <div class="row" style="margin-top:8px"><button id="sacar" class="primary">🔎 Sacar domicilios</button><button id="pararProp" hidden>⏹ Parar</button></div>
+  </div>
+  <div class="card" id="cajaDoms" hidden>
+    <div class="row" style="justify-content:space-between"><b>📋 Domicilios (<span id="nDoms">0</span>)</b><span class="row"><button class="mini" id="copiarTodos" type="button">Copiar todos</button><button class="mini" id="bajarDoms" type="button">⬇️ CSV</button><button class="mini" id="borrarDoms" type="button">Borrar lista</button></span></div>
+    <input type="text" id="filtroDoms" placeholder="Filtrar por ZIP, ciudad o tipo…" style="margin:6px 0">
+    <ul id="doms" style="max-height:40vh"></ul>
+  </div>
+  <ul id="tabla"></ul>
+  <details class="card"><summary>⚖️ Peso de cada señal</summary><div class="grid" id="pesos" style="margin-top:8px"></div></details>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="termi-calc.js"></script><script src="termi.js"></script><script src="termi-prop.js"></script>
+</body>
+</html>

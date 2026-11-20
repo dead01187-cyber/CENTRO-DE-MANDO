@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="ch">
+<head>
+<meta charset="utf-8">
+<title>Chequi 3 · Filtro HECM</title>
+<style>
+  :root { --c: #d97706; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  select, input[type=number] { width: 100%; padding: 6px 8px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; background: #fff; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  h4 { margin: 6px 0 3px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--m); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; }
+  li { padding: 6px 10px; border-bottom: 1px solid var(--b); display: flex; align-items: flex-start; gap: 6px; }
+  li:last-child { border-bottom: 0; } li .addr { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  .mini { padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .p0 { background: #e2e8f0; color: #334155; } .p1 { background: #fef9c3; color: #854d0e; } .p2 { background: #fed7aa; color: #9a3412; } .p3 { background: #fee2e2; color: #991b1b; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card grid">
+    <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="activo" checked> <b>Revisar solo cada HECM que mande Heri</b></label>
+    <label class="f">Lender / servicer<select id="lender">
+      <option value="probable">Celink / Compu-Link (confirmado o probable)</option>
+      <option value="confirmado">Solo Celink / Compu-Link confirmado</option>
+      <option value="todas">Todas las HECM</option>
+    </select></label>
+    <label class="f">Aviso de máximo (días)<input type="number" id="maxDias" min="7" max="730" value="120"></label>
+    <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="vencidas" checked> <span>Quitar las que ya pasaron su fecha de remate</span></label>
+    <label class="f" style="grid-column:1/-1">Mandar a<select id="destino">
+      <option value="bv">Veri 3 → Owny 3 (BeenVerified: herederos y residentes)</option><option value="wb">Wibi 3 (skip trace en Propwire)</option>
+    </select></label>
+    <div class="hint" style="grid-column:1/-1">Reviso cada <b>caso HECM</b> que manda Heri: que sea del lender que escojas, que el remate no haya pasado y que el aviso no sea muy viejo. Luego busco si ya está en Lofty <b>por domicilio, por nombre del dueño y por los teléfonos de sus familiares</b>. Las que pasan van ordenadas por prioridad (remate, remate cerca, dueño fallecido sin probate, Celink confirmado…).</div>
+  </div>
+  <div class="row">
+    <button id="run" class="primary">Revisar HECM ahora</button>
+    <button id="reset" title="Vuelve a revisar todas las HECM que aún no se buscan">↻ Revisar todo otra vez</button>
+  </div>
+  <div id="status" class="card">Listo. Cuando Heri mande HECM al brazo, las reviso.</div>
+  <div class="nums">
+    <div class="card"><span id="count" class="count">0</span><small>por revisar</small></div>
+    <div class="card"><span id="libres" class="count">0</span><small id="libresTxt">pasan a Veri 3</small></div>
+    <div class="card"><span id="enLofty" class="count">0</span><small>ya en Lofty</small></div>
+    <div class="card"><span id="nFilt" class="count">0</span><small>filtradas</small></div>
+  </div>
+  <div id="grupos"><span class="empty">Cuando Heri mande HECM al brazo, las reviso aquí.</span></div>
+</main>
+<script src="linea.js"></script><script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="ch3.js"></script>
+</body>
+</html>

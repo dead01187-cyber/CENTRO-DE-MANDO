@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="lf">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lofty</title>
+<script src="log.js"></script><script src="robot.js"></script>
+<script src="papaparse.min.js"></script>
+<style>
+:root{--bg:#0b0b0d;--panel:#151518;--panel2:#1c1c20;--line:#2a2a30;--txt:#f2f2f4;--mut:#8d8d96;--acc:#0a84ff;--ok:#30d158;--warn:#ff9f0a;--bad:#ff453a;--r:14px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.45 -apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding:14px 12px 40px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{font-size:22px;margin:0;font-weight:700;letter-spacing:-.02em}
+h1 span{color:var(--acc)}
+.sub{color:var(--mut);font-size:13px;margin-top:2px}
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.step{font-size:12px;padding:6px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--mut)}
+.step.on{color:var(--txt);border-color:var(--acc)}
+.step.done{color:var(--ok);border-color:#1f4d2b}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card h2{font-size:15px;margin:0 0 4px;font-weight:600}
+.card .hint{color:var(--mut);font-size:12.5px;margin:0 0 14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.drop{border:1.5px dashed var(--line);border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:.15s;background:var(--panel2)}
+.drop:hover,.drop.over{border-color:var(--acc);background:#0a84ff12}
+.drop b{display:block;font-size:14px;margin-bottom:4px}
+.drop small{color:var(--mut)}
+.files{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.file{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px}
+.file .x{background:none;border:0;color:var(--mut);cursor:pointer;font-size:16px}
+.file .x:hover{color:var(--bad)}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--mut)}
+select,input[type=text],input[type=number],input[type=password]{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font:inherit;font-size:13px;width:100%}
+select:focus,input:focus{outline:none;border-color:var(--acc)}
+.map{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:12px;padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;user-select:none;color:var(--mut)}
+.chip.on{background:#0a84ff22;border-color:var(--acc);color:var(--txt)}
+.multi{margin-top:12px}
+.multi>div{font-size:12px;color:var(--mut)}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px 18px}
+.tog{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:4px 0}
+.tog input{display:none}
+.sw{width:34px;height:20px;border-radius:999px;background:#3a3a40;position:relative;flex:none;transition:.15s}
+.sw:after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}
+.tog input:checked+.sw{background:var(--ok)}
+.tog input:checked+.sw:after{left:16px}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{background:none;border:0;color:var(--mut);padding:6px 12px;border-radius:7px;font:inherit;font-size:13px;cursor:pointer}
+.seg button.on{background:var(--acc);color:#fff}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat .n{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.stat .l{font-size:12px;color:var(--mut)}
+.stat.ok .n{color:var(--ok)}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tbl{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:440px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel2);color:var(--mut);font-weight:500;z-index:1}
+td.ph{white-space:normal;min-width:130px}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:#ff9f0a22;color:var(--warn)}
+.badge.ok{background:#30d15822;color:var(--ok)}
+.more{color:var(--mut);font-size:12px;padding:8px 2px}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:10px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--txt);font-weight:500}
+.btn.sm{padding:6px 10px;font-size:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.msg{font-size:13px;margin-top:10px;min-height:18px}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+.check{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:13px}
+@media(max-width:760px){.check{grid-template-columns:1fr}}
+.check li{display:flex;gap:8px;align-items:flex-start;cursor:pointer;color:var(--mut)}
+.check li:before{content:"";width:16px;height:16px;border-radius:5px;border:1.5px solid var(--line);flex:none;margin-top:1px}
+.check li.on{color:var(--txt)}
+.check li.on:before{background:var(--ok);border-color:var(--ok)}
+.check b{color:var(--txt);font-weight:600}
+.hidden{display:none!important}
+.muted{color:var(--mut)}
+.prog{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;margin:12px 0 6px;border:1px solid var(--line)}
+.prog>div{height:100%;width:0;background:var(--ok);transition:width .2s}
+.log{max-height:240px;overflow:auto;font-size:12.5px;border:1px solid var(--line);border-radius:10px;margin-top:10px}
+.log div{padding:6px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+.log .s-ok{color:var(--ok)}.log .s-skip{color:var(--warn)}.log .s-err{color:var(--bad)}
+.sep{border:0;border-top:1px solid var(--line);margin:18px 0}
+.confirm{background:var(--panel2);border:1px solid var(--acc);border-radius:12px;padding:14px;margin-top:12px}
+textarea.copy{position:absolute;left:-9999px}
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Owners <span>→</span> Lofty</h1>
+      <div class="sub">Owners de la pestaña 3 y/o CSV de Propwire → limpieza → sin duplicados → archivo listo para importar</div>
+    </div>
+    <div class="steps">
+      <div class="step on" id="s1">A · Datos</div>
+      <div class="step" id="s2">B · Columnas</div>
+      <div class="step" id="s3">C · Filtros</div>
+      <div class="step" id="s4">D · Exportar</div>
+    </div>
+  </header>
+
+  <!-- 1. Cargar -->
+  <div class="card">
+    <h2>A. Datos</h2>
+    <p class="hint">Los owners que vas leyendo en la pestaña Owners entran solos. También puedes subir CSV exportados de Propwire (ya con skip trace); todo se junta en un solo lote.</p>
+    <div class="file" style="margin-bottom:12px"><span>Owners de la pestaña 3: <b id="owN">0</b> propiedades</span><label class="tog"><input type="checkbox" id="oOw" checked><span class="sw"></span>Usar</label></div>
+    <div class="grid2">
+      <div>
+        <div class="drop" id="dropPw"><b>Exports de Propwire (opcional)</b><small>Arrastra aquí o haz clic · .csv</small></div>
+        <input type="file" id="filePw" accept=".csv,text/csv" multiple hidden>
+        <div class="files" id="listPw"></div>
+        <div class="row" style="margin-top:10px"><button class="btn ghost sm" id="demo">Probar con datos de ejemplo</button></div>
+      </div>
+      <div>
+        <div class="drop" id="dropLf"><b>Export de Lofty (opcional)</b><small>Para no subir leads que ya tienes · se compara por dirección y teléfono</small></div>
+        <input type="file" id="fileLf" accept=".csv,text/csv" hidden>
+        <div class="files" id="listLf"></div>
+        <div class="file" style="margin-top:10px"><span>Historial de exportados: <b id="histN">0</b> propiedades</span><button class="btn ghost sm" id="histClear">Borrar historial</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Columnas -->
+  <div class="card hidden" id="cMap">
+    <h2>B. Columnas detectadas</h2>
+    <p class="hint">Las detecté solas. Corrige solo si algo salió mal.</p>
+    <div class="map" id="mapSingle"></div>
+    <div class="multi"><div>Columnas de teléfono</div><div class="chips" id="chPhones"></div></div>
+    <div class="multi"><div>Columnas de email</div><div class="chips" id="chEmails"></div></div>
+    <div class="multi"><div>Columnas DNC (marcan números que no se deben llamar)</div><div class="chips" id="chDnc"></div></div>
+  </div>
+
+  <!-- 3. Filtros -->
+  <div class="card hidden" id="cOpts">
+    <h2>C. Filtros</h2>
+    <p class="hint">Formato de salida y reglas de limpieza.</p>
+    <div class="row" style="margin-bottom:14px">
+      <div class="seg" id="segSrc"><button data-v="propwire" class="on">Propwire</button><button data-v="geo">Geo farming</button></div>
+      <span class="muted" id="srcInfo"></span>
+    </div>
+    <div class="grid2" style="margin-bottom:12px">
+      <label class="f">Ciudades (separadas por coma · vacío = todas)<input type="text" id="cities" placeholder="irvine, tustin, lake forest"></label>
+      <label class="f">TAG 1 (fuente)<input type="text" id="tag1"></label>
+      <label class="f">Tags extra (separados por coma · salen como TAG 3, TAG 4…)<input type="text" id="tags" placeholder="absentee, high equity, oct-2026"></label>
+      <label class="f">Máximo de teléfonos por lead<input type="number" id="maxP" min="1" max="10" value="10"></label>
+    </div>
+    <div class="opts">
+      <label class="tog"><input type="checkbox" id="oEnt" checked><span class="sw"></span>Quitar empresas, LLC y trusts</label>
+      <label class="tog"><input type="checkbox" id="oPhone" checked><span class="sw"></span>Quitar leads sin teléfono</label>
+      <label class="tog"><input type="checkbox" id="oDnc" checked><span class="sw"></span>Quitar números marcados DNC</label>
+      <label class="tog"><input type="checkbox" id="oCA" checked><span class="sw"></span>Solo California</label>
+      <label class="tog"><input type="checkbox" id="oHist" checked><span class="sw"></span>Saltar los que ya exporté antes</label>
+      <label class="tog"><input type="checkbox" id="oLast"><span class="sw"></span>Incluir Last Name</label>
+    </div>
+  </div>
+
+  <!-- Resultados -->
+  <div class="card hidden" id="cRes">
+    <h2>Resultado</h2>
+    <div class="stats" id="stats"></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="tbl"><table id="tbl"></table></div>
+    <div class="more" id="more"></div>
+  </div>
+
+  <!-- 4. Exportar -->
+  <div class="card hidden" id="cExp">
+    <h2>D. Exportar a Lofty</h2>
+    <p class="hint" id="expInfo"></p>
+    <div class="row">
+      <button class="btn" id="dl">Descargar CSV</button>
+      <button class="btn ghost" id="cp">Copiar CSV</button>
+      <label class="tog" style="margin-left:6px"><input type="checkbox" id="oSave" checked><span class="sw"></span>Guardar en historial al exportar</label>
+    </div>
+    <div class="msg" id="msg"></div>
+    <hr class="sep">
+    <h2>Enviar directo a Lofty</h2>
+    <p class="hint">Crea los leads en Lofty con tu API key, sin pasar por el CSV. Antes de crear cada uno revisa si su teléfono ya existe en Lofty.</p>
+    <div class="grid2">
+      <label class="f">API key de Lofty (Settings → Integrations → API)<input type="password" id="lfKey" placeholder="Pega tu API key" autocomplete="off"></label>
+      <label class="f">Asignar a<select id="agent"><option value="347370063537680">Daniel Rubio-Novack</option></select></label>
+      <label class="f">API key de Veriphone (Vali · valida teléfonos)<input type="password" id="vpKey" placeholder="Pega tu API key de Veriphone" autocomplete="off"></label>
+      <label class="f">Vali este mes<span id="vpUso" class="muted" style="padding-top:8px">—</span></label>
+    </div>
+    <div class="opts" style="margin-top:10px">
+      <label class="tog"><input type="checkbox" id="oChk" checked><span class="sw"></span>Saltar si el teléfono ya está en Lofty</label>
+      <label class="tog" title="Antes de subir cada lead, Vali revisa sus teléfonos con Veriphone: quita los inválidos, pone primero los celulares y le pone el tag cel-validado o solo-llamada. Usa 1 crédito por número (1,000 gratis al mes)."><input type="checkbox" id="oVali" checked><span class="sw"></span>Vali: validar teléfonos antes de subir</label>
+      <label class="tog"><input type="checkbox" id="oAlert"><span class="sw"></span>Mandar aviso de lead nuevo al agente</label>
+      <label class="tog" title="Cada vez que Owny entrega leads nuevos y quedan listos, Lofti los crea en Lofty solo, sin pedir confirmación. Se apaga solo si Lofty rechaza la API key."><input type="checkbox" id="oAuto" checked><span class="sw"></span><b>Subir solo a Lofty conforme Owny los manda</b></label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="send">Enviar a Lofty</button>
+      <button class="btn ghost hidden" id="stop">Detener</button>
+      <span class="muted" id="sendInfo"></span>
+    </div>
+    <div class="confirm hidden" id="confirm"></div>
+    <div class="prog hidden" id="prog"><div></div></div>
+    <div class="msg" id="smsg"></div>
+    <div class="log hidden" id="log"></div>
+    <hr class="sep">
+    <div>
+      <div class="muted" style="font-size:12px;margin-bottom:8px">Si usas el CSV, al importar en Lofty (People → Import), revisa esto:</div>
+      <ul class="check" id="check">
+        <li>Lead type: <b>Seller</b></li>
+        <li>Ownership: <b>Company</b></li>
+        <li>Asignado a: <b>Daniel Rubio-Novack</b></li>
+        <li>Etapa: <b>New Leads</b></li>
+        <li>Duplicados: <b>Merge Leads</b></li>
+        <li>Call/Text opt-in: <b>Yes</b></li>
+        <li>Number Consent: <b>Unknown</b></li>
+        <li>Mapear <b>todas las columnas TAG</b> como tags</li>
+        <li>Marcar los <b>términos anti-spam</b></li>
+      </ul>
+    </div>
+  </div>
+</div>
+<textarea class="copy" id="ta"></textarea>
+
+<script src="lofty-core.js"></script>
+<script src="lofty.js"></script>
+</body>
+</html>

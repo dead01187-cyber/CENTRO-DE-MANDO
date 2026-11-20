@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="cp">
+<head>
+<meta charset="utf-8">
+<title>Carpi · Limpia el CSV de Propwire</title>
+<style>
+  :root { --c: #0891b2; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=number], input[type=file] { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  .mini { padding: 4px 8px; font-size: 12px; }
+  #status { color: var(--m); min-height: 34px; white-space: pre-wrap; }
+  .nums { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  h3 { margin: 4px 0 2px; font-size: 12.5px; }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 34vh; overflow: auto; }
+  li { padding: 6px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: flex-start; }
+  li:last-child { border-bottom: 0; } li .q { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .empty { padding: 12px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card hint">1) Ponme el <b>CSV que bajaste de Propwire</b>. 2) Lo limpio: quito lo que <b>no es de California</b>, las <b>compañías y trusts</b>, lo que <b>ya está en Lofty</b> y los repetidos. 3) Te guardo todo en una <b>carpeta en Descargas/Carpi</b> (el original, lo que quité y por qué, y el limpio) y la borro sola a los días que digas. 4) Te doy el archivo <b>limpio para importar a Propwire</b>.</div>
+
+  <div class="card">
+    <label class="f">CSV exportado de Propwire<input type="file" id="archivo" accept=".csv,text/csv"></label>
+    <div class="grid" style="margin-top:8px">
+      <label class="chk"><input type="checkbox" id="qCA" checked> Quitar fuera de California</label>
+      <label class="chk"><input type="checkbox" id="qEmp" checked> Quitar compañías y trusts</label>
+      <label class="chk"><input type="checkbox" id="pasarTrust"> <span><b>Dejar pasar los trusts</b> (solo quito compañías)</span></label>
+      <label class="chk"><input type="checkbox" id="qLofty" checked> Quitar los que ya están en Lofty</label>
+      <label class="chk"><input type="checkbox" id="qRep" checked> Quitar repetidos</label>
+      <label class="f">Borrar la carpeta a los (días)<input type="number" id="dias" min="1" max="365" value="7"></label>
+    </div>
+  </div>
+
+  <div class="row">
+    <button id="run" class="primary">🧹 Limpiar el archivo</button>
+    <button id="stopBtn" class="stop" hidden>Parar</button>
+  </div>
+  <div class="row">
+    <button id="bajar" class="mini" hidden>⬇️ Bajar otra vez el archivo limpio</button>
+    <button id="carpeta" class="mini" hidden>📂 Ver la carpeta</button>
+  </div>
+
+  <div class="nums">
+    <div class="card"><div class="count" id="nTotal">0</div><small>en el archivo</small></div>
+    <div class="card"><div class="count" id="nLimpio">0</div><small>limpios</small></div>
+    <div class="card"><div class="count" id="nCA">0</div><small>fuera de CA</small></div>
+    <div class="card"><div class="count" id="nEmp">0</div><small>compañías / trusts</small></div>
+    <div class="card"><div class="count" id="nLofty">0</div><small>ya en Lofty</small></div>
+  </div>
+
+  <div id="status" class="card">Listo. Ponme un CSV de Propwire.</div>
+
+  <h3>Lo que quité <span class="hint">· “Dejar pasar” lo regresa al archivo limpio</span></h3>
+  <ul id="quitados"><span class="empty">Todavía nada.</span></ul>
+  <details class="card"><summary>🗂️ Carpetas guardadas</summary><ul id="carpetas" style="margin-top:6px"></ul></details>
+</main>
+<script src="papaparse.min.js"></script>
+<script src="lofty-core.js"></script>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="carpi.js"></script>
+</body>
+</html>

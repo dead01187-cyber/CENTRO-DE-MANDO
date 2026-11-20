@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="cp">
+<head>
+<meta charset="utf-8">
+<title>Carpi · Listas de Propwire</title>
+<style>
+  :root { --c: #0891b2; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.peligro { background: #fee2e2; border-color: #fecaca; color: #b91c1c; font-weight: 600; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  h4 { margin: 4px 0 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--m); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; }
+  li { padding: 6px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: flex-start; }
+  li:last-child { border-bottom: 0; } li small { color: var(--m); display: block; } li .txt { flex: 1; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .empty { padding: 12px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card grid">
+    <label class="f">Borrar las listas ya leídas de más de (días)<input type="number" id="dias" min="0" max="365" value="7"></label>
+    <label class="chk" style="align-self:end"><input type="checkbox" id="auto"> <span><b>Limpiar solo</b> cada 6 horas</span></label>
+    <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="ajenas"> <span>Incluir en el skip trace las listas que <b>no</b> hizo Wibi</span></label>
+    <div class="hint" style="grid-column:1/-1">Administro las listas (“carpetas”) que <b>Wibi</b> y <b>Wibi 3</b> crean en Propwire: las reviso contra <b>My Activity</b>, las ordeno por estado y borro las que ya no sirven: las <b>ya leídas</b> después de los días que pongas y las que se quedaron <b>sin skip trace</b>. También hago el <b>skip trace de varias listas de un jalón</b>: marco las pendientes, “Skip Trace”, reviso que sea solo con créditos y te pido tu OK con el número exacto; luego leo el archivo y mando owners y teléfonos a Lofti. <b>Nunca toco listas que no hizo Wibi</b> ni una que Wibi esté usando. Borrar en Propwire no se puede deshacer: si “Limpiar solo” está apagado, te pregunto antes.</div>
+  </div>
+  <div class="row">
+    <button id="run" class="primary">🗂️ Revisar listas de Propwire</button>
+    <button id="borrar" class="peligro">Borrar las que ya no sirven</button>
+  </div>
+  <div class="row">
+    <button id="skip" class="primary" style="background:#ea580c;border-color:#ea580c">📇 Skip trace a las listas pendientes (de un jalón)</button>
+  </div>
+  <div id="status" class="card">Listo.</div>
+  <div class="nums">
+    <div class="card"><span id="nWibi" class="count">0</span><small>listas de Wibi</small></div>
+    <div class="card"><span id="nLeidas" class="count">0</span><small>leídas</small></div>
+    <div class="card"><span id="nBorrar" class="count">0</span><small>para borrar</small></div>
+    <div class="card"><span id="nSkip" class="count">0</span><small>sin skip trace</small></div>
+    <div class="card"><span id="nAjenas" class="count">0</span><small>otras</small></div>
+  </div>
+  <div id="grupos"><span class="empty">Dale “Revisar listas de Propwire”.</span></div>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="cp.js"></script>
+</body>
+</html>

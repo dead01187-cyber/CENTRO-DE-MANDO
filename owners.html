@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="ow">
+<head>
+<meta charset="utf-8">
+<title>Owners</title>
+<link rel="icon" href="icons/icon32.png">
+<style>
+  * { box-sizing: border-box; }
+  input[type=checkbox] { accent-color: #16a34a; }
+  body { font: 13px/1.4 -apple-system, system-ui, sans-serif; margin: 0; padding: 12px; color: #1d1d1f; background: #fafafa; }
+  h1 { font-size: 15px; margin: 0 0 10px; }
+  section { background: #fff; border: 1px solid #e3e3e3; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+  label { display: block; margin: 4px 0; }
+  input[type=text], textarea { width: 100%; font: inherit; padding: 5px; border: 1px solid #ccc; border-radius: 6px; }
+  textarea#urls { height: 70px; }
+  button { font: inherit; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; }
+  button.primario { background: #16a34a; color: #fff; border-color: #16a34a; width: 100%; padding: 8px; font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  .fila { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .fila button { flex: 1; }
+  #estado { font-size: 12px; color: #555; min-height: 16px; margin: 6px 0; }
+  #estado.error { color: #c00; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; font-weight: 600; border-bottom: 1px solid #ddd; padding: 4px; }
+  td { border-bottom: 1px solid #f0f0f0; padding: 4px; vertical-align: top; }
+  td[contenteditable] { outline: none; }
+  td[contenteditable]:focus { background: #ecfdf3; }
+  td.x { width: 18px; color: #c00; cursor: pointer; text-align: center; }
+  .card { position: relative; padding: 10px 24px 10px 2px; border-bottom: 1px solid #eee; line-height: 1.5; }
+  .card:last-child { border-bottom: none; }
+  .card .owner { font-weight: 600; font-size: 14px; }
+  .card .tels { color: #1d1d1f; white-space: pre-line; }
+  .card .dir { color: #555; }
+  .card [contenteditable] { outline: none; border-radius: 4px; }
+  .card [contenteditable]:focus { background: #ecfdf3; }
+  .card .x { position: absolute; right: 2px; top: 10px; color: #c00; cursor: pointer; }
+  #pestanas { max-height: 180px; overflow-y: auto; margin: 6px 0; border: 1px solid #eee; border-radius: 6px; }
+  .pest { display: flex; gap: 6px; align-items: center; padding: 4px 6px; border-bottom: 1px solid #f3f3f3; font-size: 12px; margin: 0; }
+  .pest span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .pest img { width: 14px; height: 14px; }
+  .pest.no { color: #aaa; }
+  a { color: #16a34a; text-decoration: none; font-size: 12px; }
+  button.fantasma { background: #0b1f12; border-color: #0b1f12; color: #4ade80; margin-top: 4px;
+    font-family: ui-monospace, Menlo, monospace; letter-spacing: .5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .fantasmaMini svg { width: 18px; height: 20px; display: block; }
+  #fantasmaCaja { margin-top: 8px; background: #0b1f12; border-radius: 8px; padding: 10px; }
+  .fantasmaFila { display: flex; align-items: center; gap: 10px; font: 11px/1.4 ui-monospace, Menlo, monospace; color: #4ade80; text-transform: uppercase; }
+  #fantasmaIcono svg { width: 34px; height: 38px; display: block; image-rendering: pixelated; }
+  .flota { animation: flotar 0.8s steps(2) infinite; }
+  @keyframes flotar { 0% { transform: translateY(0); } 50% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
+  .parpadea .ojo { animation: parpadeo 2.4s steps(1) infinite; }
+  @keyframes parpadeo { 0%, 92% { opacity: 1; } 93%, 100% { opacity: 0; } }
+  .barra { display: flex; gap: 2px; margin-top: 8px; height: 8px; }
+  .barra i { flex: 1; background: #14532d; }
+  .barra i.lleno { background: #4ade80; }
+  #btnDetener { background: transparent; color: #4ade80; border-color: #4ade80; font-family: ui-monospace, Menlo, monospace; }
+  .sin { color: #b45309 !important; font-weight: normal !important; }
+  .meta { font-size: 11px; color: #777; margin-bottom: 6px; }
+  .tags { display: flex; gap: 6px; }
+  .tags label { flex: 1; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+
+  <section>
+    <label><input type="checkbox" id="sinEmpresas" checked> Quitar trusts y compañías (LLC, Inc, Trust…)</label>
+    <button class="primario" id="btnActual">Leer la pestaña actual</button>
+  </section>
+
+  <section>
+    <b>Resultados de la pestaña BeenVerified</b>
+    <div class="meta" id="bvInfo" style="margin:4px 0 6px">Todavía no llega ningún resultado.</div>
+    <label><input type="checkbox" id="bvVivo" checked> <b>Leer cada resultado apenas llega</b> (más rápido)</label>
+    <label><input type="checkbox" id="bvAuto" checked> Leerlos solos cuando termine el ciclo de BeenVerified</label>
+    <button class="primario fantasma" id="btnBV"><span class="fantasmaMini"></span>LEER RESULTADOS DE BEENVERIFIED</button>
+  </section>
+
+  <section>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b>Pestañas abiertas</b>
+      <span>
+        <a href="#" id="selTodas">todas</a> · <a href="#" id="selNinguna">ninguna</a> · <a href="#" id="refrescar">↻</a>
+      </span>
+    </div>
+    <div id="pestanas"></div>
+    <label><input type="checkbox" id="cerrarLeidas"> Cerrar las pestañas ya leídas</label>
+    <button class="primario fantasma" id="btnFantasma"><span class="fantasmaMini"></span>FANTASMITA: CARGAR Y LEER</button>
+    <button id="btnPestanas" style="width:100%;margin-top:6px">Leer rápido (sin cargar)</button>
+  </section>
+
+  <section>
+    <label>O pega las páginas a leer (una por línea)
+      <textarea id="urls" placeholder="https://www.beenverified.com/…&#10;https://propwire.com/…"></textarea>
+    </label>
+    <button class="primario" id="btnLista">Leer estas páginas</button>
+  </section>
+
+  <div id="fantasmaCaja" hidden>
+    <div class="fantasmaFila"><span id="fantasmaIcono"></span><span id="fantasmaTxt">Preparando…</span></div>
+    <div class="barra" id="fantasmaBarra"></div>
+    <button id="btnDetener" style="width:100%;margin-top:6px">Detener fantasmita</button>
+  </div>
+  <div id="estado"></div>
+
+  <section>
+    <div class="meta" id="conteo">Lote vacío</div>
+    <div id="lista"></div>
+    <div class="meta" style="margin-top:6px">Puedes corregir cualquier celda dándole clic.</div>
+  </section>
+
+  <section>
+    <div class="tags">
+      <label>TAG 1 <input type="text" id="tag1" value="Geo farming"></label>
+      <label>TAG 2 <input type="text" value="(ciudad, automático)" disabled></label>
+    </div>
+    <div class="fila">
+      <button id="btnCsv">⬇ CSV para Lofty</button>
+      <button id="btnCopiar">Copiar texto</button>
+      <button id="btnLimpiar">Vaciar lote</button>
+    </div>
+  </section>
+
+  <script src="linea.js"></script><script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+
+  <script src="owners.js"></script>
+</body>
+</html>

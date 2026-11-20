@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="pr">
+<head>
+<meta charset="utf-8">
+<title>Prope · Properant</title>
+<style>
+  :root { --c: #a16207; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  .mini { padding: 3px 7px; font-size: 12px; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 40vh; overflow: auto; }
+  li { padding: 7px 10px; border-bottom: 1px solid var(--b); }
+  li:last-child { border-bottom: 0; } li small { color: var(--m); display: block; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; background: #fef3c7; color: #92400e; }
+  .nums .card.activo { border-color: var(--c); box-shadow: 0 0 0 2px #fde68a; }
+  .tag.gris { background: #e2e8f0; color: #334155; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card grid">
+    <label class="f">Máximo de propiedades a revisar por vuelta<input type="number" id="max" min="1" max="200" value="100"></label>
+    <label class="f">Pausa entre fichas (segundos)<input type="number" id="pausa" min="1" max="30" value="3"></label>
+    <label class="chk"><input type="checkbox" id="pasarHeri" checked> <span>Al terminar, <b>pasarle los casos a Heri</b> (registro → herederos → brazo HECM)</span></label>
+    <label class="chk"><input type="checkbox" id="conRuido"> <span>Pasar también los que ejecuta <b>otro acreedor</b> (hay hipoteca inversa, pero el aviso es de otro préstamo)</span></label>
+    <label class="chk"><input type="checkbox" id="auto"> <span><b>Buscar solo</b> cada 3 días</span></label>
+    <div class="hint" style="grid-column:1/-1"><b>Orange County.</b> En <b>Properant</b> (tu sesión abierta en el navegador) busco: condado Orange + foreclosure activo + primer préstamo <b>Reverse mortgage</b>, y abro cada ficha a ritmo humano. Tomo como dueño el <b>nombre del aviso</b> (así lo tiene el registro). Es de la hipoteca inversa si es el único préstamo abierto; solo la quito si el aviso es de <b>otro préstamo</b> o del HOA. <b>Sucesión</b>: solo cuentan los documentos de muerte <b>posteriores</b> a la hipoteca inversa y el título a nombre de Estate / Public Administrator (un Affidavit of Death anterior es del cónyuge que murió antes). <b>No uso el skip trace de Properant.</b> Properant va unas semanas atrás del registro, así que sirve para completar y confirmar, no para enterarse primero. Heri recibe los casos, los revisa en el registro (¿Celink?) y los pasa al brazo HECM; Lofti sigue esperando tu OK.</div>
+  </div>
+  <div class="row">
+    <button id="run" class="primary">🏚️ Buscar en Properant</button>
+    <button id="stop" class="stop">Parar</button>
+  </div>
+  <div id="status" class="card">Listo.</div>
+  <div id="cupo" class="hint"></div>
+  <div class="nums">
+    <div class="card"><span id="nTotal" class="count">0</span><small>en Properant</small></div>
+    <div class="card"><span id="nRev" class="count">0</span><small>fichas leídas</small></div>
+    <div class="card"><span id="nHecm" class="count">0</span><small>HECM reales</small></div>
+    <div class="card"><span id="nHer" class="count">0</span><small>con sucesión</small></div>
+    <div class="card"><span id="nRuido" class="count">0</span><small>de otro acreedor</small></div>
+    <div class="card"><span id="nHeri" class="count">0</span><small>pasadas a Heri</small></div>
+  </div>
+  <ul id="lista"><li class="empty">Aquí salen las hipotecas inversas en ejecución que encuentre en Properant.</li></ul>
+  <div class="row"><button id="olvidar" class="mini">Volver a pasarle todas a Heri</button></div>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="pr-clasif.js"></script>
+<script src="pr.js"></script>
+</body>
+</html>

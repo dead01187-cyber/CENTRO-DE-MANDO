@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="rd">
+<head>
+<meta charset="utf-8">
+<title>Redactar a zBuyer</title>
+<style>
+  :root { --c: #7c3aed; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; }
+  textarea { min-height: 150px; resize: vertical; font-size: 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 36vh; overflow: auto; }
+  li { padding: 7px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: center; }
+  li:last-child { border-bottom: 0; } li .addr { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  .mini { padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  #vista { white-space: pre-wrap; font: 11.5px/1.45 ui-monospace, Menlo, monospace; max-height: 220px; overflow: auto; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card">
+    <label class="chk"><input type="checkbox" id="auto" checked> <span><b>Hacer el borrador solo</b> en cuanto Zeta encuentre un lead que ya teníamos con fuente zBuyer</span></label>
+    <label class="chk" style="margin-top:4px"><input type="checkbox" id="capturas" checked> <span><b>Pegar capturas</b>, una debajo de la otra: primero la ficha en Lofty (Source y Reg Date) y después el correo de zBuyer (su fecha), marcadas en rojo</span></label>
+    <div class="hint" style="margin-top:4px">Para tomarlas abro una ventana unos segundos (Lofty y luego Gmail) y la cierro sola: no la cierres ni la minimices. Las fechas del texto salen de lo que se ve en las capturas; si el Reg Date de Lofty no es anterior al correo, no hago el borrador.</div>
+    <div class="hint" style="margin-top:4px">Lleno la ventana de redactar de tu Gmail, Gmail lo guarda en <b>Borradores</b> y cierro la pestaña. <b>Nunca envío nada</b>: tú lo revisas y lo mandas. Solo redacto reclamos de leads que ya teníamos con <b>fuente zBuyer</b> (o los que tú mandes con “Reclamar” desde Zeta); si la ficha de Lofty dice otra fuente, no hago el borrador.</div>
+  </div>
+  <div class="row">
+    <button id="run" class="primary">✍ Hacer borradores pendientes</button>
+    <button id="stop" class="stop">Parar</button>
+    <button id="borradores">Abrir Borradores</button>
+  </div>
+  <div id="status" class="card">Listo.</div>
+  <div class="nums">
+    <div class="card"><span id="nPen" class="count">0</span><small>pendientes</small></div>
+    <div class="card"><span id="nHec" class="count">0</span><small>borradores listos</small></div>
+    <div class="card"><span id="nErr" class="count">0</span><small>fallaron</small></div>
+    <div class="card"><span id="nReal" class="count" style="color:#15803d">0</span><small>realizados</small></div>
+  </div>
+  <div class="row">
+    <label class="chk" style="flex:1"><input type="checkbox" id="ocultarReal" checked> <span>Ocultar los ya realizados</span></label>
+    <button id="todosReal" class="mini" title="Marca como realizados todos los que ya tienen borrador listo">✔ Marcar realizados los que tienen borrador</button>
+  </div>
+  <ul id="list"><li class="empty">Cuando Zeta encuentre un lead que ya teníamos con fuente zBuyer, aquí aparece.</li></ul>
+  <details class="card" open>
+    <summary>✏ Cómo se redacta (plantilla)</summary>
+    <div class="grid" style="margin-top:8px">
+      <label class="f">Para<input type="text" id="para"></label>
+      <label class="f">CC<input type="text" id="cc"></label>
+      <label class="f" style="grid-column:1/-1">Asunto<input type="text" id="asunto"></label>
+      <label class="f" style="grid-column:1/-1">Mensaje<textarea id="cuerpo"></textarea></label>
+    </div>
+    <div class="hint" style="margin-top:6px">Datos que puedes usar: {capturas} (donde van las imágenes) · {origen} (pone “Z Buyer (or Z Buyer Prospecting sheets)”; si reclamas a mano uno de otra fuente, pone la fuente que dice Lofty) · {fechaLofty} y {fechaCorreo} (las mismas fechas que se ven en las capturas) · {nombre} {telefono} {telefono2} {correo} {direccion} {calle} {ciudad} {zip} {leadIdZb} {fechaCorreo} {fechaLofty} {etapaLofty} {fuenteLofty} {nombreLofty} {coincide}</div>
+    <div class="row" style="margin-top:6px"><span class="hint" style="flex:1">Así se vería:</span><button id="restaurar" class="mini" title="Regresa el asunto y el mensaje a la plantilla original del reclamo">Restaurar plantilla</button></div>
+    <div id="vista" class="card" style="margin-top:6px"></div>
+  </details>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="fotos.js"></script><script src="capturas.js"></script>
+<script src="rd.js"></script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+/* =====================================================================
+   Tema neón para las pestañas de los robots (mismo look del Centro de Mando).
+   Va al final de cada pestaña y solo cambia lo visual.
+   ===================================================================== */
+html[data-mod] {
+  --acc: #2dd4bf; --fondo: #070b18; --vidrio: rgba(16, 23, 46, .78); --vidrio2: rgba(22, 31, 60, .85);
+  --linea: rgba(120, 160, 255, .16); --texto: #e6ecff; --tenue: #8693bb; --rojo: #f87171; --verde: #4ade80; --ambar: #fbbf24;
+  color-scheme: dark;
+}
+html[data-mod=pw] { --acc: #2dd4bf; } html[data-mod=ch] { --acc: #f472b6; } html[data-mod=ac] { --acc: #fb923c; } html[data-mod=bv2] { --acc: #e879f9; } html[data-mod=ow2] { --acc: #a3e635; } html[data-mod=bv] { --acc: #818cf8; } html[data-mod=ow] { --acc: #4ade80; }
+html[data-mod=zb] { --acc: #22d3ee; } html[data-mod=rd] { --acc: #a78bfa; } html[data-mod=ti] { --acc: #60a5fa; } html[data-mod=wb] { --acc: #facc15; } html[data-mod=tx] { --acc: #34d399; } html[data-mod=hr] { --acc: #f59e0b; } html[data-mod=ch3], html[data-mod=bv3], html[data-mod=ow3], html[data-mod=wb3] { --acc: #f59e0b; } html[data-mod=lf] { --acc: #38bdf8; } html[data-mod=sv] { --acc: #fbbf24; }
+html[data-mod], html[data-mod] body { overflow-x: hidden; }
+html[data-mod] body {
+  background: radial-gradient(600px 380px at 85% -60px, color-mix(in srgb, var(--acc) 16%, transparent), transparent 70%),
+              radial-gradient(500px 300px at -10% 110%, rgba(99, 102, 241, .12), transparent 70%), var(--fondo) !important;
+  background-attachment: fixed !important; color: var(--texto) !important;
+}
+html[data-mod] body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
+  background-image: linear-gradient(rgba(90,130,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(90,130,255,.05) 1px, transparent 1px);
+  background-size: 32px 32px; }
+html[data-mod] main, html[data-mod] .wrap, html[data-mod] section, html[data-mod] #chat { position: relative; z-index: 1; }
+html[data-mod] ::selection { background: color-mix(in srgb, var(--acc) 45%, transparent); }
+html[data-mod] ::-webkit-scrollbar { width: 8px; height: 8px; }
+html[data-mod] ::-webkit-scrollbar-thumb { background: rgba(120,160,255,.22); border-radius: 9px; border: 2px solid transparent; background-clip: padding-box; }
+html[data-mod] ::-webkit-scrollbar-track { background: transparent; }
+html[data-mod] input[type=checkbox], html[data-mod] input[type=radio] { accent-color: var(--acc); }
+
+/* ---------- Barra del robot (arriba de cada pestaña) ---------- */
+html[data-mod] .rb { background: linear-gradient(180deg, rgba(10,15,32,.96), rgba(10,15,32,.86)) !important; backdrop-filter: blur(10px);
+  border-bottom: 1px solid color-mix(in srgb, var(--acc) 35%, transparent) !important; color: var(--texto) !important; padding: 10px 14px !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,.35), 0 1px 0 color-mix(in srgb, var(--acc) 25%, transparent); }
+html[data-mod] .rb .ico { width: 46px !important; height: 46px !important; border-radius: 50%; display: grid; place-items: center; position: relative;
+  background: radial-gradient(circle, color-mix(in srgb, var(--acc) 24%, transparent), rgba(5,8,20,.9) 72%);
+  border: 1.5px solid color-mix(in srgb, var(--acc) 55%, transparent); box-shadow: 0 0 14px color-mix(in srgb, var(--acc) 35%, transparent); }
+html[data-mod] .rb .ico svg { width: 30px !important; height: 28px !important; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--acc) 70%, transparent)); }
+html[data-mod] .rb .ico::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--acc); opacity: 0; }
+html[data-mod] .rb.trabajando .ico::after, html[data-mod] .rb.pensando .ico::after { opacity: 1; animation: tmGira 1.1s linear infinite; }
+html[data-mod] .rb b { color: #fff; font-size: 14px; text-shadow: 0 0 10px color-mix(in srgb, var(--acc) 70%, transparent); }
+html[data-mod] .rb .rol { color: var(--tenue) !important; }
+html[data-mod] .rb .txt { color: #b9c4e4 !important; }
+html[data-mod] .rb .chip { background: color-mix(in srgb, var(--acc) 14%, transparent) !important; color: color-mix(in srgb, var(--acc) 85%, white) !important;
+  border: 1px solid color-mix(in srgb, var(--acc) 45%, transparent); text-transform: uppercase; letter-spacing: .07em; padding: 3px 9px !important; }
+html[data-mod] .rb.error, html[data-mod] .rb.ayuda { --acc: #f87171; }
+html[data-mod] .rb.feliz { --acc: #4ade80; } html[data-mod] .rb.pausa { --acc: #fbbf24; } html[data-mod] .rb.pensando { --acc: #38bdf8; }
+html[data-mod] .rb.ayuda { background: linear-gradient(180deg, rgba(60,14,20,.96), rgba(40,10,16,.9)) !important; animation: tmAlarma 1s ease-in-out infinite; }
+@keyframes tmGira { to { transform: rotate(360deg); } }
+@keyframes tmAlarma { 50% { box-shadow: 0 0 30px rgba(248,113,113,.45); } }
+
+/* ---------- Contenedores ---------- */
+html[data-mod] main { padding: 14px !important; gap: 12px !important; }
+html[data-mod] .card, html[data-mod] section, html[data-mod] details, html[data-mod] #status {
+  background: var(--vidrio) !important; border: 1px solid var(--linea) !important; border-radius: 14px !important; color: var(--texto);
+  backdrop-filter: blur(8px); box-shadow: 0 8px 24px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.03); }
+html[data-mod] section { padding: 12px !important; margin-bottom: 12px !important; }
+html[data-mod] #status { color: #b9c4e4 !important; position: relative; padding-left: 26px !important; font-size: 12.5px; }
+html[data-mod] #status::before { content: ""; position: absolute; left: 11px; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--acc);
+  box-shadow: 0 0 8px var(--acc); animation: tmLat 1.8s infinite; }
+@keyframes tmLat { 50% { opacity: .3; } }
+html[data-mod] details summary { color: var(--tenue); }
+html[data-mod] details[open] summary { color: var(--texto); margin-bottom: 6px; }
+html[data-mod] label, html[data-mod] b { color: var(--texto); }
+html[data-mod] .hint, html[data-mod] small, html[data-mod] .meta, html[data-mod] .muted, html[data-mod] .sub { color: var(--tenue) !important; }
+html[data-mod] a { color: var(--acc); }
+
+/* ---------- Campos ---------- */
+html[data-mod] input[type=text], html[data-mod] input[type=number], html[data-mod] input[type=password], html[data-mod] input:not([type]),
+html[data-mod] textarea, html[data-mod] select {
+  background: rgba(4,7,18,.75) !important; color: var(--texto) !important; border: 1px solid var(--linea) !important; border-radius: 10px !important;
+  transition: border-color .15s, box-shadow .15s; }
+html[data-mod] input:focus, html[data-mod] textarea:focus, html[data-mod] select:focus { outline: none;
+  border-color: var(--acc) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--acc) 18%, transparent); }
+html[data-mod] input::placeholder, html[data-mod] textarea::placeholder { color: #55618a; }
+html[data-mod] input:disabled { opacity: .55; }
+
+/* ---------- Botones ---------- */
+html[data-mod] button { background: rgba(255,255,255,.04) !important; color: var(--texto) !important; border: 1px solid var(--linea) !important;
+  border-radius: 10px !important; transition: transform .12s, box-shadow .2s, border-color .2s, background .2s; }
+html[data-mod] button:hover:not(:disabled) { filter: none !important; border-color: color-mix(in srgb, var(--acc) 60%, transparent) !important;
+  background: color-mix(in srgb, var(--acc) 10%, transparent) !important; box-shadow: 0 0 14px color-mix(in srgb, var(--acc) 22%, transparent); }
+html[data-mod] button:active:not(:disabled) { transform: scale(.97); }
+html[data-mod] button:disabled { opacity: .45 !important; }
+html[data-mod] button.primary, html[data-mod] button.primario, html[data-mod] .btn:not(.ghost), html[data-mod] form button, html[data-mod] #enviar {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--acc) 92%, white), var(--acc) 55%, color-mix(in srgb, var(--acc) 70%, black)) !important;
+  color: #06101d !important; border: 0 !important; font-weight: 700 !important; letter-spacing: .01em;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--acc) 38%, transparent), inset 0 1px 0 rgba(255,255,255,.35); }
+html[data-mod] button.primary:hover:not(:disabled), html[data-mod] button.primario:hover:not(:disabled), html[data-mod] .btn:not(.ghost):hover:not(:disabled) {
+  box-shadow: 0 0 28px color-mix(in srgb, var(--acc) 60%, transparent), inset 0 1px 0 rgba(255,255,255,.35); }
+html[data-mod] button.primary:disabled, html[data-mod] button.primario:disabled { animation: tmTrabaja 1.4s ease-in-out infinite; opacity: .75 !important; }
+@keyframes tmTrabaja { 50% { box-shadow: 0 0 30px color-mix(in srgb, var(--acc) 70%, transparent); } }
+html[data-mod] button.stop, html[data-mod] #btnDetener, html[data-mod] #stop { background: rgba(248,113,113,.1) !important; color: #fca5a5 !important;
+  border: 1px solid rgba(248,113,113,.4) !important; box-shadow: none !important; }
+html[data-mod] button.stop:hover, html[data-mod] #btnDetener:hover { background: rgba(248,113,113,.2) !important; box-shadow: 0 0 14px rgba(248,113,113,.3) !important; }
+html[data-mod] .row > *, html[data-mod] .fila > * { min-width: 0; }
+
+/* ---------- Números grandes ---------- */
+html[data-mod] .count, html[data-mod] .stat .n { color: var(--acc) !important; font-family: "SF Mono", ui-monospace, monospace;
+  text-shadow: 0 0 14px color-mix(in srgb, var(--acc) 65%, transparent); }
+html[data-mod] .count { font-size: 26px !important; }
+
+/* ---------- Listas de domicilios (Propi y Veri) ---------- */
+html[data-mod] ul { background: var(--vidrio) !important; border: 1px solid var(--linea) !important; border-radius: 14px !important; }
+html[data-mod] li { border-bottom: 1px solid rgba(120,160,255,.08) !important; transition: background .15s; }
+html[data-mod] li:hover { background: color-mix(in srgb, var(--acc) 7%, transparent); }
+html[data-mod] li.done, html[data-mod] li.copied { background: rgba(74,222,128,.06) !important; }
+html[data-mod] li.done .addr { color: var(--tenue) !important; text-decoration: line-through; text-decoration-color: rgba(134,147,187,.4); }
+html[data-mod] li.current { outline: none !important; background: color-mix(in srgb, var(--acc) 14%, transparent) !important;
+  box-shadow: inset 3px 0 0 var(--acc), 0 0 18px color-mix(in srgb, var(--acc) 25%, transparent); animation: tmLat 1.4s infinite; }
+html[data-mod] li .mini, html[data-mod] .copy1 { padding: 4px 9px !important; font-size: 12px !important; }
+html[data-mod] .copy1.done { background: var(--acc) !important; color: #06101d !important; }
+html[data-mod] .tag, html[data-mod] .bv { background: color-mix(in srgb, var(--acc) 18%, transparent) !important; color: color-mix(in srgb, var(--acc) 85%, white) !important; }
+html[data-mod] .empty { color: var(--tenue) !important; }
+
+/* ---------- Owny ---------- */
+html[data-mod=ow] body { padding: 0 !important; }
+html[data-mod=ow] section:first-of-type { margin-top: 12px !important; }
+html[data-mod=ow] body > section, html[data-mod=ow] body > #fantasmaCaja, html[data-mod=ow] body > #estado { margin-left: 12px !important; margin-right: 12px !important; }
+html[data-mod=ow] .card { background: transparent !important; border: 0 !important; border-bottom: 1px solid rgba(120,160,255,.1) !important;
+  border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none; }
+html[data-mod=ow] .card .owner { color: #fff; } html[data-mod=ow] .card .tels { color: #c9f7d8 !important; font-family: "SF Mono", ui-monospace, monospace; font-size: 12px; }
+html[data-mod=ow] .card .dir { color: var(--tenue) !important; }
+html[data-mod=ow] .card [contenteditable]:focus, html[data-mod=ow] td[contenteditable]:focus { background: rgba(74,222,128,.12) !important; }
+html[data-mod=ow] #pestanas { border-color: var(--linea) !important; border-radius: 10px !important; background: rgba(4,7,18,.5); }
+html[data-mod=ow] .pest { border-bottom-color: rgba(120,160,255,.08) !important; } html[data-mod=ow] .pest.no { color: #4b557a !important; }
+html[data-mod=ow] th { border-bottom-color: var(--linea) !important; color: var(--tenue); } html[data-mod=ow] td { border-bottom-color: rgba(120,160,255,.08) !important; }
+html[data-mod=ow] button.fantasma { background: linear-gradient(135deg, #052e16, #0b1f12) !important; color: #4ade80 !important;
+  border: 1px solid rgba(74,222,128,.45) !important; box-shadow: 0 0 16px rgba(74,222,128,.25), inset 0 0 12px rgba(74,222,128,.08) !important; }
+html[data-mod=ow] #fantasmaCaja { background: linear-gradient(180deg, #04140a, #0b1f12) !important; border: 1px solid rgba(74,222,128,.35);
+  border-radius: 14px !important; box-shadow: 0 0 24px rgba(74,222,128,.18); }
+html[data-mod=ow] .barra i { border-radius: 2px; } html[data-mod=ow] .barra i.lleno { box-shadow: 0 0 6px #4ade80; }
+html[data-mod=ow] #estado { color: var(--tenue) !important; } html[data-mod=ow] #estado.error { color: var(--rojo) !important; }
+html[data-mod=ow] .x { color: var(--rojo) !important; }
+html[data-mod=ow] .sin { color: var(--ambar) !important; }
+
+/* ---------- Lofti ---------- */
+html[data-mod=lf] { --bg: var(--fondo); --panel: var(--vidrio); --panel2: rgba(4,7,18,.7); --line: var(--linea); --txt: var(--texto); --mut: var(--tenue); --acc: #38bdf8; --ok: #4ade80; }
+html[data-mod=lf] h1 { text-shadow: 0 0 16px rgba(56,189,248,.45); }
+html[data-mod=lf] .step.on { box-shadow: 0 0 12px rgba(56,189,248,.35); color: #fff; }
+html[data-mod=lf] .drop:hover, html[data-mod=lf] .drop.over { box-shadow: 0 0 22px rgba(56,189,248,.25); }
+html[data-mod=lf] .stat { background: var(--vidrio2) !important; }
+html[data-mod=lf] .stat.ok .n { color: var(--verde) !important; text-shadow: 0 0 14px rgba(74,222,128,.6); }
+html[data-mod=lf] .seg button.on, html[data-mod=lf] .seg button { box-shadow: none; }
+html[data-mod=lf] .seg button.on { background: var(--acc) !important; color: #06101d !important; border: 0 !important; }
+html[data-mod=lf] .seg button:not(.on) { background: transparent !important; border: 0 !important; }
+html[data-mod=lf] .file .x { background: none !important; border: 0 !important; }
+html[data-mod=lf] .prog > div { background: linear-gradient(90deg, #38bdf8, #4ade80) !important; box-shadow: 0 0 10px #38bdf8; }
+html[data-mod=lf] th { background: #0c1328 !important; }
+
+/* ---------- Capi ---------- */
+html[data-mod=sv] .barra:not(.mision .barra) { background: rgba(10,15,32,.85) !important; border-bottom: 1px solid var(--linea) !important; }
+html[data-mod=sv] details.ajustes { border-radius: 0 !important; border-left: 0 !important; border-right: 0 !important; box-shadow: none !important; }
+html[data-mod=sv] .mision { background: rgba(40,30,6,.6) !important; border: 1px solid rgba(251,191,36,.4) !important; border-radius: 12px !important; color: #fde68a; }
+html[data-mod=sv] .mision small { color: #fcd34d !important; }
+html[data-mod=sv] .mision .barra { background: rgba(251,191,36,.15) !important; }
+html[data-mod=sv] .mision .barra div { background: linear-gradient(90deg, #f59e0b, #fde047) !important; box-shadow: 0 0 10px #fbbf24; }
+html[data-mod=sv] .mision button { font-size: 11px !important; padding: 3px 9px !important; border-radius: 99px !important; }
+html[data-mod=sv] #chat .m { animation: tmAparece .3s ease-out; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+html[data-mod=sv] #chat .m.sv { background: var(--vidrio2) !important; border: 1px solid rgba(251,191,36,.28) !important; color: #f5f0dc; }
+html[data-mod=sv] #chat .m.yo { background: linear-gradient(135deg, #f59e0b, #b45309) !important; color: #1a1205 !important; font-weight: 500; }
+html[data-mod=sv] #chat .m.aviso { background: rgba(251,191,36,.1) !important; color: #fcd34d !important; border: 1px dashed rgba(251,191,36,.35); }
+html[data-mod=sv] #chat .m.err { background: rgba(248,113,113,.1) !important; color: #fca5a5 !important; border: 1px solid rgba(248,113,113,.35); }
+html[data-mod=sv] #chat .acc { color: #6f7ba3 !important; font-family: "SF Mono", ui-monospace, monospace; font-size: 10.5px; }
+html[data-mod=sv] .rapidos button { border-radius: 99px !important; font-size: 12px !important; }
+html[data-mod=sv] form { background: rgba(10,15,32,.6); border-top: 1px solid var(--linea); }
+html[data-mod=sv] .pie, html[data-mod=sv] .pie a, html[data-mod=sv] #micEstado { color: #5d6890 !important; }
+html[data-mod=sv] .dot { background: #334155; }
+@keyframes tmAparece { from { opacity: 0; transform: translateY(6px); } }
+html[data-mod=bv] .tag.lofty { background: rgba(251,191,36,.16) !important; color: #fcd34d !important; border: 1px solid rgba(251,191,36,.35); }
+
+
+/* =====================================================================
+   Estilo n8n para las pestañas (html.n8n): gris oscuro, plano, sin brillos.
+   ===================================================================== */
+html.n8n[data-mod] { --fondo: #1e1e1e; --vidrio: #262626; --vidrio2: #2e2e2e; --linea: #3d3d3d; --texto: #e4e4e4; --tenue: #9a9a9a; --n8n: #ff6d5a; }
+html.n8n[data-mod] body { background: #1e1e1e !important; font-family: "Open Sans", -apple-system, system-ui, sans-serif; }
+html.n8n[data-mod] body::before { display: none; }
+html.n8n[data-mod] ::-webkit-scrollbar-thumb { background: #444; }
+html.n8n[data-mod] input[type=checkbox], html.n8n[data-mod] input[type=radio] { accent-color: var(--n8n); }
+
+/* barra del robot */
+html.n8n[data-mod] .rb { background: #262626 !important; backdrop-filter: none; border-bottom: 1px solid #333 !important; box-shadow: none; }
+html.n8n[data-mod] .rb .ico { border-radius: 8px; background: #333; border: 1.5px solid #4a4a4a; box-shadow: none; }
+html.n8n[data-mod] .rb .ico svg { filter: none; }
+html.n8n[data-mod] .rb .ico::after { display: none; }
+html.n8n[data-mod] .rb.trabajando .ico, html.n8n[data-mod] .rb.pensando .ico { border-color: var(--n8n); box-shadow: 0 0 0 3px rgba(255,109,90,.18); }
+html.n8n[data-mod] .rb.feliz .ico { border-color: #43b05c; } html.n8n[data-mod] .rb.error .ico, html.n8n[data-mod] .rb.ayuda .ico { border-color: #ea4b4b; }
+html.n8n[data-mod] .rb b { color: #e4e4e4; text-shadow: none; font-weight: 600; }
+html.n8n[data-mod] .rb .txt { color: #b5b5b5 !important; }
+html.n8n[data-mod] .rb .chip { background: #3a3a3a !important; color: #c8c8c8 !important; border: 0; border-radius: 4px; text-transform: none; letter-spacing: .02em; }
+html.n8n[data-mod] .rb.trabajando .chip, html.n8n[data-mod] .rb.pensando .chip { background: rgba(255,109,90,.18) !important; color: #ff8f80 !important; }
+html.n8n[data-mod] .rb.feliz .chip { background: rgba(67,176,92,.18) !important; color: #7fd493 !important; }
+html.n8n[data-mod] .rb.error .chip, html.n8n[data-mod] .rb.ayuda .chip { background: rgba(234,75,75,.18) !important; color: #ff8d8d !important; }
+html.n8n[data-mod] .rb.ayuda { background: #3a2222 !important; animation: none; }
+
+/* tarjetas y estado */
+html.n8n[data-mod] .card, html.n8n[data-mod] section, html.n8n[data-mod] details, html.n8n[data-mod] #status {
+  background: #262626 !important; border: 1px solid #3d3d3d !important; border-radius: 8px !important; backdrop-filter: none; box-shadow: none; }
+html.n8n[data-mod] #status { color: #c8c8c8 !important; }
+html.n8n[data-mod] #status::before { background: #9a9a9a; box-shadow: none; animation: none; }
+html.n8n[data-mod] a { color: #ff8f80; }
+
+/* campos */
+html.n8n[data-mod] input[type=text], html.n8n[data-mod] input[type=number], html.n8n[data-mod] input[type=password], html.n8n[data-mod] input:not([type]),
+html.n8n[data-mod] textarea, html.n8n[data-mod] select { background: #1e1e1e !important; border: 1px solid #4a4a4a !important; border-radius: 6px !important; }
+html.n8n[data-mod] input:focus, html.n8n[data-mod] textarea:focus, html.n8n[data-mod] select:focus { border-color: var(--n8n) !important; box-shadow: none; }
+html.n8n[data-mod] input::placeholder, html.n8n[data-mod] textarea::placeholder { color: #6a6a6a; }
+
+/* botones */
+html.n8n[data-mod] button { background: #2e2e2e !important; border: 1px solid #4a4a4a !important; border-radius: 6px !important; color: #e4e4e4 !important; }
+html.n8n[data-mod] button:hover:not(:disabled) { background: #363636 !important; border-color: #6a6a6a !important; box-shadow: none; }
+html.n8n[data-mod] button.primary, html.n8n[data-mod] button.primario, html.n8n[data-mod] .btn:not(.ghost), html.n8n[data-mod] form button, html.n8n[data-mod] #enviar {
+  background: var(--n8n) !important; color: #fff !important; border: 0 !important; box-shadow: none; font-weight: 600 !important; }
+html.n8n[data-mod] button.primary:hover:not(:disabled), html.n8n[data-mod] button.primario:hover:not(:disabled), html.n8n[data-mod] .btn:not(.ghost):hover:not(:disabled),
+html.n8n[data-mod] form button:hover:not(:disabled) { background: #ff8573 !important; box-shadow: none; }
+html.n8n[data-mod] button.primary:disabled, html.n8n[data-mod] button.primario:disabled { animation: none; }
+html.n8n[data-mod] button.stop, html.n8n[data-mod] #btnDetener, html.n8n[data-mod] #stop { background: rgba(234,75,75,.12) !important; color: #ff9b9b !important; border: 1px solid rgba(234,75,75,.45) !important; }
+
+/* números */
+html.n8n[data-mod] .count, html.n8n[data-mod] .stat .n { color: #e4e4e4 !important; text-shadow: none; font-family: "Open Sans", -apple-system, system-ui, sans-serif; font-weight: 600; }
+
+/* listas */
+html.n8n[data-mod] ul { background: #262626 !important; border: 1px solid #3d3d3d !important; border-radius: 8px !important; }
+html.n8n[data-mod] li { border-bottom: 1px solid #333 !important; }
+html.n8n[data-mod] li:hover { background: #2b2b2b; }
+html.n8n[data-mod] li.done, html.n8n[data-mod] li.copied { background: rgba(67,176,92,.07) !important; }
+html.n8n[data-mod] li.current { background: rgba(255,109,90,.1) !important; box-shadow: inset 3px 0 0 var(--n8n); animation: none; }
+html.n8n[data-mod] .tag, html.n8n[data-mod] .bv { background: #3a3a3a !important; color: #d0d0d0 !important; border-radius: 4px; }
+html.n8n[data-mod] .copy1.done { background: #43b05c !important; color: #fff !important; }
+
+/* Owny */
+html.n8n[data-mod=ow] .card { background: transparent !important; border: 0 !important; border-bottom: 1px solid #333 !important; border-radius: 0 !important; }
+html.n8n[data-mod=ow] .card .owner { color: #e4e4e4; } html.n8n[data-mod=ow] .card .tels { color: #b8e6c4 !important; }
+html.n8n[data-mod=ow] #pestanas { background: #1e1e1e; border-color: #3d3d3d !important; }
+html.n8n[data-mod=ow] button.fantasma { background: #24352a !important; color: #7fd493 !important; border: 1px solid #3f6b4b !important; box-shadow: none !important; }
+html.n8n[data-mod=ow] #fantasmaCaja { background: #232a25 !important; border: 1px solid #3f6b4b; box-shadow: none; }
+html.n8n[data-mod=ow] .barra i.lleno { box-shadow: none; }
+
+/* Lofti */
+html.n8n[data-mod=lf] { --bg: #1e1e1e; --panel: #262626; --panel2: #1e1e1e; --line: #3d3d3d; --txt: #e4e4e4; --mut: #9a9a9a; --acc: #ff6d5a; }
+html.n8n[data-mod=lf] h1 { text-shadow: none; }
+html.n8n[data-mod=lf] .step.on { box-shadow: none; }
+html.n8n[data-mod=lf] .stat { background: #2e2e2e !important; }
+html.n8n[data-mod=lf] .stat.ok .n { color: #7fd493 !important; text-shadow: none; }
+html.n8n[data-mod=lf] .seg button.on { background: var(--n8n) !important; color: #fff !important; }
+html.n8n[data-mod=lf] .prog > div { background: var(--n8n) !important; box-shadow: none; }
+html.n8n[data-mod=lf] th { background: #2b2b2b !important; }
+
+/* Capi */
+html.n8n[data-mod=sv] .barra:not(.mision .barra) { background: #262626 !important; border-bottom: 1px solid #333 !important; }
+html.n8n[data-mod=sv] .mision { background: #3b3522 !important; border: 1px solid #5a5132 !important; border-radius: 8px !important; color: #e8d9a8; }
+html.n8n[data-mod=sv] .mision small { color: #d9c88e !important; }
+html.n8n[data-mod=sv] .mision .barra div { background: var(--n8n) !important; box-shadow: none; }
+html.n8n[data-mod=sv] #chat .m { box-shadow: none; }
+html.n8n[data-mod=sv] #chat .m.sv { background: #2e2e2e !important; border: 1px solid #4a4a4a !important; color: #e4e4e4; }
+html.n8n[data-mod=sv] #chat .m.yo { background: var(--n8n) !important; color: #fff !important; }
+html.n8n[data-mod=sv] #chat .m.aviso { background: #3b3522 !important; color: #e8d9a8 !important; border: 1px dashed #5a5132; }
+html.n8n[data-mod=sv] form { background: #262626; border-top: 1px solid #333; }

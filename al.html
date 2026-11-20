@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="al">
+<head>
+<meta charset="UTF-8">
+<title>Agente Lofty</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font: 13px/1.4 system-ui, sans-serif; margin: 0; padding: 12px; color: #1d2433; background: #f6f7fb; }
+  h1 { font-size: 16px; margin: 0; }
+  .header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  #mascot { width: 52px; height: 52px; }
+  #mascot.working { animation: bob 1.2s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #5b6478; margin: 14px 0 6px; }
+  .card { background: #fff; border: 1px solid #e3e6ee; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+  label { display: block; font-size: 12px; color: #5b6478; margin: 6px 0 2px; }
+  input[type=text], input[type=password], input[type=number], textarea, select {
+    width: 100%; padding: 6px 8px; border: 1px solid #d5d9e3; border-radius: 6px; font: inherit; background: #fff;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  .check { display: flex; align-items: center; gap: 6px; margin: 4px 0; color: #1d2433; font-size: 13px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  button { border: 0; border-radius: 6px; padding: 7px 10px; font: inherit; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .45; cursor: default; }
+  .primary { background: #3b5bdb; color: #fff; }
+  .green { background: #2f9e44; color: #fff; }
+  .red { background: #e03131; color: #fff; }
+  .orange { background: #f08c00; color: #fff; }
+  .ghost { background: #e9ecf3; color: #1d2433; }
+  #status { font-weight: 600; }
+  #current { font-size: 13px; }
+  #current .name { font-weight: 700; font-size: 14px; }
+  #current .addr { color: #1d2433; margin: 2px 0; }
+  #current .phones { color: #5b6478; }
+  #log { max-height: 260px; overflow: auto; font: 12px/1.45 ui-monospace, monospace; background: #0f1320; color: #d7deee; border-radius: 8px; padding: 8px; white-space: pre-wrap; }
+  .muted { color: #5b6478; font-size: 12px; }
+  .msg { border: 1px solid #e3e6ee; border-radius: 8px; padding: 6px 8px; margin-top: 8px; }
+  .msg-head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 12px; }
+  .msg-head label { margin: 0; display: flex; gap: 6px; align-items: center; color: #1d2433; font-size: 12px; }
+  .msg textarea { margin-top: 4px; min-height: 60px; }
+  .over { color: #e03131; }
+</style>
+<link rel="stylesheet" href="tema.css">
+<style>
+  /* ===== Marki con el estilo del Centro de Mando ===== */
+  html[data-mod=al] { --acc: #60a5fa; }
+  html[data-mod=al] body { padding: 0 !important; }
+  html[data-mod=al] body > .header { display: none; } /* la barra del robot ya dice quién es */
+  html[data-mod=al] body > *:not(.rb):not(datalist):not(script) { margin-left: 12px; margin-right: 12px; }
+  html[data-mod=al] body > .card:first-of-type, html[data-mod=al] .rb + .header + .card { margin-top: 12px; }
+  html[data-mod=al] h2 { color: var(--tenue); font-size: 11px; letter-spacing: .08em; margin: 16px 12px 6px; }
+  html[data-mod=al] .card { padding: 12px !important; margin-bottom: 12px; }
+  html[data-mod=al] label { color: var(--tenue); }
+  html[data-mod=al] .check { color: var(--texto); }
+  html[data-mod=al] #status, html.n8n[data-mod=al] #status { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 0 0 16px !important; font-size: 13px; font-weight: 700; color: var(--texto) !important; }
+  html[data-mod=al] #status::before { left: 0; top: 6px; }
+  html[data-mod=al] #counts { margin-top: 2px; }
+  /* el lead en curso: nombre y propiedad grandes */
+  html[data-mod=al] #current:not(:empty) { margin-top: 10px !important; padding: 12px 14px; border-radius: 10px;
+    background: color-mix(in srgb, var(--acc) 9%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 35%, transparent); }
+  html[data-mod=al] #current .name { font-size: 24px !important; line-height: 1.15; font-weight: 800; color: #fff; letter-spacing: -.01em; }
+  html[data-mod=al] #current .addr { font-size: 18px !important; line-height: 1.3; font-weight: 600; color: var(--texto) !important; margin: 6px 0 4px !important; }
+  html[data-mod=al] #current .precio { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin: 2px 0 4px; font-size: 13px; color: var(--tenue); }
+  html[data-mod=al] #current .precio a { font-size: 22px; font-weight: 800; color: #4ade80; text-decoration: none; letter-spacing: -.01em; }
+  html[data-mod=al] #current .precio a:hover { text-decoration: underline; }
+  html[data-mod=al] #current .precio .fuente { font-size: 12px; color: var(--tenue); }
+  html[data-mod=al] #current .precio.sin { font-size: 12.5px; }
+  html[data-mod=al] #current .phones { font-size: 14px; color: var(--tenue) !important; font-family: "SF Mono", ui-monospace, monospace; }
+  html[data-mod=al] #current .phones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  html[data-mod=al] #current .tel { display: inline-flex; align-items: center; gap: 6px; padding: 3px 4px 3px 10px; border-radius: 8px; background: rgba(0,0,0,.25); border: 1px solid var(--linea); color: var(--texto); }
+  html[data-mod=al] #current .tel.quitado { text-decoration: line-through; opacity: .5; padding-right: 10px; }
+  html[data-mod=al] #current .borrarTel { padding: 2px 7px !important; font-size: 13px; line-height: 1.2; border-radius: 6px !important; flex: none; }
+  html[data-mod=al] #current .borrarTel:hover:not(:disabled) { background: rgba(248,113,113,.18) !important; border-color: rgba(248,113,113,.6) !important; box-shadow: none; }
+  /* botones de acción */
+  html[data-mod=al] .row button { flex: 1; padding: 9px 10px !important; }
+  html[data-mod=al] button.green { background: var(--acc) !important; color: #06101d !important; border: 0 !important; font-weight: 700 !important; }
+  html[data-mod=al] button.red { background: rgba(248,113,113,.12) !important; color: #fca5a5 !important; border: 1px solid rgba(248,113,113,.45) !important; }
+  html[data-mod=al] button.orange { background: rgba(251,191,36,.12) !important; color: #fcd34d !important; border: 1px solid rgba(251,191,36,.45) !important; }
+  html[data-mod=al] button.primary { flex: 1; }
+  html[data-mod=al] .msg { border-color: var(--linea) !important; background: rgba(0,0,0,.15); }
+  html[data-mod=al] .msg-head label { color: var(--texto) !important; }
+  html[data-mod=al] #log { background: rgba(0,0,0,.35) !important; border: 1px solid var(--linea); color: #c8d2ea !important; margin: 0 12px 12px; max-height: 300px; }
+  /* estilo n8n (cuando el Mando está en n8n) */
+  html.n8n[data-mod=al] { --acc: #ff6d5a; }
+  html.n8n[data-mod=al] #current:not(:empty) { background: #2e2e2e; border-color: #4a4a4a; }
+  html.n8n[data-mod=al] button.green { background: #ff6d5a !important; color: #fff !important; }
+  html.n8n[data-mod=al] #log { background: #1a1a1a !important; color: #cfcfcf !important; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <img src="al-mascota.svg" alt="" id="mascot" hidden>
+    <div><h1>Agente Lofty</h1><div class="muted" id="mascotSay">¡Listo para trabajar!</div></div>
+  </div>
+
+  <div class="card">
+    <div id="status">Detenido</div>
+    <div id="counts" class="muted"></div>
+    <div id="current" style="margin-top:6px"></div>
+    <div class="row">
+      <button id="start" class="green">▶ Iniciar</button>
+      <button id="stop" class="red" disabled>■ Parar</button>
+    </div>
+    <div class="row">
+      <button id="answered" class="orange" disabled>Contestó → No Active Plans</button>
+      <button id="skip" class="ghost" disabled>Saltar lead</button>
+    </div>
+  </div>
+
+  <h2>Qué hace con cada lead</h2>
+  <div class="card">
+    <label class="check"><input type="checkbox" id="doCalls"> Marcar todos sus números</label>
+    <label class="check"><input type="checkbox" id="autoSave" checked> Darle Save solo a cada llamada al terminar (también las que marques tú)</label>
+    <label class="check"><input type="checkbox" id="doSms" checked> Mandar SMS a todos sus números</label>
+    <label class="check"><input type="checkbox" id="skipPrimary" checked> No repetir el SMS si el lead ya lo recibió hoy en su número principal</label>
+    <label class="check"><input type="checkbox" id="caOnly" checked> Solo números de California (llamadas y SMS)</label>
+    <label class="check"><input type="checkbox" id="deleteNonCA" checked> Borrar del lead los números que no son de California</label>
+    <label for="smsMode" style="display:none">Cómo alternar los SMS</label>
+    <select id="smsMode" style="display:none">
+      <option value="lead">Uno distinto por lead (SMS 1, 2, 3, 4, 1…)</option>
+      <option value="phone">Uno distinto por número del mismo lead</option>
+      <option value="random">Al azar</option>
+      <option value="first">Siempre el primero activo</option>
+    </select>
+    <div id="msgs"></div>
+    <div class="muted">Más de 160 caracteres cuenta como 2 SMS.</div>
+    <label for="targetStage">Mover a este pipeline al terminar</label>
+    <input type="text" id="targetStage" list="stages">
+    <label for="answeredStage">Pipeline si contestó</label>
+    <input type="text" id="answeredStage" list="stages">
+    <label for="removeTag">Quitar este tag al terminar (vacío = no quitar)</label>
+    <input type="text" id="removeTag">
+  </div>
+
+  <h2>Qué leads trabaja</h2>
+  <div class="card">
+    <label for="filterStage">Pipeline</label>
+    <input type="text" id="filterStage" list="stages">
+    <label for="filterTag">Con el tag</label>
+    <input type="text" id="filterTag">
+    <div class="row"><button id="preview" class="ghost">Contar leads</button></div>
+  </div>
+
+  <h2>Conexión</h2>
+  <div class="card">
+    <label for="apiKey">API key de Lofty</label>
+    <input type="password" id="apiKey" placeholder="Pega tu API key">
+    <div class="row"><button id="usarTexi" class="ghost" type="button">Usar la API key de Texi</button></div>
+    <label for="maxCallMin">Máximo de minutos por llamada</label>
+    <input type="number" id="maxCallMin" min="1" max="120">
+    <div class="row">
+      <button id="save" class="primary">Guardar ajustes</button>
+      <button id="test" class="ghost">Probar conexión</button>
+    </div>
+  </div>
+
+  <h2>Registro</h2>
+  <div id="log"></div>
+
+  <datalist id="stages">
+    <option value="New Leads">
+    <option value="Attempted Contact">
+    <option value="Hot 1-3 Months">
+    <option value="Warm 3-6 Months">
+    <option value="Nurture 6-12 Months">
+    <option value="Cold 12 Month +">
+    <option value="No Active Plans">
+    <option value="Under Contract">
+  </datalist>
+
+  <script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+  <script src="al.js"></script>
+</body>
+</html>

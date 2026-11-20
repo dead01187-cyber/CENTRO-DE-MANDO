@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Agente Geo Farming</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; font: 13px/1.3 -apple-system, system-ui, sans-serif; color: #0f172a; background: #f8fafc; }
+  header { display: flex; align-items: center; gap: 8px; padding: 10px 12px 0; }
+  header img { width: 20px; height: 20px; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 700; flex: 1; }
+  #b-sv { display: flex; align-items: center; gap: 5px; border: 1px solid #fcd34d; background: #fffbeb; color: #92400e; border-radius: 99px;
+    padding: 4px 10px 4px 5px; font: 600 12px -apple-system, system-ui, sans-serif; cursor: pointer; position: relative; }
+  #b-sv img, #b-sv .rbm svg { width: 20px; height: 19px; display: block; image-rendering: pixelated; }
+  #b-sv.on { background: #b45309; border-color: #b45309; color: #fff; }
+  #b-sv .n { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: #dc2626; border: 2px solid #fff; }
+  #b-sv .n:empty { display: none; }
+  nav { display: flex; gap: 2px; padding: 8px 6px 0; border-bottom: 1px solid #e2e8f0; }
+  nav button { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; column-gap: 3px; row-gap: 2px; white-space: nowrap; border: 1px solid transparent;
+    border-bottom: 0; background: transparent; padding: 7px 2px 8px; border-radius: 8px 8px 0 0; font: 600 11.5px -apple-system, system-ui, sans-serif;
+    color: #64748b; cursor: pointer; position: relative; top: 1px; }
+  nav button .rbm { flex-basis: 100%; display: flex; justify-content: center; }
+  nav button img, nav button .rbm svg { width: 20px; height: 18px; display: block; image-rendering: pixelated; }
+  nav button.on { background: #fff; border-color: #e2e8f0; color: #0f172a; }
+  nav button .n { min-width: 16px; padding: 0 4px; margin-left: 1px; border-radius: 9px; font-size: 10px; line-height: 16px; color: #fff; }
+  nav button .n:empty { display: none; }
+  #b-ac .n { background: #ea580c; } #b-tx .n { background: #059669; } #b-hr .n { background: #b45309; } #b-pr .n { background: #a16207; } #b-ch3 .n, #b-bv3 .n, #b-ow3 .n, #b-wb3 .n { background: #d97706; } #b-bv2 .n { background: #c026d3; } #b-ow2 .n { background: #65a30d; } #b-ch .n { background: #db2777; } #b-pw .n { background: #0f766e; } #b-bv .n { background: #4f46e5; } #b-ow .n { background: #16a34a; } #b-lf .n { background: #0a84ff; } #b-zb .n { background: #0891b2; } #b-rd .n { background: #7c3aed; } #b-ti .n { background: #2563eb; } #b-wb .n { background: #ca8a04; }
+  nav .flecha { display: none; }
+  @media (max-width: 360px) { nav button img, nav button .rbm { display: none; } nav .flecha { display: none; } }
+  #b-mando { border: 1px solid #c7d2fe; background: #eef2ff; color: #3730a3; border-radius: 99px; padding: 4px 10px; font: 600 12px -apple-system, system-ui, sans-serif; cursor: pointer; }
+  #aviso-mando { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; color: #334155; }
+  #aviso-mando button { border: 0; background: #4f46e5; color: #fff; border-radius: 10px; padding: 9px 16px; font: 600 13px -apple-system, system-ui, sans-serif; cursor: pointer; }
+  body.mando-abierto nav, body.mando-abierto .marcos, body.mando-abierto #b-sv { display: none; }
+  body.mando-abierto #aviso-mando { display: flex; }
+  .marcos { flex: 1; position: relative; background: #fff; }
+  iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; visibility: hidden; }
+  iframe.on { visibility: visible; }
+  nav button.off { opacity: .45; text-decoration: line-through; }
+</style>
+</head>
+<body>
+  <header><img src="icons/icon48.png" alt=""><h1>Agente Geo Farming</h1><button id="b-mando" title="Abrir el Centro de Mando en pestaña completa">🚀 Mando</button><button id="b-sv" title="Capi: coordina a los robots, arregla errores y te habla"><span class="rbm" data-r="sv"></span>Capi<span class="n"></span></button></header>
+  <nav>
+    <button id="b-ac" data-m="ac" title="Actualizar leads que ya están en Lofty"><span class="rbm" data-r="ac"></span>Actualizar <span class="n"></span></button>
+    <button id="b-bv2" data-m="bv2" title="Veri 2: busca los leads de Acti"><span class="rbm" data-r="bv2"></span>BV 2 <span class="n"></span></button>
+    <button id="b-ow2" data-m="ow2" title="Owny 2: lee los reportes de los leads de Acti"><span class="rbm" data-r="ow2"></span>Own 2 <span class="n"></span></button>
+    <button id="b-zb" data-m="zb" title="Zeta: leads de zBuyer en Gmail vs Lofty"><span class="rbm" data-r="zb"></span>zBuyer <span class="n"></span></button>
+    <button id="b-rd" data-m="rd" title="Redi: borradores de reclamo a zBuyer"><span class="rbm" data-r="rd"></span>Correo <span class="n"></span></button>
+    <button id="b-ti" data-m="ti" title="Timi: manda a Teams la captura del borrador"><span class="rbm" data-r="ti"></span>Teams <span class="n"></span></button>
+    <button id="b-pr" data-m="pr" title="Prope: HECM en ejecución desde Properant"><span class="rbm" data-r="pr"></span>Prope <span class="n"></span></button>
+    <button id="b-hr" data-m="hr" title="Heri: HECM (Celink / HUD) con Notice of Default"><span class="rbm" data-r="hr"></span>HECM <span class="n"></span></button>
+    <button id="b-ch3" data-m="ch3" title="Chequi 3: revisa en Lofty las HECM"><span class="rbm" data-r="ch3"></span>Filtro 3 <span class="n"></span></button>
+    <button id="b-bv3" data-m="bv3" title="Veri 3: herederos HECM en BeenVerified"><span class="rbm" data-r="bv3"></span>BV 3 <span class="n"></span></button>
+    <button id="b-ow3" data-m="ow3" title="Owny 3: lee los reportes de las HECM"><span class="rbm" data-r="ow3"></span>Own 3 <span class="n"></span></button>
+    <button id="b-wb3" data-m="wb3" title="Wibi 3: skip trace en Propwire de las HECM"><span class="rbm" data-r="wb3"></span>Wibi 3 <span class="n"></span></button>
+    <button id="b-pw" data-m="pw" title="1. Sacar domicilios de una zona"><span class="rbm" data-r="pw"></span>Propwire <span class="n"></span></button>
+    <span class="flecha">›</span>
+    <button id="b-ch" data-m="ch" title="Filtro: quitar los que ya están en Lofty"><span class="rbm" data-r="ch"></span>Filtro <span class="n"></span></button>
+    <span class="flecha">›</span>
+    <button id="b-wb" data-m="wb" title="Wibi: skip trace en Propwire"><span class="rbm" data-r="wb"></span>Wibi <span class="n"></span></button>
+    <span class="flecha">›</span>
+    <button id="b-bv" data-m="bv" title="2. Buscarlos en BeenVerified"><span class="rbm" data-r="bv"></span>BV <span class="n"></span></button>
+    <span class="flecha">›</span>
+    <button id="b-ow" data-m="ow" title="3. Sacar owner y teléfonos"><span class="rbm" data-r="ow"></span>Owners <span class="n"></span></button>
+    <span class="flecha">›</span>
+    <button id="b-lf" data-m="lf" title="4. Limpiar, quitar duplicados y exportar a Lofty"><span class="rbm" data-r="lf"></span>Lofty <span class="n"></span></button>
+    <span class="flecha">›</span>
+    <button id="b-tx" data-m="tx" title="Texi: manda SMS a los leads que escojas (otra cuenta de Lofty)"><span class="rbm" data-r="tx"></span>SMS <span class="n"></span></button>
+  </nav>
+  <div id="aviso-mando"><b>El Centro de Mando está abierto</b><span>Capi y los robots están trabajando allá para no hacer doble trabajo.</span><button id="ir-mando">Ir al Centro de Mando</button></div>
+  <div class="marcos">
+    <iframe id="f-ac" src="ac.html"></iframe>
+    <iframe id="f-bv2" src="bv.html?linea=ac" allow="clipboard-read; clipboard-write"></iframe>
+    <iframe id="f-ow2" src="owners.html?linea=ac" allow="clipboard-read; clipboard-write"></iframe>
+    <iframe id="f-zb" src="zb.html"></iframe>
+    <iframe id="f-rd" src="rd.html"></iframe>
+    <iframe id="f-ti" src="ti.html"></iframe>
+    <iframe id="f-pw" src="pw.html" allow="clipboard-read; clipboard-write"></iframe>
+    <iframe id="f-ch" src="ch.html"></iframe>
+    <iframe id="f-wb" src="wibi.html"></iframe>
+    <iframe id="f-pr" src="pr.html"></iframe>
+    <iframe id="f-hr" src="hr.html"></iframe>
+    <iframe id="f-ch3" src="ch3.html?linea=hr"></iframe>
+    <iframe id="f-bv3" src="bv.html?linea=hr" allow="clipboard-read; clipboard-write"></iframe>
+    <iframe id="f-ow3" src="owners.html?linea=hr" allow="clipboard-read; clipboard-write"></iframe>
+    <iframe id="f-wb3" src="wb.html?linea=hr"></iframe>
+    <iframe id="f-tx" src="tx.html"></iframe>
+    <iframe id="f-bv" src="bv.html" allow="clipboard-read; clipboard-write"></iframe>
+    <iframe id="f-ow" src="owners.html" allow="clipboard-read; clipboard-write"></iframe>
+    <iframe id="f-lf" src="lofty.html" allow="clipboard-read; clipboard-write"></iframe>
+    <iframe id="f-sv" src="sv.html" allow="clipboard-read; clipboard-write; microphone"></iframe>
+  </div>
+  <script src="comun.js"></script><script src="robot.js"></script>
+  <script src="panel.js"></script>
+<script src="apagar.js"></script>
+</body>
+</html>
