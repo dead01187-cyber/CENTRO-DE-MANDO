@@ -6,7 +6,7 @@ En esta fase **no se cambia ninguna función de la extensión**. Solo se protege
 
 | Paso | Qué es | Estado |
 |---|---|---|
-| 0.1 | Etiqueta de línea base en git | ✅ `v1.60.0-baseline` → commit `79493f0` |
+| 0.1 | Etiqueta de línea base en git | ⚠️ Creada solo en la copia de trabajo; GitHub rechazó subir la etiqueta. La línea base es el commit `79493f0` (hoy es `main`). Para fijarla en GitHub: *Releases → Draft a new release → tag* `v1.60.0-baseline` *→ Target:* `main` |
 | 0.2 | Huella SHA-256 de los 92 archivos de la línea base | ✅ `docs/auditoria/linea-base-sha256.txt` |
 | 0.3 | Informe de auditoría guardado en el repo | ✅ `docs/auditoria/MISION-01-auditoria.md` |
 | 0.4 | Evitar que un respaldo con llaves se suba a git por accidente | ✅ `.gitignore` → `respaldo-*.json` |
@@ -105,7 +105,7 @@ En `chrome://extensions` → Agente Geo Farming, revisa qué versión dice:
 ## Cómo volver a la línea base
 
 ```bash
-git checkout v1.60.0-baseline
+git checkout 79493f0   # línea base (o v1.60.0-baseline si ya creaste la etiqueta)
 ```
 
 Para verificar que ningún archivo de la línea base cambió:
