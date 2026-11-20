@@ -188,3 +188,19 @@ async function revisarFondo() {
 load();
 revisarFondo();
 setInterval(revisarFondo, 30000);
+
+// ---------- Fase 2b: acciones grandes por el bus de tareas (registro.js). Sin entrada, usan lo que ya está escrito en la pantalla. ----------
+const FIN_PROPI = /^Listo:|recorrí|^Parado|No encontré la barra|no se resolvió|No pude hablar|Escribe primero|llegué al tope/i;
+const FALLA_PROPI = /No encontré|no se resolvió|No pude|Escribe primero/i;
+window.Tareas && Tareas.atender("buscar", async ({ zona, paginas, tope } = {}) => {
+  if (zona) { $("zone").value = zona; await chrome.storage.local.set({ zone: zona }); render(); }
+  if (paginas) $("pages").value = String(paginas);
+  if (tope != null) { $("tope").value = String(tope); await chrome.storage.local.set({ pwTope: topeValor() }); }
+  const desde = Date.now();
+  await $("run").onclick();
+  if (/^Escribe primero|^No pude hablar/.test($("status").textContent)) throw new Error($("status").textContent);
+  const ev = await Tareas.esperarEvento(FIN_PROPI, desde, 60 * 60e3);
+  if (!ev) throw new Error("Propi tardó más de una hora sin terminar");
+  if (FALLA_PROPI.test(ev.texto)) throw new Error(ev.texto);
+  return ev.texto;
+}, { alCancelar: () => $("stop").onclick() });

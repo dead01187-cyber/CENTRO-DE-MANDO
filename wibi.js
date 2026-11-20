@@ -326,3 +326,11 @@ function botones() { $("bajarSkip").disabled = corriendo || !leads.some(faltaSki
 $("stopBtn").onclick = () => { parar = true; ver("Parando…"); };
 chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.carpiCarpetas && !corriendo) pintarCarpetas(); });
 cargarCfg().then(() => { pintar(); pintarCarpetas(); });
+
+// ---------- Fase 2b: acciones grandes por el bus de tareas (registro.js). Sin entrada, usan lo que ya está escrito en la pantalla. ----------
+window.Tareas && Tareas.atender("leer", async ({ carpeta } = {}) => {
+  await Tareas.esperarLibre(() => corriendo);
+  if (carpeta != null) $("carpeta").value = String(carpeta);
+  await $("run").onclick();
+  return $("status").textContent.trim() || "Lectura terminada.";
+}, { alCancelar: () => { parar = true; } });

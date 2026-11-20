@@ -186,90 +186,79 @@ function poner(m, campo, valor) {
   if (e.type === "checkbox") e.checked = valor === true || siNo(valor); else e.value = valor;
   e.dispatchEvent(new Event("input", { bubbles: true })); e.dispatchEvent(new Event("change", { bubbles: true }));
 }
-const pendientesBV = () => parseInt(txt("bv", "count"), 10) || 0;
-const enFiltro = () => parseInt(txt("ch", "count"), 10) || 0;      // domicilios que Chequi todavía no revisa
-const pendientesWB = () => parseInt(txt("wb", "nPen"), 10) || 0;   // lo que Wibi tiene por hacer
-const reserva = () => pendientesBV() + pendientesWB() + enFiltro();  // lo que Veri/Wibi tienen o están por recibir
-
-// Línea de producción: los robots trabajan al mismo tiempo, no por rondas.
-// · Propi mantiene una reserva de domicilios para Veri (junta más cuando baja).
-// · Veri busca sin parar mientras haya pendientes.
-// · Owny lee cada resultado apenas llega ("en vivo") y Lofti sube conforme le llegan.
+// =====================================================================
+// Fase 2b: el motor de misiones trabaja con el BUS DE TAREAS y con los conteos guardados (comun.conteos),
+// ya no con clics ni leyendo las páginas de los robots. Si una página no está abierta, su tarea espera en fila.
+//   Propi "buscar"  → junta domicilios de la zona (cada vuelta con más páginas)
+//   Veri  "ciclo"   → busca los pendientes en BeenVerified
+//   Owny  "leer"    → lee los reportes (en vivo)
+//   Lofti           → sube solo si el jefe prendió "Subir solo a Lofty"; si no, la misión termina pidiendo su OK
+// =====================================================================
 const RESERVA = 10;
-const FIN_PROPI = /^Listo:|recorrí|^Parado|No encontré la barra|no se resolvió|No pude hablar|Escribe primero|llegué al tope/i;
-const FALLA_PROPI = /No encontré|no se resolvió|No pude|Escribe primero/i;
-let propiDesde = 0; // > 0 mientras Propi está buscando
-async function eventoPropi() {
-  if (!propiDesde) return null;
-  const { svEventos = [] } = await chrome.storage.local.get("svEventos");
-  const ev = svEventos.find((e) => e.mod === "pw" && e.t >= propiDesde && FIN_PROPI.test(e.texto));
-  if (ev) { propiDesde = 0; return ev; }
-  if (Date.now() - propiDesde > 60 * 60e3) { propiDesde = 0; return { texto: "tardó demasiado" }; }
-  return null;
+const vivasDe = async () => (window.Tareas ? await Tareas.listar({ vivas: true }) : []);
+const viva = (ts, robot, accion) => ts.find((t) => t.robot === robot && t.accion === accion) || null;
+async function tareaMision(robot, accion, entrada = {}) {
+  return Tareas.crear(robot, accion, { origen: "capi (misión)", entrada, motivo: `misión: ${mision.meta} de ${mision.zona}` });
 }
+async function estadoTarea(id) { const t = id ? (await Tareas.listar({ limite: 400 })).find((x) => x.id === id) : null; return t || null; }
 
 async function correrMision() {
   if (motorCorriendo || !mision || mision.estado !== "corriendo") return;
+  if (!window.Tareas) { pausarMision("El bus de tareas no está disponible."); return; }
   motorCorriendo = true;
   window.robot && robot.set("trabajando", `Misión: ${mision.meta} de ${mision.zona}.`);
   try {
-    // Preparar: zona en todos lados, Owny leyendo en vivo y cerrando pestañas ya leídas
-    if (val("pw", "zone") !== mision.zona) poner("pw", "zone", mision.zona);
-    poner("ch", "activo", true); poner("ow", "bvVivo", true); poner("ow", "bvAuto", true); poner("ow", "cerrarLeidas", true);
-    propiDesde = 0;
+    // Preparar (por storage, no con clics): Chequi revisando, Owny leyendo en vivo y cerrando pestañas ya leídas
+    await chrome.storage.local.set({ chActivo: true, bvVivo: true, bvAuto: true, cerrarLeidas: true });
+    await tareaMision("ow", "leer", { vivo: true, auto: true, cerrarLeidas: true });
     let ultimoN = await listos(), ultimoAvance = Date.now();
     while (mision && mision.estado === "corriendo") {
       const ya = await listos();
       pintarMision();
       if (ya > ultimoN) { ultimoN = ya; ultimoAvance = Date.now(); mision.ultimoListos = ya; guardarMision(); }
-      if (ya >= mision.meta && await autoSube()) {
-        mision.estado = "terminada"; guardarMision();
-        if (ocupado("bv", "cycle")) el("bv", "stop") && el("bv", "stop").click();
-        avisoCapi(`AVISO DE MISIÓN: terminé la misión de ${mision.zona}: llegué a ${ya} leads (meta ${mision.meta}) y Lofti los fue subiendo a Lofty solo. Díselo al jefe en pocas palabras.`);
-        break;
-      }
       if (ya >= mision.meta) {
-        mision.estado = "esperando_ok"; mision.fase = "esperando"; guardarMision();
-        if (ocupado("bv", "cycle")) el("bv", "stop") && el("bv", "stop").click();
-        try { parent.mostrar && parent.mostrar("sv"); } catch (e) {}
-        avisoCapi(`AVISO DE MISIÓN: ya hay ${ya} leads listos para Lofty de ${mision.zona} (la meta era ${mision.meta}). Pregúntale al jefe si los subes a Lofty o si quiere juntar más.`);
+        const auto = await autoSube();
+        mision.estado = auto ? "terminada" : "esperando_ok"; mision.fase = auto ? mision.fase : "esperando"; guardarMision();
+        await cancelarTareasMision(["bv"]);
+        if (!auto) { try { parent.mostrar && parent.mostrar("sv"); } catch (e) {} }
+        avisoCapi(auto
+          ? `AVISO DE MISIÓN: terminé la misión de ${mision.zona}: llegué a ${ya} leads (meta ${mision.meta}) y Lofti los fue subiendo a Lofty solo. Díselo al jefe en pocas palabras.`
+          : `AVISO DE MISIÓN: ya hay ${ya} leads listos para Lofty de ${mision.zona} (la meta era ${mision.meta}). Pregúntale al jefe si los subes (subir_leads le deja la tarjeta de aprobación) o si quiere juntar más.`);
         break;
       }
       const faltan = mision.meta - ya;
+      const n = await conteos(); // todo de storage
+      const reserva = (n.bus || 0) + (n.rev || 0);
+      const ts = await vivasDe();
+
+      // Chequi manda a Wibi, pero la línea de Wibi para leads nuevos no está montada (wb.html sin ?linea): se atoraría
+      if (n.destino === "wb" && (n.wbBus || 0) > 0) { pausarMision("En Chequi está “Mandar a: Wibi”, pero la línea de Wibi para leads nuevos no está montada; esos domicilios no los busca nadie. Pide al jefe cambiar Chequi a “Mandar a: Veri”."); break; }
 
       // 1) Propi: ¿terminó su búsqueda?
-      const ev = await eventoPropi();
-      if (ev) {
-        if (FALLA_PROPI.test(ev.texto) || ev.texto === "tardó demasiado") { pausarMision(`Propi no pudo buscar en Propwire: ${ev.texto}`); break; }
-        if (reserva() <= (mision.pendAntes || 0)) mision.sinMas = mision.paginas >= 8; // ya no salen domicilios nuevos
-        guardarMision();
+      if (mision.tareaPropi) {
+        const tp = await estadoTarea(mision.tareaPropi);
+        if (!tp || ["fallida", "cancelada", "rechazada"].includes(tp.estado)) { pausarMision(`Propi no pudo buscar en Propwire: ${(tp && tp.error) || "la tarea desapareció"}`); break; }
+        if (tp.estado === "hecha") {
+          if (reserva <= (mision.pendAntes || 0)) mision.sinMas = mision.paginas >= 8; // ya no salen domicilios nuevos
+          mision.tareaPropi = null; guardarMision();
+        }
       }
-      // …y si a Veri le queda poca reserva, que junte más (al mismo tiempo que Veri busca)
-      if (!propiDesde && !mision.sinMas && reserva() < Math.min(RESERVA, Math.ceil(faltan * 1.5))) {
-        mision.paginas = (mision.paginas || 0) + 1; mision.pendAntes = reserva(); guardarMision();
-        poner("pw", "pages", String(mision.paginas));
-        propiDesde = Date.now();
-        el("pw", "run") && el("pw", "run").click();
+      // …y si queda poca reserva, que junte más (mientras Veri sigue buscando)
+      if (!mision.tareaPropi && !mision.sinMas && reserva < Math.min(RESERVA, Math.ceil(faltan * 1.5))) {
+        mision.paginas = (mision.paginas || 0) + 1; mision.pendAntes = reserva;
+        const t = await tareaMision("pw", "buscar", { zona: mision.zona, paginas: mision.paginas });
+        mision.tareaPropi = t.id; guardarMision();
       }
+      // 2) Veri: busca mientras haya pendientes
+      if ((n.bus || 0) > 0 && !viva(ts, "bv", "ciclo")) await tareaMision("bv", "ciclo", { maxPestanas: Math.min(20, Math.max(3, Math.ceil(faltan * 1.5))) });
+      // 3) Owny: si hay resultados esperando y no está leyendo, que lea
+      if ((n.pend || 0) > 0 && !viva(ts, "ow", "leer")) await tareaMision("ow", "leer", { vivo: true });
 
-      // 2) Veri: busca sin parar mientras haya pendientes
-      if (!ocupado("bv", "cycle") && pendientesBV() > 0) {
-        poner("bv", "maxTabs", String(Math.min(20, Math.max(3, Math.ceil(faltan * 1.5)))));
-        await sleep(300);
-        el("bv", "cycle") && el("bv", "cycle").click();
-      }
-
-      // 2b) Wibi (si Chequi le manda a él): skip trace en Propwire mientras haya pendientes
-      if (pendientesWB() > 0 && !ocupado("wb", "run")) el("wb", "run") && el("wb", "run").click();
-
-      // 3) Owny: lee en vivo; por si acaso, si hay resultados esperando y no está leyendo, que lea
-      const { bvPendientes = [] } = await chrome.storage.local.get("bvPendientes");
-      if (bvPendientes.length && !ocupado("ow", "btnBV")) el("ow", "btnBV") && el("ow", "btnBV").click();
-
-      mision.fase = ocupado("wb", "run") ? "wibi" : ocupado("bv", "cycle") ? "beenverified" : propiDesde ? "propwire" : bvPendientes.length ? "owners" : "revisando";
+      const ts2 = await vivasDe();
+      mision.fase = viva(ts2, "bv", "ciclo") ? "beenverified" : mision.tareaPropi ? "propwire" : (n.pend || viva(ts2, "ow", "leer")) ? "owners" : "revisando";
 
       // ¿Ya no hay nada más que hacer en esta zona?
-      if (mision.sinMas && !propiDesde && !reserva() && !ocupado("bv", "cycle") && !ocupado("wb", "run") && !bvPendientes.length && !ocupado("ow", "btnBV")) {
+      if (mision.sinMas && !mision.tareaPropi && !reserva && !(n.pend || 0) && !["pw", "bv", "ow"].some((r) => ts2.some((t) => t.robot === r))) {
         await sleep(8000); // dar chance a que Lofti suba lo último
         terminarMision(`Ya no hay domicilios nuevos en ${mision.zona}.`);
         break;
@@ -283,12 +272,16 @@ async function correrMision() {
     motorCorriendo = false;
   }
 }
+// Cancela las tareas vivas que la misión pidió (por defecto Propi y Veri)
+async function cancelarTareasMision(robots = ["pw", "bv"]) {
+  try { for (const t of await vivasDe()) if (robots.includes(t.robot) && /misión/.test(t.origen || "")) await Tareas.cancelar(t.id, "misión"); } catch (e) {}
+}
 
 function pausarMision(motivo) {
   if (!mision) return;
-  mision.estado = "pausada"; guardarMision();
-  if (ocupado("bv", "cycle")) el("bv", "stop") && el("bv", "stop").click();
-  avisoCapi(`AVISO DE MISIÓN: la misión de ${mision.meta} en ${mision.zona} quedó en pausa. Motivo: ${motivo}. Revisa qué pasó (puedes pedirle ayuda al robot de esa sección con delegar) y dile al jefe en pocas palabras.`);
+  mision.estado = "pausada"; mision.tareaPropi = null; guardarMision();
+  cancelarTareasMision();
+  avisoCapi(`AVISO DE MISIÓN: la misión de ${mision.meta} en ${mision.zona} quedó en pausa. Motivo: ${motivo}. Revisa qué pasó (puedes pedirle ayuda al supervisor o al robot de esa sección) y dile al jefe en pocas palabras.`);
 }
 function terminarMision(motivo) {
   if (!mision) return;
@@ -475,30 +468,15 @@ const esPWoBV = (u) => /^https:\/\/([a-z0-9-]+\.)?(propwire|beenverified)\.com\/
 const siNo = (v) => /^(s[ií]|true|1|yes|on)$/i.test(String(v).trim());
 let turnoAutomatico = false;
 
+// Fase 2b: subir a Lofty = tarea "subir" de Lofti en el bus. Siempre pide la aprobación del jefe (tarjeta Aprobar / Rechazar);
+// Capi no puede aprobar. Antes Capi daba clic en la página de Lofti.
 async function subirLeads(soloUno) {
   if (turnoAutomatico) return "No puedo subir por un aviso automático: necesito que el jefe lo autorice.";
   const n = await listos();
   if (!n) return "No hay leads listos para subir.";
   const { loftyKey } = await chrome.storage.local.get("loftyKey");
   if (!loftyKey) return "Falta la API key de Lofty en la pestaña Lofty.";
-  // Fase 1: confirmación en pantalla que el modelo NO puede pulsar (antes bastaba con que Claude interpretara un "sí")
-  try { parent.mostrar && parent.mostrar("sv"); } catch (e) {}
-  const okJefe = await preguntar(`Capi quiere subir a Lofty ${soloUno ? "1 lead de prueba" : `${n} lead(s)`}. Se crean como Seller en tu CRM y no se pueden deshacer desde aquí.\n\n¿Lo autorizas?`, soloUno ? "Sí, subir 1" : `Sí, subir ${n}`, "No");
-  if (!okJefe) return "El jefe no autorizó la subida en la pantalla de confirmación. No subí nada.";
-  const antes = txt("lf", "smsg");
-  el("lf", "send").click();
-  const ok = await (async () => { for (let i = 0; i < 20; i++) { await sleep(500); const b = el("lf", soloUno ? "test" : "go"); if (b) return b; if (txt("lf", "smsg") !== antes && /falta|rechaz|No hay/i.test(txt("lf", "smsg"))) return null; } return null; })();
-  if (!ok) return "No se abrió la confirmación: " + (txt("lf", "smsg") || "sin mensaje");
-  ok.click();
-  for (let i = 0; i < 600; i++) {
-    await sleep(2000);
-    const m = txt("lf", "smsg");
-    if (/^Enviados a Lofty|^Detenido|rechaz|No pude revisar/i.test(m)) {
-      if (mision && /^Enviados/.test(m)) { mision.estado = "terminada"; guardarMision(); }
-      return m;
-    }
-  }
-  return "El envío sigue corriendo; revisa la pestaña Lofty.";
+  return await pedirTarea("lf", "subir", soloUno ? "1 lead de prueba" : `${n} lead(s) listos`, false, { soloUno: !!soloUno });
 }
 
 // ---------- Fase 2: bus de tareas ----------
@@ -511,8 +489,8 @@ async function resumenTareas() {
 }
 // El botón que Capi quiere pulsar, ¿ya es una acción del bus? (registro.js: acciones[].boton)
 const accionDeBoton = (m, boton) => ((REGISTRO.ROBOTS[m] || {}).acciones || []).find((x) => x.boton === boton) || null;
-async function pedirTarea(robot, accion, motivo, deRobot) {
-  const t = await Tareas.crear(robot, accion, { origen: deRobot ? `robot ${REGISTRO.nombre(robot)}` : "capi", motivo });
+async function pedirTarea(robot, accion, motivo, deRobot, entrada = {}) {
+  const t = await Tareas.crear(robot, accion, { origen: deRobot ? `robot ${REGISTRO.nombre(robot)}` : "capi", motivo, entrada });
   if (t.estado === "aprobacion") { pintarAprobaciones(); return `Le dejé la tarea a ${REGISTRO.nombre(robot)} (${accion}), pero necesita la aprobación del jefe: le aparece en el chat con botones Aprobar / Rechazar. Díselo.`; }
   burbuja("acc", `   📋 Tarea para ${REGISTRO.nombre(robot)}: ${accion}${t.repetida ? " (ya estaba en fila)" : ""}`);
   // Si la página del robot no está cargada en el panel/Mando, no tiene caso esperar 90 s: la tarea queda en fila
@@ -541,7 +519,14 @@ async function pintarAprobaciones() {
     hablar(`Jefe, ${REGISTRO.nombre(t.robot)} necesita tu aprobación.`, true, true);
   }
 }
-chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.tareas) pintarAprobaciones(); });
+chrome.storage.onChanged.addListener((ch, area) => {
+  if (area !== "local" || !ch.tareas) return;
+  pintarAprobaciones();
+  // Fase 2b: si la misión esperaba el OK y Lofti ya subió los leads (tarea "subir" hecha), la misión termina
+  if (mision && mision.estado === "esperando_ok" && Object.values(ch.tareas.newValue || {}).some((t) => t.robot === "lf" && t.accion === "subir" && t.estado === "hecha" && t.actualizada > (mision.inicio || 0))) {
+    mision.estado = "terminada"; guardarMision();
+  }
+});
 setTimeout(pintarAprobaciones, 1500);
 
 async function ejecutar(nombre, a, deRobot = false) {
@@ -564,9 +549,9 @@ async function ejecutar(nombre, a, deRobot = false) {
       mision.rondasSinAvance = 0; guardarMision(); correrMision();
       return `Nueva meta: ${mision.meta}. Sigo trabajando.`;
     }
-    case "pausar_mision": if (!mision) return "No hay misión."; mision.estado = "pausada"; guardarMision(); if (ocupado("bv", "cycle")) el("bv", "stop").click(); return "Misión en pausa.";
+    case "pausar_mision": if (!mision) return "No hay misión."; mision.estado = "pausada"; mision.tareaPropi = null; guardarMision(); await cancelarTareasMision(); return "Misión en pausa.";
     case "seguir_mision": if (!mision) return "No hay misión."; mision.estado = "corriendo"; mision.rondasSinAvance = 0; guardarMision(); correrMision(); return "Seguimos.";
-    case "cancelar_mision": if (!mision) return "No hay misión."; mision.estado = "cancelada"; guardarMision(); if (ocupado("bv", "cycle")) el("bv", "stop").click(); mision = null; return "Misión cancelada.";
+    case "cancelar_mision": if (!mision) return "No hay misión."; mision.estado = "cancelada"; guardarMision(); await cancelarTareasMision(); mision = null; return "Misión cancelada.";
     case "interruptor": {
       if (deRobot || turnoAutomatico) return "Solo el jefe prende o apaga robots.";
       const { robotsApagados = {} } = await chrome.storage.local.get("robotsApagados");
@@ -658,7 +643,7 @@ Robots pensantes: cada robot tiene su propio cerebro. Si algo falla en una secci
 Reglas:
 - Captcha o verificación: nunca intentes resolverlo ni saltarlo. El robot ya pausó y puso la pestaña al frente; dile al jefe que lo resuelva y que todo sigue solo.
 - Login de BeenVerified o Propwire: pídele que inicie sesión.
-- Subir a Lofty SOLO con subir_leads y SOLO si el jefe lo autorizó en su último mensaje. Además el jefe tiene que confirmar en una ventana; si dice que no, no insistas. Nunca por un aviso automático. Si falta la API key de Lofty, dile que la pegue en la pestaña Lofty.
+- Subir a Lofty SOLO con subir_leads y SOLO si el jefe lo autorizó en su último mensaje. subir_leads deja una tarea con tarjeta Aprobar / Rechazar que solo el jefe puede pulsar (en el chat o en el tablero); si la rechaza, no insistas. Nunca por un aviso automático. Si falta la API key de Lofty, dile que la pegue en la pestaña Lofty.
 - Interruptores: cada robot tiene un interruptor en el Centro de Mando. Si uno está apagado (lo ves en ver_estado como robotsApagados), no trabaja: no lo prendas por tu cuenta; si hace falta, dile al jefe. Solo usa interruptor cuando él te lo pide.
 - No reintentes lo mismo más de 2 veces. No borres datos. Solo cierras pestañas de Propwire o BeenVerified.
 - "Error de código": explícale qué archivo falló para que se lo pase a Claude en el chat.

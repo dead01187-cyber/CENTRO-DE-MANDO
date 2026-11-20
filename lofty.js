@@ -545,4 +545,16 @@
   $('oOw').onchange = () => { store.set('pw2l_useOwners', $('oOw').checked); rebuildRows(); };
   chrome.storage.onChanged.addListener((ch, area) => { if (area === 'local' && (ch.lote || ch.lote_wb || ch.lote_hr || ch.lote_wb_hr)) loadOwners(); if (area === 'local' && ch.addresses) cargarHecm(); });
   renderFiles(); setSrc(S.src); loadOwners();
+
+  // ---------- Fase 2b: "subir" por el bus de tareas ----------
+  // Crea en Lofty los leads listos. El bus SOLO la entrega después de que el jefe la aprobó (tarjeta Aprobar / Rechazar),
+  // así que aquí no se vuelve a preguntar. soloUno = solo 1 de prueba.
+  window.Tareas && Tareas.atender('subir', async ({ soloUno } = {}) => {
+    await Tareas.esperarLibre(() => sending);
+    const pend = S.records.filter(r => r.status === 'ok' && !r.sent);
+    if (!pend.length) return 'No había leads listos para subir.';
+    await loadMembers();
+    await runSend(soloUno ? pend.slice(0, 1) : pend);
+    return $('smsg').textContent.trim() || 'Envío terminado.';
+  }, { alCancelar: () => { stopReq = true; } });
 })();

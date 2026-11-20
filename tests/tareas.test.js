@@ -77,3 +77,14 @@ test("registro: cada robot tiene supervisor válido y página", () => {
   for (const [id, r] of Object.entries(R.ROBOTS)) { assert.ok(R.SUPERVISORES[r.supervisor], id); assert.ok(r.pagina, id); }
   assert.ok(!R.acciones().some((a) => a.robot === "tx" || a.robot === "al")); // ningún SMS por el bus
 });
+test("Fase 2b: misma acción con distinta entrada no es duplicado; con la misma sí", async () => {
+  const a = await BUS.crear({ robot: "pw", accion: "buscar", entrada: { zona: "Irvine" } });
+  const b = await BUS.crear({ robot: "pw", accion: "buscar", entrada: { zona: "Tustin" } });
+  const c = await BUS.crear({ robot: "pw", accion: "buscar", entrada: { zona: "Irvine" } });
+  assert.notEqual(a.id, b.id); assert.equal(c.id, a.id);
+});
+test("Fase 2b: Lofti subir y Acti traer requieren aprobación; Propi buscar no", async () => {
+  assert.equal((await BUS.crear({ robot: "lf", accion: "subir" })).estado, "aprobacion");
+  assert.equal((await BUS.crear({ robot: "ac", accion: "traer" })).estado, "aprobacion");
+  assert.equal((await BUS.crear({ robot: "pw", accion: "buscar", entrada: { zona: "X" } })).estado, "pendiente");
+});

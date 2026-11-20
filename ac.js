@@ -192,3 +192,12 @@ setInterval(procesar, 15e3);
   $("veriSolo").checked = acConfig.veriSolo !== false;
   trabajos = acTrabajos; pintar(); procesar();
 })();
+
+// ---------- Fase 2b: acciones grandes por el bus de tareas (registro.js). Sin entrada, usan lo que ya está escrito en la pantalla. ----------
+// "traer" termina cambiando leads en Lofty (owner y teléfonos): el bus pide la aprobación del jefe
+window.Tareas && Tareas.atender("traer", async ({ etapa, tag, ciudad, tanda } = {}) => {
+  await Tareas.esperarLibre(() => trayendo);
+  for (const [id, v] of [["etapa", etapa], ["tag", tag], ["ciudad", ciudad], ["tanda", tanda]]) if (v != null && v !== "") $(id).value = String(v);
+  await traer();
+  return $("status").textContent.trim() || "Listo.";
+}, { alCancelar: () => { parar = true; } });

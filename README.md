@@ -10,7 +10,7 @@ Las llaves (Lofty, Anthropic, etc.) se ponen dentro de la extensión; no van en 
 
 ## Documentación
 - `docs/auditoria/MISION-01-auditoria.md`: auditoría técnica integral.
-- `docs/FASE-0.md` … `docs/FASE-6.md`: qué cambió en cada fase, cómo verificarlo y qué falta.
+- `docs/FASE-0.md` … `docs/FASE-6.md` y `docs/FASE-2b.md`: qué cambió en cada fase, cómo verificarlo y qué falta.
 
 ## Pruebas
 - Unitarias: `npm test`.

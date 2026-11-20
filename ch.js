@@ -106,6 +106,7 @@ $("activo").onchange = () => { chrome.storage.local.set({ chActivo: $("activo").
 
 chrome.storage.onChanged.addListener((ch, area) => {
   if (area !== "local") return;
+  if (ch.chActivo && $("activo").checked !== (ch.chActivo.newValue !== false)) $("activo").checked = ch.chActivo.newValue !== false; // la misión lo prende por storage
   if (ch.addresses || ch.zone) cargar().then(() => { if ($("activo").checked) revisar(false); });
   if (ch.loftyKey && ch.loftyKey.newValue && $("activo").checked) revisar(false);
   if (ch[K("chDestino")]) { $("destino").value = ch[K("chDestino")].newValue === "wb" ? "wb" : "bv"; pintarDestino(); }

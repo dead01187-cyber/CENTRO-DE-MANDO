@@ -95,15 +95,29 @@ test("Marki: con SMS prendidos pide confirmación; al cancelar no hace nada", as
   } finally { await amb.cerrar(); }
 });
 
-test("Capi: subir a Lofty pide tu confirmación en pantalla; si dices que no, no sube", async () => {
+test("Capi: subir a Lofty deja una tarea que solo el jefe aprueba; si la rechaza, no sube", async () => {
   const amb = await abrir({ storage: { loftyKey: "llave-falsa", loftyListos: 3 } });
   try {
-    const sv = await amb.pagina("sv.html");
-    await sv.waitForTimeout(1200);
-    const r = sv.evaluate(() => ejecutar("subir_leads", {}));
-    await sv.waitForSelector("[data-pregunta]", { timeout: 10000 }); await sv.click("[data-pregunta] .no");
-    assert.match(await r, /no autorizó/);
-    assert.equal(amb.lofty.estado.creados.length, 0);
+    const sv = await amb.pagina("sv.html"); await sv.waitForTimeout(1200);
+    assert.match(await sv.evaluate(() => ejecutar("subir_leads", {})), /aprobación del jefe/);
+    await sv.waitForSelector("#chat .aviso button", { timeout: 10000 }); // tarjeta Aprobar / Rechazar
+    await sv.evaluate(() => [...document.querySelectorAll("#chat .aviso button")].find((b) => b.textContent === "Rechazar").click());
+    await sv.waitForTimeout(800);
+    const t = (await sv.evaluate(() => Tareas.listar())).find((x) => x.robot === "lf");
+    assert.equal(t.estado, "rechazada"); assert.equal(amb.lofty.estado.creados.length, 0);
+  } finally { await amb.cerrar(); }
+});
+
+test("Lofti por el bus: aprobada por el jefe, sube (sin volver a preguntar) y quita el 800 y el DNC", async () => {
+  const amb = await abrir({ storage: { loftyKey: "llave-falsa", ...LOTE } });
+  try {
+    const sv = await amb.pagina("sv.html"); await amb.pagina("lofty.html"); await sv.waitForTimeout(3000);
+    const t = await sv.evaluate(() => Tareas.crear("lf", "subir", { origen: "capi" }));
+    assert.equal(t.estado, "aprobacion");
+    await sv.evaluate((id) => Tareas.aprobar(id), t.id);
+    const fin = await sv.evaluate((id) => Tareas.esperar(id, 30000), t.id);
+    assert.equal(fin.estado, "hecha", fin.error);
+    assert.equal(amb.lofty.estado.creados.length, 1); assert.deepEqual(amb.lofty.estado.creados[0].phones, ["+19493728811"]);
   } finally { await amb.cerrar(); }
 });
 
@@ -129,6 +143,43 @@ test("Tablero: pasar a la etapa 1 (con confirmación) apaga a los que escriben, 
     for (const id of ["tx", "rs", "al", "ti", "lf", "ac", "li", "bv", "wb3"]) assert.equal(robotsApagados[id], true, id);
     for (const id of ["ch", "cu", "qa", "pw"]) assert.ok(!robotsApagados[id], id);
     assert.ok(!robotsApagados.sv);
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});
+
+test("Misión por el bus: pide Propi → Veri → espera tu OK, y al pausar cancela lo que pidió", async () => {
+  const amb = await abrir({ storage: { loftyKey: "llave-falsa", chActivo: true } });
+  try {
+    const sv = await amb.pagina("sv.html"); await sv.waitForTimeout(1200);
+    await sv.evaluate(() => ejecutar("iniciar_mision", { zona: "Irvine", meta: 2 }));
+    await sv.waitForTimeout(5000);
+    let ts = await sv.evaluate(() => Tareas.listar());
+    const pw = ts.find((t) => t.robot === "pw" && t.accion === "buscar");
+    assert.ok(pw, "pidió a Propi"); assert.equal(pw.entrada.zona, "Irvine"); assert.equal(pw.entrada.paginas, 1);
+    assert.ok(ts.some((t) => t.robot === "ow" && t.accion === "leer"), "pidió a Owny leer en vivo");
+    // Simular que Propi terminó y dejó 3 domicilios que Chequi ya aprobó
+    await amb.sw.evaluate(async (id) => {
+      await BUS.reclamar("pw", "simulado"); await BUS.terminar(id, "simulado", { ok: true, resultado: "Listo: recorrí 1 página" });
+      const a = (s) => ({ street: s, city: "Irvine", zip: "92618", state: "CA", lofty: "no", via: "bv", found: Date.now() });
+      await chrome.storage.local.set({ addresses: { k1: a("1 Oak St"), k2: a("2 Oak St"), k3: a("3 Oak St") } });
+    }, pw.id);
+    await sv.waitForTimeout(7000);
+    ts = await sv.evaluate(() => Tareas.listar());
+    const bv = ts.find((t) => t.robot === "bv" && t.accion === "ciclo");
+    assert.ok(bv && bv.estado === "pendiente", "pidió a Veri un ciclo");
+    // Llegar a la meta sin subida automática → espera el OK del jefe
+    await amb.sw.evaluate(() => chrome.storage.local.set({ loftyListos: 2 }));
+    await sv.waitForTimeout(5000);
+    assert.equal((await amb.leer("mision")).mision.estado, "esperando_ok");
+    ts = await sv.evaluate(() => Tareas.listar());
+    assert.equal(ts.find((t) => t.id === bv.id).estado, "cancelada", "al llegar a la meta se cancela el ciclo de Veri");
+    assert.equal(amb.lofty.estado.creados.length, 0, "no sube nada sin tu OK");
+    // Seguir y pausar: cancela lo que pidió la misión
+    await sv.evaluate(() => ejecutar("cambiar_meta", { meta: 50 })); await sv.waitForTimeout(5000);
+    await sv.evaluate(() => ejecutar("pausar_mision", {}));
+    await sv.waitForTimeout(1000);
+    ts = await sv.evaluate(() => Tareas.listar({ vivas: true }));
+    assert.ok(!ts.some((t) => ["pw", "bv"].includes(t.robot) && /misión/.test(t.origen)), JSON.stringify(ts.map((t) => [t.robot, t.estado])));
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });

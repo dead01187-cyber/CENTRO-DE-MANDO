@@ -38,7 +38,9 @@
     if (!acc) error(`${reg.nombre(robot)} no tiene la acción “${accion}” en el registro.`);
     return conCandado(async () => {
       const tareas = await leer();
-      const viva = Object.values(tareas).find((t) => VIVAS.includes(t.estado) && ((idem && t.idem === idem) || (t.robot === robot && t.accion === accion)));
+      // misma clave idem, o mismo robot + acción + MISMA entrada (dos búsquedas de zonas distintas no son duplicado)
+      const igual = (a, b) => JSON.stringify(a || {}) === JSON.stringify(b || {});
+      const viva = Object.values(tareas).find((t) => VIVAS.includes(t.estado) && ((idem && t.idem === idem) || (t.robot === robot && t.accion === accion && igual(t.entrada, entrada))));
       if (viva) return { ...viva, repetida: true };
       const ahora = Date.now();
       const t = { id: nuevaId(), robot, accion, entrada, origen, motivo: String(motivo || "").slice(0, 300), idem: String(idem || ""),

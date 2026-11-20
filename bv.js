@@ -447,3 +447,12 @@ chrome.runtime.onMessage.addListener((m) => { if (m.type === "bvStatus") setStat
   // va jalando lo nuevo que encuentre la pestaña Propwire
   chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch.addresses || ch.zone || ch.chActivo || ch.ch3Config || ch.loftyKey || ch.chDestino || ch[K("chDestino")])) sync(); });
 })();
+
+// ---------- Fase 2b: acciones grandes por el bus de tareas (registro.js). Sin entrada, usan lo que ya está escrito en la pantalla. ----------
+window.Tareas && Tareas.atender("ciclo", async ({ maxPestanas } = {}) => {
+  await Tareas.esperarLibre(() => running);
+  if (maxPestanas) { $("maxTabs").value = String(maxPestanas); state.maxTabs = Number(maxPestanas); save(); }
+  paradoAMano = false;
+  await runCycle();
+  return $("status").textContent.trim() || "Ciclo terminado.";
+}, { alCancelar: () => $("stop").onclick() });

@@ -989,3 +989,12 @@ setInterval(async () => { const { hrDia } = await chrome.storage.local.get("hrDi
   if (prPideHeri) setTimeout(() => trabajar(true, { soloProp: true }), 15000);
 })();
 chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.prPideHeri && ch.prPideHeri.newValue && !corriendo) setTimeout(() => { if (!corriendo) trabajar(true, { soloProp: true }); }, 3000); });
+
+// ---------- Fase 2b: acciones grandes por el bus de tareas (registro.js). Sin entrada, usan lo que ya está escrito en la pantalla. ----------
+window.Tareas && Tareas.atender("buscar", async ({ dias, tope } = {}) => {
+  await Tareas.esperarLibre(() => corriendo);
+  if (dias) $("dias").value = String(dias);
+  if (tope) $("tope").value = String(tope);
+  await trabajar(true);
+  return $("status").textContent.trim() || "Vuelta terminada.";
+}, { alCancelar: () => { parar = true; } });

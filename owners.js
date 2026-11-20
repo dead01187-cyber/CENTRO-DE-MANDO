@@ -794,3 +794,13 @@ chrome.storage.local.get(["sinEmpresas", "tag1", "urls", K("lote"), "cerrarLeida
   if (Array.isArray(d.lote)) lote = d.lote;
   pintar();
 });
+
+// ---------- Fase 2b: acciones grandes por el bus de tareas (registro.js). Sin entrada, usan lo que ya está escrito en la pantalla. ----------
+window.Tareas && Tareas.atender("leer", async ({ vivo, auto, cerrarLeidas } = {}) => {
+  // ajustes que pide la misión (se guardan igual que si los marcaras tú)
+  for (const [id, v] of [["bvVivo", vivo], ["bvAuto", auto], ["cerrarLeidas", cerrarLeidas]]) if (typeof v === "boolean" && $(id).checked !== v) { $(id).checked = v; chrome.storage.local.set({ [id]: v }); }
+  await Tareas.esperarLibre(() => leyendoBV);
+  await leerBV(false);
+  await Tareas.esperarLibre(() => leyendoBV);
+  return ($("estado").textContent || $("fantasmaTxt").textContent || "").trim() || "Lectura terminada.";
+}, { alCancelar: () => { const b = $("btnDetener"); b && b.click(); } });
