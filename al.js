@@ -573,7 +573,7 @@ async function run() {
     // Fase 1: los SMS masivos ya no arrancan con un solo clic
     let total = "?"; try { total = (await fetchMatchingLeads(1)).total; } catch (e) {}
     const pol = await SMS.config();
-    const okSms = await preguntar(`Marki va a mandar SMS automáticamente, lead por lead, a los leads de “${cfg.filterStage || "todas las etapas"}”${cfg.filterTag ? ` con el tag “${cfg.filterTag}”` : ""} (Lofty dice ${total}).\n\nMensaje: “${activeMessages()[0].text}”\n\nSolo a números de California, de ${pol.desde}:00 a ${pol.hasta}:00 hora de California, máximo ${pol.tope} SMS al día entre todos los robots, y nunca a bajas ni números DNC. Un SMS mandado no se puede borrar.`, "Sí, mandar SMS", "Cancelar");
+    const okSms = await preguntar(`Marki va a mandar SMS automáticamente, lead por lead, a los leads de “${cfg.filterStage || "todas las etapas"}”${cfg.filterTag ? ` con el tag “${cfg.filterTag}”` : ""} (Lofty dice ${total}).\n\nMensaje: “${activeMessages()[0].text}”\n\nSolo a números de California, de ${pol.desde}:00 a ${pol.hasta}:00 hora de California${pol.tope > 0 ? `, máximo ${pol.tope} SMS al día` : ", sin tope diario"}, y nunca a bajas ni números DNC. Un SMS mandado no se puede borrar.`, "Sí, mandar SMS", "Cancelar");
     if (!okSms) { log("Cancelado: no arranqué."); return; }
   }
   running = true; stopRequested = false;

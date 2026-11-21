@@ -287,7 +287,7 @@ async function mandar() {
       for (const num of destinos(x)) {
         if (parar) break;
         if (!esCA(num)) continue; // doble seguro
-        // Fase 1: política común de SMS (bajas permanentes, horario 8–21 h de California, tope diario; falla cerrada)
+        // Fase 1: política común de SMS (bajas permanentes, horario 8–21 h de California; falla cerrada)
         const pol = await SMS.puedeMandar({ tel: num, leadId: x.id, cuenta: "tx", fuente: "Texi" });
         if (!pol.ok) {
           await SMS.anotar({ fuente: "Texi", leadId: x.id, tel: num, estado: "bloqueado", motivo: pol.motivo });

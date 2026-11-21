@@ -6,7 +6,7 @@ Corrige los riesgos **CRÍTICOS** y **ALTOS** de la auditoría (`docs/auditoria/
 
 | Dónde | Antes | Ahora |
 |---|---|---|
-| **Todos los SMS** (Texi, Resi, Marki) | Sin horario ni tope | Solo **8:00–21:00 hora de California**, máximo **200 SMS al día** entre todos, solo números de California |
+| **Todos los SMS** (Texi, Resi, Marki) | Sin horario ni tope | Solo **8:00–21:00 hora de California**, sin tope diario (se quitó en v1.73.0; antes 200 al día), solo números de California |
 | **Bajas (STOP)** | Si el lead escribía otra cosa después, dejaba de estar bloqueado | **Permanentes** por número y por lead. Se guardan en `smsBajas` |
 | **Texi** | Si no podía revisar el opt-out, mandaba igual | **No manda** (falla cerrada) |
 | **Marki** | "▶ Iniciar" mandaba SMS sin preguntar | Pide **confirmación**; no manda a bajas ni DNC; si no puede revisar, no manda |
@@ -23,7 +23,7 @@ Corrige los riesgos **CRÍTICOS** y **ALTOS** de la auditoría (`docs/auditoria/
 
 ### Ajustar la política de SMS
 
-Valores por defecto: de 8 a 21, tope de 200 al día. Para cambiarlos, en la consola del Centro de Mando:
+Valores por defecto: de 8 a 21, sin tope diario (v1.73.0; se puede volver a poner con `tope`). Para cambiarlos, en la consola del Centro de Mando:
 
 ```js
 chrome.storage.local.set({ smsPolitica: { desde: 9, hasta: 20, tope: 150 } })

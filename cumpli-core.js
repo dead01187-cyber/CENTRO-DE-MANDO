@@ -25,7 +25,7 @@
   function auditar(st, { dias = 30, ahora = Date.now() } = {}) {
     const h = [];
     const add = (gravedad, regla, detalle, t) => h.push({ gravedad, regla, detalle, cuando: t ? cuando(t) : "", t: t || 0 });
-    const pol = { desde: 8, hasta: 21, tope: 200, ...(st.smsPolitica || {}) };
+    const pol = { desde: 8, hasta: 21, tope: 0, ...(st.smsPolitica || {}) };
     const bajas = st.smsBajas || { tels: {}, leads: {} };
     const enviados = (st.smsRegistro || []).filter((e) => e.estado === "enviado" && e.t >= ahora - dias * 864e5);
     const porDiaTel = new Map(), porDia = new Map();
@@ -42,7 +42,7 @@
       porDia.set(diaCA(e.t), (porDia.get(diaCA(e.t)) || 0) + 1);
     }
     for (const [k, n] of porDiaTel) if (n > 1) { const [dia, d] = k.split("|"); add("media", "Varios SMS el mismo día", `${fmt(d)} recibió ${n} SMS el ${dia}`); }
-    for (const [dia, n] of porDia) if (n > pol.tope) add("alta", "Se pasó el tope diario", `${dia}: ${n} SMS (tope ${pol.tope})`);
+    for (const [dia, n] of porDia) if (pol.tope > 0 && n > pol.tope) add("alta", "Se pasó el tope diario", `${dia}: ${n} SMS (tope ${pol.tope})`);
     // Ajustes actuales
     if (st.loftyAuto === true) add("baja", "Subida automática a Lofty prendida", "Lofti crea leads sin pedir OK; revisa que sea lo que quieres.");
     const al = st.alCfg || {};

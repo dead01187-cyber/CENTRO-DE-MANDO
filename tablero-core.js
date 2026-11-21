@@ -86,7 +86,7 @@
       cumpli: st.cuRes || null, qai: st.qaRes || null,
       aprobacionesPendientes: tareas.filter((t) => t.estado === "aprobacion").length,
       bajasPermanentes: Object.keys((st.smsBajas || {}).tels || {}).length,
-      politicaSms: { desde: 8, hasta: 21, tope: 200, ...(st.smsPolitica || {}) },
+      politicaSms: { desde: 8, hasta: 21, tope: 0, ...(st.smsPolitica || {}) },
       subidaAutomatica: st.loftyAuto === true, markiBorraNumeros: !!(st.alCfg || {}).deleteNonCA,
       escribenCrm: conPermiso("escribe_crm"), mandanSms: conPermiso("envia_sms"), gastan: conPermiso("gasta"), publican: conPermiso("publica"),
     };

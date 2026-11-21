@@ -62,6 +62,12 @@ test("tope diario compartido; devolverLugar regresa el lugar", async () => {
   await SMS.devolverLugar();
   assert.equal((await SMS.puedeMandar({ tel: "9495551233" })).ok, true);
 });
+test("sin tope diario por defecto: 300 SMS el mismo día pasan (bajas y horario siguen)", async () => {
+  st.poner({});
+  for (let i = 0; i < 300; i++) assert.equal((await SMS.puedeMandar({ tel: "94955" + String(10000 + i) })).ok, true);
+  await SMS.marcarBaja({ tel: "9495510005", motivo: "STOP" });
+  assert.equal((await SMS.puedeMandar({ tel: "9495510005" })).ok, false);
+});
 test("falla cerrada: si storage falla, no se manda", async () => {
   const get = chrome.storage.local.get; chrome.storage.local.get = async () => { throw new Error("storage roto"); };
   try { const r = await SMS.puedeMandar({ tel: "9495551234" }); assert.equal(r.ok, false); assert.match(r.motivo, /no se manda/); }

@@ -1,6 +1,6 @@
 {
   "name": "agente-geo-farming",
-  "version": "1.72.0",
+  "version": "1.73.0",
   "private": true,
   "description": "Extensión de Chrome (MV3) Agente Geo Farming · Centro de Mando. Este archivo solo sirve para correr las pruebas; la extensión no usa npm.",
   "scripts": {

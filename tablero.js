@@ -66,7 +66,7 @@ async function pintar() {
   const filasS = [
     ["Cumpli (cumplimiento)", S.cumpli ? `${S.cumpli.altas} graves · ${S.cumpli.medias} medios` : "sin auditar todavía", S.cumpli && S.cumpli.altas ? "falla" : S.cumpli && S.cumpli.medias ? "aviso" : "ok"],
     ["Qai (salud técnica)", S.qai ? `${S.qai.fallas} fallas · ${S.qai.avisos} avisos` : "sin revisar todavía", S.qai && S.qai.fallas ? "falla" : S.qai && S.qai.avisos ? "aviso" : "ok"],
-    ["Política de SMS", `${S.politicaSms.desde}:00–${S.politicaSms.hasta}:00 California · tope ${S.politicaSms.tope}/día · ${S.bajasPermanentes} bajas permanentes`, "ok"],
+    ["Política de SMS", `${S.politicaSms.desde}:00–${S.politicaSms.hasta}:00 California · ${S.politicaSms.tope > 0 ? `tope ${S.politicaSms.tope}/día` : "sin tope diario"} · ${S.bajasPermanentes} bajas permanentes`, "ok"],
     ["Subida automática a Lofty", si(S.subidaAutomatica), S.subidaAutomatica ? "aviso" : "ok"],
     ["Marki borra números fuera de CA", si(S.markiBorraNumeros), S.markiBorraNumeros ? "aviso" : "ok"],
     ["Esperan tu aprobación", String(S.aprobacionesPendientes), S.aprobacionesPendientes ? "aviso" : "ok"],
