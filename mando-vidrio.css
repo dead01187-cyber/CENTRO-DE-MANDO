@@ -1,7 +1,7 @@
 /* =====================================================================
    Centro de Mando · vidrio esmerilado sobre fondo gris oscuro (estilo macOS grafito)
    Va DESPUÉS de mando-n8n.css. Solo cambia lo visual.
-   - Fondo: gris oscuro casi liso con luces grises suaves (estilo grafito).
+   - Fondo: la imagen fondos/fondo-mando.jpg (la eligió el jefe).
    - Tarjetas de los robots, barra de arriba, tarjetas laterales y cajón:
      vidrio translúcido con desenfoque, orilla brillante y texto blanco.
    Los estados (trabajando, terminó, error, pausa) conservan sus colores.
@@ -13,20 +13,14 @@ body.n8n {
   --vid-sombra: 0 10px 28px rgba(0, 0, 0, .35);
   --vid-blur: blur(22px) saturate(170%);
   --t: #ffffff; --m: rgba(255,255,255,.72);
-  background: #2c2d30;
+  background: #141414;
   color: #fff;
 }
 
-/* ---------- Fondo: gris oscuro, serio (estilo grafito de macOS en modo oscuro) ----------
-   Casi liso, con dos o tres luces grises muy suaves para que el vidrio de las tarjetas se note. */
+/* ---------- Fondo: imagen que eligió el jefe (fondos/fondo-mando.jpg), cubre toda la ventana ---------- */
 body.n8n .rejilla {
   opacity: 1; animation: none;
-  background:
-    radial-gradient(55% 50% at 18% 15%, rgba(255,255,255,.07) 0%, rgba(255,255,255,0) 65%),
-    radial-gradient(50% 55% at 85% 85%, rgba(255,255,255,.05) 0%, rgba(255,255,255,0) 65%),
-    radial-gradient(40% 40% at 60% 40%, rgba(160,170,190,.06) 0%, rgba(160,170,190,0) 70%),
-    linear-gradient(160deg, #3a3b3f 0%, #303135 50%, #28292c 100%) !important; /* un tono más claro (v1.69.2) */
-  background-size: 100% 100% !important;
+  background: #141414 url("fondos/fondo-mando.jpg") center / cover no-repeat !important;
 }
 
 /* ---------- Tarjetas de los robots ---------- */
@@ -72,6 +66,6 @@ body.n8n input, body.n8n textarea { background: rgba(255,255,255,.12); border-co
 body.n8n input::placeholder, body.n8n textarea::placeholder { color: rgba(255,255,255,.55); }
 body.n8n #camara button { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.25); color: #fff; }
 body.n8n #camZoom { color: rgba(255,255,255,.8); }
-body.n8n .cajon { background: rgba(40, 41, 44, .70); border-left: 1px solid rgba(255,255,255,.20);
+body.n8n .cajon { background: rgba(28, 28, 30, .72); border-left: 1px solid rgba(255,255,255,.20);
   -webkit-backdrop-filter: blur(28px) saturate(160%); backdrop-filter: blur(28px) saturate(160%); }
 body.n8n .cajon-top { background: rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.16); }

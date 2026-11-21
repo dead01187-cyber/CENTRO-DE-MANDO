@@ -75,11 +75,11 @@ Cualquier página puede usarlo cargando `vidrio/vidrio.js` y llamando `Vidrio.en
 - cada vidrio agrega filtros SVG y sigue al ratón;
 - en el panel lateral de Chrome y con muchos robots abiertos, demasiados vidrios pueden hacer lento el Centro de Mando.
 
-## Centro de Mando: vidrio esmerilado sobre fondo gris oscuro (v1.69.1)
+## Centro de Mando: vidrio esmerilado sobre la imagen de fondo (v1.70.0)
 
 El Centro de Mando usa un estilo parecido a las tarjetas de vidrio de macOS. Todo está en `mando-vidrio.css`, que se carga después de `mando-n8n.css`. Es solo CSS (`backdrop-filter`): **no usa React**, así que con 30 tarjetas sigue siendo ligero.
 
-- **Fondo:** gris oscuro casi liso (grafito, de #3a3b3f a #28292c; un tono más claro desde v1.69.2), con dos o tres luces grises muy suaves para que se note el vidrio de las tarjetas. Desde v1.69.1. Antes era de manchas de colores; se cambió a uno más serio.
+- **Fondo:** la imagen que eligió el jefe, `fondos/fondo-mando.jpg` (2000×2000, ~105 KB). Cubre toda la ventana (`cover`), sobre gris casi negro mientras carga. Para cambiarla, reemplaza ese archivo por otra imagen con el mismo nombre. Desde v1.70.0; antes era un gris en CSS.
 - **Tarjetas de los robots:** vidrio translúcido con desenfoque (22 px) y más saturación, orilla clara, brillo arriba, sombra suave, esquinas de 16 px y texto blanco. El cuadro del robot y la pastilla de estado también son de vidrio.
 - **Estados:** trabajando, terminó, error y pausa conservan sus colores de orilla y animaciones.
 - **También de vidrio:** la barra de arriba, los contadores, los botones, las tarjetas de Misión, Capi y Bitácora, la burbuja de Capi, los controles de zoom y el cajón.
