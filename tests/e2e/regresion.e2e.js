@@ -237,3 +237,30 @@ test("Fondo propio: subir una imagen la pone de fondo, sigue al recargar y al bo
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });
+
+test("Sonidos relajantes: cada efecto suena (sin saturar), el botón los prende y el volumen se guarda", async () => {
+  const amb = await abrir({});
+  try {
+    const m = await amb.pagina("mando.html"); await m.waitForTimeout(1500);
+    const picos = await m.evaluate(async () => {
+      const out = {};
+      for (const n of Sonidos.NOMBRES) {
+        const c = new OfflineAudioContext(2, 44100 * 3, 44100); Sonidos.renderizar(c, n);
+        const d = (await c.startRendering()).getChannelData(0); let p = 0; for (const x of d) p = Math.max(p, Math.abs(x)); out[n] = p;
+      }
+      return out;
+    });
+    for (const [n, p] of Object.entries(picos)) { assert.ok(p > 0.02, `${n} casi no suena (${p})`); assert.ok(p < 0.9, `${n} satura (${p})`); }
+    assert.equal(await m.isVisible("#volSonido"), false);
+    await m.click("#b-sonido");
+    assert.equal((await m.textContent("#b-sonido")).trim(), "Sonido: sí");
+    assert.equal(await m.isVisible("#volSonido"), true);
+    assert.equal(await m.evaluate(() => Sonidos.activo), true);
+    await m.fill("#volSonido", "30"); await m.dispatchEvent("#volSonido", "input"); await m.waitForTimeout(200);
+    assert.equal((await amb.leer("mandoVolumen")).mandoVolumen, 0.3);
+    await m.evaluate(() => { for (const n of Sonidos.NOMBRES) Sonidos.tocar(n); });
+    await m.click("#b-sonido");
+    assert.equal(await m.evaluate(() => Sonidos.activo), false);
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});

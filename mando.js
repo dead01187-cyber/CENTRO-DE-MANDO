@@ -66,18 +66,9 @@ document.addEventListener("click", (e) => { if (!menuNav.hidden && !e.target.clo
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !menuNav.hidden) { e.stopImmediatePropagation(); abrirMenu(false); } }, true);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && enCajon) cerrarCajon(); });
 
-// ---------- Sonidos (opcionales) ----------
-let sonido = false, ac = null;
-function bip(f = 660, dur = 0.07, vol = 0.04, tipo = "sine") {
-  if (!sonido) return;
-  try {
-    ac = ac || new AudioContext();
-    const o = ac.createOscillator(), g = ac.createGain();
-    o.type = tipo; o.frequency.value = f;
-    g.gain.setValueAtTime(vol, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
-    o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + dur);
-  } catch (e) {}
-}
+// ---------- Sonidos (opcionales): efectos relajantes de sonidos.js, sin música ----------
+let sonido = false;
+const sonar = (nombre) => window.Sonidos && Sonidos.tocar(nombre);
 // ---------- Tema: solo estilo n8n (el tema neón se quitó por decisión del jefe) ----------
 const N8N = () => true;
 function ponerTema() {
@@ -149,8 +140,10 @@ $("b-tablero").onclick = () => mostrar("tb"); // Fase 5
 chrome.storage.local.set({ mandoTema: "n8n" }); // si estaba guardado "neon", se reemplaza
 ponerTema();
 
-function pintarSonido() { $("b-sonido").textContent = sonido ? "Sonido: sí" : "Sonido: no"; }
-$("b-sonido").onclick = () => { sonido = !sonido; chrome.storage.local.set({ mandoSonido: sonido }); pintarSonido(); bip(880, .1); };
+function pintarSonido() { $("b-sonido").textContent = sonido ? "Sonido: sí" : "Sonido: no"; if (window.Sonidos) Sonidos.activo = sonido; $("volSonido").hidden = !sonido; }
+$("b-sonido").onclick = () => { sonido = !sonido; chrome.storage.local.set({ mandoSonido: sonido }); pintarSonido(); sonar("listo"); };
+$("volSonido").oninput = (e) => { const v = Number(e.target.value) / 100; if (window.Sonidos) Sonidos.volumen = v; chrome.storage.local.set({ mandoVolumen: v }); };
+$("volSonido").onchange = () => sonar("gota");
 
 // =====================================================================
 // Fondo de estrellas
@@ -345,7 +338,7 @@ function dibujarLazos(t) {
 function llegada(m) {
   const a = document.querySelector(`#e-${m} .aro`); if (!a) return;
   a.animate([{ filter: "brightness(1.9)" }, { filter: "brightness(1)" }], { duration: 380 });
-  bip(520 + Math.random() * 300, .05, .02);
+  sonar("gota");
 }
 
 // Los pulsos SOLO salen cuando algo de verdad pasa de un robot a otro (un domicilio, un lead, un borrador, un SMS…):
@@ -371,8 +364,8 @@ function leerEstados() {
     const e = $("e-" + m);
     if (estado[m] !== st) {
       if (estado[m] !== undefined) {
-        if (st === "error" || st === "ayuda") bip(220, .25, .05, "square");
-        if (st === "feliz") { bip(784, .09); setTimeout(() => bip(1046, .12), 90); }
+        if (st === "error" || st === "ayuda") sonar("aviso");
+        if (st === "feliz") sonar("listo");
       }
       estado[m] = st;
       for (const c of Object.keys(CHIP)) e.classList.toggle(c, c === st);
@@ -538,7 +531,7 @@ $("mIniciar").onclick = async () => {
   const zona = $("mZona").value.trim(), meta = corrido ? CORRIDO : parseInt($("mMeta").value, 10);
   if (!zona || !meta) { $("mZona").focus(); return; }
   chrome.storage.local.set({ mandoCorrido: corrido });
-  bip(440, .08); setTimeout(() => bip(660, .08), 80); setTimeout(() => bip(880, .14), 160);
+  sonar("inicio");
   const r = await capi("iniciar_mision", { zona, meta });
   if (r) { const w = svWin(); w && w.burbuja && w.burbuja("aviso", "Desde el Centro de Mando: " + r); }
   pintarMision();
@@ -565,7 +558,7 @@ $("fCapi").onsubmit = (e) => {
   if (!w || typeof w.turno !== "function") { alert("Capi todavía está cargando."); return; }
   $("tCapi").value = "";
   w.burbuja("yo", t); w.turno(t);
-  bip(700, .06);
+  sonar("enviar");
 };
 
 // ---------- Reloj ----------
@@ -583,7 +576,7 @@ $("escena").addEventListener("scroll", () => medir(), { passive: true });
 new ResizeObserver(() => medir()).observe($("escena"));
 tamEstrellas(); medir(); contar();
 setInterval(leerEstados, 500);
-chrome.storage.local.get("mandoSonido").then((d) => { sonido = !!d.mandoSonido; pintarSonido(); });
+chrome.storage.local.get(["mandoSonido", "mandoVolumen"]).then((d) => { sonido = !!d.mandoSonido; const v = d.mandoVolumen == null ? 0.6 : d.mandoVolumen; if (window.Sonidos) Sonidos.volumen = v; $("volSonido").value = String(Math.round(v * 100)); pintarSonido(); });
 chrome.storage.local.set({ tabActiva: "mando" });
 requestAnimationFrame(cuadro);
 

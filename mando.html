@@ -23,7 +23,8 @@
     <div class="der">
       <button class="chipbtn" id="b-tablero" title="Tablero: agentes, supervisores, tareas, errores, costos y seguridad">Tablero</button>
       <button class="chipbtn" id="b-fondo" title="Fondo de pantalla: usa tus propias imágenes" aria-haspopup="true" aria-expanded="false">Fondo</button>
-      <button id="b-sonido" class="chipbtn" title="Efectos de sonido">Sonido: no</button>
+      <button id="b-sonido" class="chipbtn" title="Efectos de sonido relajantes (sin música)">Sonido: no</button>
+      <input type="range" id="volSonido" class="vol-sonido" min="0" max="100" step="1" value="60" title="Volumen de los efectos" aria-label="Volumen de los efectos" hidden>
       <span id="reloj">--:--</span>
     </div>
   </header>
@@ -283,7 +284,7 @@
     <div id="fondoAviso" class="fondo-aviso" aria-live="polite"></div>
   </div>
   <script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
-  <script src="mando.js"></script><script src="fondos.js"></script>
+  <script src="sonidos.js"></script><script src="mando.js"></script><script src="fondos.js"></script>
 <script src="apagar.js"></script>
 </body>
 </html>
