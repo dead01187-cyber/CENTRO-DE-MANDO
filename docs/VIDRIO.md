@@ -86,3 +86,17 @@ El Centro de Mando usa un estilo parecido a las tarjetas de vidrio de macOS. Tod
 - **Vidrio más sobrio:** menos brillo y orillas más tenues para ir con el gris.
 - **Líneas entre robots:** blancas translúcidas (antes eran grises). La línea del robot que está trabajando sigue en coral.
 - **Pantallas de los robots** (dentro del cajón): no cambian, siguen en n8n oscuro.
+
+### Ajustes de diseño (v1.71.0)
+
+- **Fondo:** velo oscuro ligero sobre la imagen. La franja de luz ya no le quita contraste a las tarjetas.
+- **Líneas entre robots:** más discretas.
+- **Globo de Capi:** compacto, de 2 líneas. Ya no tapa la etiqueta "Leads nuevos" y el texto completo sigue en el chat de Capi.
+- **Tarjetas:**
+  - el nombre del robot tiene más peso;
+  - el mensaje secundario va más apagado;
+  - en reposo ya no repiten "Listo para trabajar.".
+- **"Arrancar misión":** botón blanco estilo Apple (antes coral).
+- **Contadores de arriba:** se ven como indicadores, no como botones.
+- **Etiquetas de grupo:** un poco más grandes.
+- **Bitácora:** mide lo que trae, sin el hueco vacío, y se desplaza si crece.

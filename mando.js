@@ -378,7 +378,10 @@ function leerEstados() {
       for (const c of Object.keys(CHIP)) e.classList.toggle(c, c === st);
       e.querySelector(".chip").textContent = CHIP[st];
     }
-    const box = e.querySelector(".msg"); if (box && box.textContent !== msg) box.textContent = msg;
+    // en reposo, "Listo para trabajar." no aporta nada: la tarjeta solo muestra lo importante
+    const enReposo = (estado[m] === "idle" || !estado[m]) && /^(Listo para trabajar\.?|Esperando…?|Listo\.?)$/i.test(String(msg || "").trim());
+    const txtMsg = enReposo ? "" : msg;
+    const box = e.querySelector(".msg"); if (box && box.textContent !== txtMsg) box.textContent = txtMsg;
   }
   // Lo último que dijo Capi en su chat → burbuja
   const d = docDe("sv"), ms = d ? d.querySelectorAll("#chat .m.sv") : [];
