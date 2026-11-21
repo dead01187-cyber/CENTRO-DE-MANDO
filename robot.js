@@ -3,13 +3,9 @@
 // Cambian de estado solos según lo que anota cada pestaña en la bitácora.
 // Estados: idle, trabajando, feliz, error, ayuda (captcha/login), pausa.
 // =====================================================================
-// Tema de las pestañas: el mismo que escojas en el Centro de Mando (n8n o neón)
+// Tema de las pestañas: siempre estilo n8n (el tema neón se quitó)
 (function () {
-  try {
-    const poner = (t) => document.documentElement.classList.toggle("n8n", (t || "n8n") === "n8n");
-    chrome.storage.local.get("mandoTema").then(({ mandoTema }) => poner(mandoTema));
-    chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.mandoTema) poner(ch.mandoTema.newValue); });
-  } catch (e) {}
+  try { document.documentElement.classList.add("n8n"); } catch (e) {}
 })();
 (function () {
   const ROBOTS = {

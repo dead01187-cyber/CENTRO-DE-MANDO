@@ -13,7 +13,7 @@ El botón **✨ Vidrio** lo prende y lo apaga. Viene prendido y tu elección se 
 
 - Los botones que quedan dentro del vidrio (Aprobar, Rechazar, Actualizar) funcionan igual.
 - Al apagarlo, todo regresa exactamente a como estaba.
-- En el tema **neón** (fondo con degradado y cuadrícula) el efecto se nota más que en **n8n** (fondo plano). La refracción necesita algo detrás para verse.
+- La extensión usa solo el tema **n8n** (fondo gris plano), así que el efecto es discreto: la refracción necesita algo detrás para verse.
 
 ## Cómo está armado (y por qué no tienes que compilar)
 

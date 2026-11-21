@@ -78,12 +78,11 @@ function bip(f = 660, dur = 0.07, vol = 0.04, tipo = "sine") {
     o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + dur);
   } catch (e) {}
 }
-// ---------- Tema: neón o estilo n8n ----------
-const N8N = () => document.body.classList.contains("n8n");
-function ponerTema(t) {
-  document.body.classList.toggle("n8n", t === "n8n");
+// ---------- Tema: solo estilo n8n (el tema neón se quitó por decisión del jefe) ----------
+const N8N = () => true;
+function ponerTema() {
+  document.body.classList.add("n8n");
   aplicarCam();
-  $("b-tema").textContent = t === "n8n" ? "🌌 Estilo neón" : "🎨 Estilo n8n";
   setTimeout(() => { try { medir(); } catch (e) {} }, 60);
 }
 // ---------- Cámara (estilo n8n): zoom con botones o Ctrl/⌘ + rueda; arrastrar con clic izquierdo para mover ----------
@@ -147,8 +146,8 @@ function encuadrar() { // que quepa todo el flujo en la pantalla
 })();
 
 $("b-tablero").onclick = () => mostrar("tb"); // Fase 5
-$("b-tema").onclick = () => { const t = N8N() ? "neon" : "n8n"; chrome.storage.local.set({ mandoTema: t }); ponerTema(t); };
-chrome.storage.local.get("mandoTema").then(({ mandoTema = "n8n" }) => ponerTema(mandoTema));
+chrome.storage.local.set({ mandoTema: "n8n" }); // si estaba guardado "neon", se reemplaza
+ponerTema();
 
 function pintarSonido() { $("b-sonido").textContent = sonido ? "🔊 Efectos" : "🔇 Efectos"; }
 $("b-sonido").onclick = () => { sonido = !sonido; chrome.storage.local.set({ mandoSonido: sonido }); pintarSonido(); bip(880, .1); };
