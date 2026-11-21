@@ -183,3 +183,19 @@ test("Misión por el bus: pide Propi → Veri → espera tu OK, y al pausar canc
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });
+
+test("Vidrio (liquid-glass-react): el tablero lo monta, los botones adentro siguen sirviendo y se apaga sin rastro", async () => {
+  const amb = await abrir({});
+  try {
+    await amb.sw.evaluate(() => BUS.crear({ robot: "li", accion: "limpiar", origen: "capi" }));
+    const tb = await amb.pagina("tablero.html"); await tb.waitForTimeout(2500);
+    assert.match(await tb.evaluate(() => window.Vidrio && Vidrio.version), /liquid-glass-react/);
+    assert.equal(await tb.evaluate(() => document.querySelectorAll(".vidrio-anfitrion").length), 3);
+    await tb.click("#aprob button:has-text('Rechazar')"); await tb.waitForTimeout(800);
+    assert.equal((await amb.sw.evaluate(() => BUS.listar())).find((t) => t.robot === "li").estado, "rechazada");
+    await tb.click("#vidrioBtn"); await tb.waitForTimeout(600);
+    assert.equal(await tb.evaluate(() => document.querySelectorAll(".vidrio-anfitrion").length), 0);
+    assert.equal((await amb.leer("mandoVidrio")).mandoVidrio, false);
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});

@@ -28,6 +28,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
+      - name: El efecto vidrio compilado (vidrio/vidrio.js) corresponde a su fuente
+        run: npm run build:vidrio && git diff --exit-code vidrio/
       - run: npx playwright install --with-deps chromium
       - name: Regresión contra Lofty falso
         run: npm run test:e2e

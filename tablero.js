@@ -103,3 +103,16 @@ chrome.storage.onChanged.addListener((ch, area) => { if (area === "local") pinta
 $("act").onclick = pintarPronto;
 setInterval(pintarPronto, 30e3); // "sin señal" y "hace X min" cambian aunque no cambie storage
 pintar().catch((e) => { $("sub").textContent = "No pude cargar el tablero: " + e.message; });
+
+// ---------- Efecto vidrio (liquid-glass-react vía vidrio/vidrio.js). Prendido por defecto; se apaga con ✨ Vidrio ----------
+const VIDRIOS = [[".semaforo", { radio: 16 }], ["#secAprob", { radio: 16 }], ["#secMision", { radio: 16 }]];
+let vidrios = [];
+function ponerVidrio(on) {
+  vidrios.forEach((v) => v && v.quitar()); vidrios = [];
+  document.querySelectorAll(".en-vidrio").forEach((e) => e.classList.remove("en-vidrio"));
+  $("vidrioBtn").classList.toggle("primary", on);
+  if (!on || !window.Vidrio) return;
+  for (const [sel, op] of VIDRIOS) { const e = document.querySelector(sel); if (e) { e.classList.add("en-vidrio"); vidrios.push(Vidrio.envolver(e, op)); } }
+}
+$("vidrioBtn").onclick = async () => { const { mandoVidrio } = await chrome.storage.local.get("mandoVidrio"); const on = mandoVidrio === false; await chrome.storage.local.set({ mandoVidrio: on }); ponerVidrio(on); };
+chrome.storage.local.get("mandoVidrio").then(({ mandoVidrio }) => ponerVidrio(mandoVidrio !== false));

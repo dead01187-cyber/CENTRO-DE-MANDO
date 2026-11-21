@@ -17,12 +17,15 @@
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .apr { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   .wrap-tabla { overflow-x: auto; }
+  /* Efecto vidrio (liquid-glass-react): lo que va adentro del vidrio se vuelve transparente para que se vea la refracción */
+  html[data-mod] .en-vidrio { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+  .vidrio-anfitrion { margin: 0; }
 </style>
 <link rel="stylesheet" href="tema.css">
 </head>
 <body>
 <main>
-  <div class="card semaforo"><span class="luz" id="luz"></span><div style="flex:1"><b id="titulo">Tablero</b><div class="hint" id="sub">Cargando…</div></div><button id="act">↻ Actualizar</button></div>
+  <div class="card semaforo"><span class="luz" id="luz"></span><div style="flex:1"><b id="titulo">Tablero</b><div class="hint" id="sub">Cargando…</div></div><button id="vidrioBtn" title="Efecto Liquid Glass (liquid-glass-react)">✨ Vidrio</button><button id="act">↻ Actualizar</button></div>
   <div class="nums" id="nums"></div>
   <section id="secAprob" hidden><h3>Esperando tu aprobación</h3><ul id="aprob"></ul></section>
   <section id="secMision" hidden><h3>Misión</h3><div class="card" id="mision"></div></section>
@@ -36,6 +39,6 @@
   <section><h3>Seguridad y cumplimiento</h3><div class="wrap-tabla"><table id="seguridad"></table></div></section>
 </main>
 <script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
-<script src="presupuesto.js"></script><script src="vista.js"></script><script src="tablero-core.js"></script><script src="tablero.js"></script>
+<script src="presupuesto.js"></script><script src="vista.js"></script><script src="tablero-core.js"></script><script src="vidrio/vidrio.js"></script><script src="tablero.js"></script>
 </body>
 </html>
