@@ -39,6 +39,7 @@ const svWin = () => { try { return frame("sv").contentWindow; } catch (e) { retu
 let enCajon = null;
 function mostrar(m) {
   if (!MODS.includes(m)) return;
+  if (enCajon !== m || !document.body.classList.contains("con-cajon")) window.Sonidos && Sonidos.tocar("abrir"); // sonido suave al abrir un agente
   enCajon = m;
   document.body.classList.add("con-cajon");
   for (const x of MODS) frame(x) && frame(x).classList.toggle("on", x === m);
@@ -74,6 +75,11 @@ addEventListener("keydown", (e) => { if (e.key === "Escape" && enCajon) cerrarCa
 // ---------- Sonidos (opcionales): efectos relajantes de sonidos.js, sin música ----------
 let sonido = false;
 const sonar = (nombre) => window.Sonidos && Sonidos.tocar(nombre);
+chrome.storage.onChanged.addListener((ch, area) => {
+  if (area !== "local" || !ch.smsRegistro) return;
+  const antes = (ch.smsRegistro.oldValue || []).length, ahora = ch.smsRegistro.newValue || [];
+  if (ahora.slice(antes > ahora.length ? -1 : antes).some((e) => e && e.estado === "enviado")) sonar("sms");
+});
 // ---------- Tema: solo estilo n8n (el tema neón se quitó por decisión del jefe) ----------
 const N8N = () => true;
 function ponerTema() {
@@ -146,9 +152,9 @@ chrome.storage.local.set({ mandoTema: "n8n" }); // si estaba guardado "neon", se
 ponerTema();
 
 function pintarSonido() { $("b-sonido").textContent = sonido ? "Sonido: sí" : "Sonido: no"; if (window.Sonidos) Sonidos.activo = sonido; $("volSonido").hidden = !sonido; }
-$("b-sonido").onclick = () => { sonido = !sonido; chrome.storage.local.set({ mandoSonido: sonido }); pintarSonido(); sonar("listo"); };
+$("b-sonido").onclick = () => { sonido = !sonido; chrome.storage.local.set({ mandoSonido: sonido }); pintarSonido(); if (sonido) sonar("abrir"); }; // muestra cómo suena
 $("volSonido").oninput = (e) => { const v = Number(e.target.value) / 100; if (window.Sonidos) Sonidos.volumen = v; chrome.storage.local.set({ mandoVolumen: v }); };
-$("volSonido").onchange = () => sonar("gota");
+$("volSonido").onchange = () => sonar("sms"); // para oír el volumen nuevo
 
 // =====================================================================
 // Fondo de estrellas
@@ -343,7 +349,6 @@ function dibujarLazos(t) {
 function llegada(m) {
   const a = document.querySelector(`#e-${m} .aro`); if (!a) return;
   a.animate([{ filter: "brightness(1.9)" }, { filter: "brightness(1)" }], { duration: 380 });
-  sonar("gota");
 }
 
 // Los pulsos SOLO salen cuando algo de verdad pasa de un robot a otro (un domicilio, un lead, un borrador, un SMS…):
@@ -369,8 +374,6 @@ function leerEstados() {
     const e = $("e-" + m);
     if (estado[m] !== st) {
       if (estado[m] !== undefined) {
-        if (st === "error" || st === "ayuda") sonar("aviso");
-        if (st === "feliz") sonar("listo");
       }
       estado[m] = st;
       for (const c of Object.keys(CHIP)) e.classList.toggle(c, c === st);
@@ -536,7 +539,6 @@ $("mIniciar").onclick = async () => {
   const zona = $("mZona").value.trim(), meta = corrido ? CORRIDO : parseInt($("mMeta").value, 10);
   if (!zona || !meta) { $("mZona").focus(); return; }
   chrome.storage.local.set({ mandoCorrido: corrido });
-  sonar("inicio");
   const r = await capi("iniciar_mision", { zona, meta });
   if (r) { const w = svWin(); w && w.burbuja && w.burbuja("aviso", "Desde el Centro de Mando: " + r); }
   pintarMision();
@@ -563,7 +565,6 @@ $("fCapi").onsubmit = (e) => {
   if (!w || typeof w.turno !== "function") { alert("Capi todavía está cargando."); return; }
   $("tCapi").value = "";
   w.burbuja("yo", t); w.turno(t);
-  sonar("enviar");
 };
 
 // ---------- Reloj ----------

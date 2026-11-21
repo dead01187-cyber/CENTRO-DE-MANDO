@@ -238,7 +238,7 @@ test("Fondo propio: subir una imagen la pone de fondo, sigue al recargar y al bo
   } finally { await amb.cerrar(); }
 });
 
-test("Sonidos relajantes: cada efecto suena (sin saturar), el botón los prende y el volumen se guarda", async () => {
+test("Sonidos relajantes: solo abrir agente y SMS; suenan sin saturar, el botón los prende y el volumen se guarda", async () => {
   const amb = await abrir({});
   try {
     const m = await amb.pagina("mando.html"); await m.waitForTimeout(1500);
@@ -250,6 +250,7 @@ test("Sonidos relajantes: cada efecto suena (sin saturar), el botón los prende 
       }
       return out;
     });
+    assert.deepEqual(Object.keys(picos).sort(), ["abrir", "sms"]);
     for (const [n, p] of Object.entries(picos)) { assert.ok(p > 0.02, `${n} casi no suena (${p})`); assert.ok(p < 0.9, `${n} satura (${p})`); }
     assert.equal(await m.isVisible("#volSonido"), false);
     await m.click("#b-sonido");
@@ -261,6 +262,43 @@ test("Sonidos relajantes: cada efecto suena (sin saturar), el botón los prende 
     await m.evaluate(() => { for (const n of Sonidos.NOMBRES) Sonidos.tocar(n); });
     await m.click("#b-sonido");
     assert.equal(await m.evaluate(() => Sonidos.activo), false);
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});
+
+test("Datos: descargar respaldo, importar solo llaves y restaurar todo (con respaldo previo y confirmación)", async () => {
+  const fs = require("fs"), os = require("os"), path = require("path");
+  const amb = await abrir({ storage: { loftyKey: "vieja", mandoFondoVelo: 0.4, txPlantillas: [{ id: "a", nombre: "Mía" }] } });
+  try {
+    const m = await amb.pagina("mando.html"); await m.waitForTimeout(1200);
+    await m.click("#b-datos"); assert.equal(await m.isVisible("#datosPanel"), true);
+    // 1) descargar
+    const [d1] = await Promise.all([m.waitForEvent("download"), m.click("#datosBajar")]);
+    const r1 = JSON.parse(fs.readFileSync(await d1.path(), "utf8"));
+    assert.equal(r1.storage.loftyKey, "vieja"); assert.match(d1.suggestedFilename(), /^respaldo-geo-farming-/);
+    // un respaldo "viejo" con otras llaves y otros datos
+    const arch = path.join(os.tmpdir(), "resp-prueba.json");
+    fs.writeFileSync(arch, JSON.stringify({ creado: "2026-11-01T10:00:00Z", version: "1.70.0", storage: { loftyKey: "L2", txKey: "T2", svKey: "S2", alCfg: { apiKey: "M2", otro: 1 }, txPlantillas: [{ id: "b", nombre: "Del respaldo" }] }, localStorage: {} }));
+    // 2) importar solo llaves: las plantillas actuales se quedan
+    const [fc] = await Promise.all([m.waitForEvent("filechooser"), m.click("#datosLlaves")]);
+    await fc.setFiles(arch);
+    await m.waitForFunction(() => /Llaves importadas/.test(document.getElementById("datosAviso").textContent));
+    const st = await amb.leer(["loftyKey", "txKey", "svKey", "alCfg", "txPlantillas"]);
+    assert.equal(st.loftyKey, "L2"); assert.equal(st.txKey, "T2"); assert.equal(st.svKey, "S2"); assert.equal(st.alCfg.apiKey, "M2");
+    assert.equal(st.alCfg.otro, undefined); assert.equal(st.txPlantillas[0].nombre, "Mía");
+    // 3) restaurar: si no escribe RESTAURAR, no pasa nada
+    m.once("dialog", (dg) => dg.accept("no")); const [fc2] = await Promise.all([m.waitForEvent("filechooser"), m.click("#datosRestaurar")]); await fc2.setFiles(arch);
+    await m.waitForFunction(() => /No se restauró/.test(document.getElementById("datosAviso").textContent));
+    assert.equal((await amb.leer("txPlantillas")).txPlantillas[0].nombre, "Mía");
+    // con RESTAURAR: primero baja "antes-de-restaurar" y luego reemplaza todo
+    m.once("dialog", (dg) => dg.accept("RESTAURAR"));
+    const [fc3] = await Promise.all([m.waitForEvent("filechooser"), m.click("#datosRestaurar")]);
+    const [d2] = await Promise.all([m.waitForEvent("download"), fc3.setFiles(arch)]);
+    assert.match(d2.suggestedFilename(), /^antes-de-restaurar-/);
+    assert.equal(JSON.parse(fs.readFileSync(await d2.path(), "utf8")).storage.txPlantillas[0].nombre, "Mía");
+    await m.waitForTimeout(800);
+    const fin = await amb.leer(null);
+    assert.equal(fin.txPlantillas[0].nombre, "Del respaldo"); assert.equal(fin.mandoFondoVelo, undefined); assert.equal(fin.loftyKey, "L2");
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });

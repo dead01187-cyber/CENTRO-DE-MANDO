@@ -22,6 +22,7 @@
     </div>
     <div class="der">
       <button class="chipbtn" id="b-tablero" title="Tablero: agentes, supervisores, tareas, errores, costos y seguridad">Tablero</button>
+      <button class="chipbtn" id="b-datos" title="Respaldar, importar llaves o restaurar tus datos" aria-haspopup="true" aria-expanded="false">Datos</button>
       <button class="chipbtn" id="b-fondo" title="Fondo de pantalla: usa tus propias imágenes" aria-haspopup="true" aria-expanded="false">Fondo</button>
       <button id="b-sonido" class="chipbtn" title="Efectos de sonido relajantes (sin música)">Sonido: no</button>
       <input type="range" id="volSonido" class="vol-sonido" min="0" max="100" step="1" value="60" title="Volumen de los efectos" aria-label="Volumen de los efectos" hidden>
@@ -273,6 +274,17 @@
     <div><b>Ya hay otro Centro de Mando abierto.</b><p>Para que Capi no trabaje doble, usa la otra pestaña.</p></div>
   </div>
 
+  <!-- Datos: respaldar, importar llaves y restaurar (respaldo.js) -->
+  <div id="datosPanel" class="fondo-panel datos-panel" hidden role="dialog" aria-label="Datos">
+    <div class="fondo-tit"><b>Datos</b><small>respaldos e importación</small></div>
+    <button id="datosBajar" class="fondo-agregar">Descargar respaldo</button>
+    <small class="fondo-hint">Baja un archivo .json con todo: leads, ajustes, bajas de SMS y tus llaves. Guárdalo en un lugar seguro y no lo compartas.</small>
+    <button id="datosLlaves" class="datos-btn">Importar llaves de un respaldo</button>
+    <small class="fondo-hint">Toma solo las API keys (Lofty, Texi, Claude, ElevenLabs, Marki, Census). No cambia tus leads ni ajustes.</small>
+    <button id="datosRestaurar" class="datos-btn peligro">Restaurar todo desde un respaldo</button>
+    <small class="fondo-hint">Reemplaza todos los datos por los del respaldo. Antes baja automáticamente un respaldo de lo que tienes ahora, y te pide escribir RESTAURAR.</small>
+    <div id="datosAviso" class="datos-aviso" aria-live="polite"></div>
+  </div>
   <!-- Fondo de pantalla propio (fondos.js) -->
   <div id="fondoPanel" class="fondo-panel" hidden role="dialog" aria-label="Fondo de pantalla">
     <div class="fondo-tit"><b>Fondo de pantalla</b><small id="fondoCuenta"></small></div>
@@ -284,7 +296,7 @@
     <div id="fondoAviso" class="fondo-aviso" aria-live="polite"></div>
   </div>
   <script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
-  <script src="sonidos.js"></script><script src="mando.js"></script><script src="fondos.js"></script>
+  <script src="sonidos.js"></script><script src="mando.js"></script><script src="fondos.js"></script><script src="respaldo.js"></script>
 <script src="apagar.js"></script>
 </body>
 </html>

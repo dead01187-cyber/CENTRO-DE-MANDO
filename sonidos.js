@@ -1,22 +1,22 @@
 // =====================================================================
 // Efectos de sonido relajantes del Centro de Mando (v1.76.0)
 // Solo efectos cortos, sin música. Todo se sintetiza con Web Audio
-// (no hay archivos de audio): gotas de agua, campanas suaves tipo cuenco,
-// un soplo de aire y un tono cálido para avisos. Pasan por un eco suave
+// (no hay archivos de audio): un soplo con gota al abrir un agente y una
+// campana suave tipo cuenco cuando sale un SMS. Pasan por un eco suave
 // (reverberación generada) y un compresor, a volumen bajo.
 //
-//   Sonidos.tocar("gota" | "listo" | "aviso" | "inicio" | "enviar" | "clic")
+//   Sonidos.tocar("abrir" | "sms")   (v1.79.0: solo al abrir un agente y al mandar un SMS)
 //   Sonidos.activo = true/false
 //   Sonidos.volumen = 0..1   (se guarda en chrome.storage: mandoVolumen)
 //
 // Para no cansar: la misma clase de sonido no se repite antes de su pausa
-// mínima (la gota, por ejemplo, máx. ~4 por segundo).
+// mínima (si salen muchos SMS seguidos, la campana suena cuando mucho cada 1.2 s).
 // =====================================================================
 (function (g) {
   let ctx = null, salida = null;
   const ultimo = {};
   const GANANCIA = 2.6; // nivel general: con volumen 60% los picos quedan alrededor de -12 dB
-  const PAUSA = { gota: 250, listo: 900, aviso: 1500, inicio: 1200, enviar: 300, clic: 80 };
+  const PAUSA = { abrir: 400, sms: 1200 };
 
   // ---------- Cadena de salida: volumen → compresor → (seco + eco) ----------
   function eco(c, seg = 2.6, caida = 3.2) {
@@ -74,21 +74,13 @@
   // ---------- Los efectos ----------
   const azar = (a, b) => a + Math.random() * (b - a);
   const EFECTOS = {
-    // Llega un dato a un agente: gota de agua (tono que cae rápido)
-    gota: (c, d, t) => nota(c, d, t, { f: azar(950, 1350), glide: 0.45, vol: 0.12, ataque: 0.003, dura: 0.22 }),
-    // Un agente terminó bien: campana suave, una sola
-    listo: (c, d, t) => campana(c, d, t, azar(520, 560), 0.11, 2.6),
-    // Error o necesita ayuda: dos tonos cálidos que bajan (sin zumbido)
-    aviso: (c, d, t) => {
-      nota(c, d, t, { f: 392, tipo: "triangle", vol: 0.12, ataque: 0.02, dura: 0.9, filtro: 1200 });
-      nota(c, d, t + 0.22, { f: 311, tipo: "triangle", vol: 0.12, ataque: 0.02, dura: 1.2, filtro: 1000 });
+    // Abres un agente (clic en su tarjeta o en el menú): soplo muy suave con una gota clara
+    abrir: (c, d, t) => {
+      soplo(c, d, t, { desde: 500, hasta: 1600, vol: 0.05, dura: 0.35 });
+      nota(c, d, t + 0.08, { f: azar(780, 820), glide: 0.82, vol: 0.07, ataque: 0.004, dura: 0.5 });
     },
-    // Arranca una misión: soplo que sube y una campana grave
-    inicio: (c, d, t) => { soplo(c, d, t, { desde: 400, hasta: 1800, vol: 0.06, dura: 0.7 }); campana(c, d, t + 0.35, 330, 0.12, 3.2); },
-    // Mandaste un mensaje a Capi: soplo corto
-    enviar: (c, d, t) => soplo(c, d, t, { desde: 900, hasta: 3200, vol: 0.16, dura: 0.3 }),
-    // Prender el sonido / clic: toque de madera suave
-    clic: (c, d, t) => nota(c, d, t, { f: 880, tipo: "sine", vol: 0.08, ataque: 0.002, dura: 0.09, glide: 0.7 }),
+    // Salió un SMS: campana suave tipo cuenco, una sola
+    sms: (c, d, t) => campana(c, d, t, azar(520, 545), 0.11, 2.6),
   };
 
   const S = {

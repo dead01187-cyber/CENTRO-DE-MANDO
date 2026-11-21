@@ -166,3 +166,11 @@ body.n8n .der { display: flex; align-items: center; gap: 8px; flex: none; }
 @media (max-width: 1700px) { body.n8n.con-cajon .logo small { display: none; } }
 @media (max-width: 1600px) { body.n8n.con-cajon .metricas { display: none; } body.n8n.con-cajon .der { margin-left: auto; } }
 @media (max-width: 1250px) { body.n8n.con-cajon #reloj, body.n8n.con-cajon .vol-sonido { display: none; } }
+
+/* Panel "Datos": respaldar, importar llaves y restaurar (v1.79.0) */
+.datos-btn { font: inherit; font-size: 12.5px; padding: 9px; border-radius: 10px; cursor: pointer; font-weight: 600;
+  color: #fff; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22); }
+.datos-btn:hover { background: rgba(255,255,255,.16); }
+.datos-btn.peligro { color: #fecaca; border-color: rgba(248,113,113,.45); background: rgba(248,113,113,.10); }
+.datos-btn.peligro:hover { background: rgba(248,113,113,.18); }
+.datos-aviso { font-size: 12px; color: #bbf7d0; } .datos-aviso.malo { color: #fca5a5; } .datos-aviso:empty { display: none; }
