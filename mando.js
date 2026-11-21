@@ -44,6 +44,7 @@ function mostrar(m) {
   for (const x of MODS) frame(x) && frame(x).classList.toggle("on", x === m);
   document.querySelectorAll("#cajonNav button").forEach((b) => b.classList.toggle("on", b.dataset.m === m));
   $("cajonTitulo").textContent = NOMBRE[m];
+  $("cajonIcono").innerHTML = window.robotSVG ? robotSVG(m) : "";
   chrome.storage.local.set({ tabActiva: m });
   setTimeout(medir, 380);
 }
@@ -55,7 +56,11 @@ function cerrarCajon() {
 }
 window.mostrar = mostrar; // Capi lo usa (parent.mostrar)
 document.querySelectorAll(".estacion[data-m]").forEach((e) => (e.onclick = () => mostrar(e.dataset.m)));
-document.querySelectorAll("#cajonNav button").forEach((b) => (b.onclick = () => mostrar(b.dataset.m)));
+document.querySelectorAll("#cajonNav button").forEach((b) => {
+  // ícono de línea de cada agente junto a su nombre en el menú
+  if (window.robotSVG) { const i = document.createElement("span"); i.className = "ni"; i.innerHTML = robotSVG(b.dataset.m); b.prepend(i); }
+  b.onclick = () => mostrar(b.dataset.m);
+});
 $("cajonCerrar").onclick = cerrarCajon;
 // Menú desplegable de robots
 const menuBtn = $("cajonMenuBtn"), menuNav = $("cajonNav");

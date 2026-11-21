@@ -94,6 +94,7 @@
 
   // Íconos de línea (Lucide v0.469.0, licencia ISC: https://lucide.dev/license). Uno por función.
   const FORMAS = {
+    "layout-dashboard": '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
     "sparkles": '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
     "map-pin": '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
     "list-checks": '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
@@ -122,7 +123,7 @@
     "users": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
     "database": '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
   };
-  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database"};
+  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database", "tb":"layout-dashboard"};
 
   // Ícono de cada agente: línea fina del color de su sección (antes era pixel art; los mapas se quedan solo como color)
   function robotSVG(mod) {

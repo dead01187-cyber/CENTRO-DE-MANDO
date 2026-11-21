@@ -137,3 +137,32 @@ body.n8n .estacion.trabajando .robot, body.n8n .estacion.pensando .robot { anima
 /* Volumen de los efectos de sonido (v1.76.0) */
 .vol-sonido { width: 84px; accent-color: #fff; opacity: .8; }
 .vol-sonido[hidden] { display: none; }
+
+/* =====================================================================
+   Menú de agentes del cajón y barra con cajón abierto (v1.77.0)
+   ===================================================================== */
+body.n8n #cajonMenuBtn { display: inline-flex; align-items: center; gap: 9px; padding: 7px 12px 7px 9px; border-radius: 10px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: #fff; font-weight: 600; }
+body.n8n #cajonMenuBtn:hover { background: rgba(255,255,255,.14); }
+.ni { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: none; border-radius: 7px; background: rgba(255,255,255,.07); }
+.ni:empty { display: none; }
+.ni svg { width: 15px; height: 15px; }
+body.n8n .cajon-top nav#cajonNav {
+  width: min(432px, calc(100vw - 40px)); max-height: calc(100vh - 90px); overflow: auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 6px; padding: 12px;
+  background: rgba(28,28,30,.86); border: 1px solid rgba(255,255,255,.16); border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 24px 48px rgba(0,0,0,.55);
+  -webkit-backdrop-filter: blur(30px) saturate(160%); backdrop-filter: blur(30px) saturate(160%); }
+body.n8n #cajonNav .g-tit { color: rgba(255,255,255,.45); font-size: 10px; font-weight: 600; letter-spacing: .09em; margin: 0 0 4px 6px; }
+body.n8n .cajon-top nav#cajonNav button { display: flex; align-items: center; gap: 7px; padding: 3px 5px; font-size: 12.5px; white-space: nowrap; border-radius: 8px;
+  color: rgba(255,255,255,.86); background: transparent; }
+body.n8n .cajon-top nav#cajonNav button:hover { background: rgba(255,255,255,.08); }
+body.n8n .cajon-top nav#cajonNav button.on { background: rgba(255,255,255,.14); color: #fff; font-weight: 600; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+
+/* Barra de arriba: nada se parte en dos renglones; con el cajón abierto se queda lo esencial */
+body.n8n .hud { flex-wrap: nowrap; min-width: 0; }
+body.n8n .logo, body.n8n .der, body.n8n .der .chipbtn, body.n8n #reloj { white-space: nowrap; }
+body.n8n .der { display: flex; align-items: center; gap: 8px; flex: none; }
+@media (max-width: 1700px) { body.n8n.con-cajon .logo small { display: none; } }
+@media (max-width: 1600px) { body.n8n.con-cajon .metricas { display: none; } body.n8n.con-cajon .der { margin-left: auto; } }
+@media (max-width: 1250px) { body.n8n.con-cajon #reloj, body.n8n.con-cajon .vol-sonido { display: none; } }
