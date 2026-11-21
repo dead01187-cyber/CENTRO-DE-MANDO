@@ -7,3 +7,4 @@ respaldo-*.json
 
 # Solo para las pruebas (npm install); nunca dentro de la extensión que carga Chrome
 node_modules/
+test-results/
