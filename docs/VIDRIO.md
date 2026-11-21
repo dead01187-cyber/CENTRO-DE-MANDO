@@ -79,7 +79,7 @@ Cualquier página puede usarlo cargando `vidrio/vidrio.js` y llamando `Vidrio.en
 
 El Centro de Mando usa un estilo parecido a las tarjetas de vidrio de macOS. Todo está en `mando-vidrio.css`, que se carga después de `mando-n8n.css`. Es solo CSS (`backdrop-filter`): **no usa React**, así que con 30 tarjetas sigue siendo ligero.
 
-- **Fondo:** gris oscuro casi liso (grafito, de #2a2b2e a #18191b), con dos o tres luces grises muy suaves para que se note el vidrio de las tarjetas. Desde v1.69.1. Antes era de manchas de colores; se cambió a uno más serio.
+- **Fondo:** gris oscuro casi liso (grafito, de #3a3b3f a #28292c; un tono más claro desde v1.69.2), con dos o tres luces grises muy suaves para que se note el vidrio de las tarjetas. Desde v1.69.1. Antes era de manchas de colores; se cambió a uno más serio.
 - **Tarjetas de los robots:** vidrio translúcido con desenfoque (22 px) y más saturación, orilla clara, brillo arriba, sombra suave, esquinas de 16 px y texto blanco. El cuadro del robot y la pastilla de estado también son de vidrio.
 - **Estados:** trabajando, terminó, error y pausa conservan sus colores de orilla y animaciones.
 - **También de vidrio:** la barra de arriba, los contadores, los botones, las tarjetas de Misión, Capi y Bitácora, la burbuja de Capi, los controles de zoom y el cajón.

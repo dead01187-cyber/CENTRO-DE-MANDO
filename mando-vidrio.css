@@ -13,7 +13,7 @@ body.n8n {
   --vid-sombra: 0 10px 28px rgba(0, 0, 0, .35);
   --vid-blur: blur(22px) saturate(170%);
   --t: #ffffff; --m: rgba(255,255,255,.72);
-  background: #1c1d1f;
+  background: #2c2d30;
   color: #fff;
 }
 
@@ -25,7 +25,7 @@ body.n8n .rejilla {
     radial-gradient(55% 50% at 18% 15%, rgba(255,255,255,.07) 0%, rgba(255,255,255,0) 65%),
     radial-gradient(50% 55% at 85% 85%, rgba(255,255,255,.05) 0%, rgba(255,255,255,0) 65%),
     radial-gradient(40% 40% at 60% 40%, rgba(160,170,190,.06) 0%, rgba(160,170,190,0) 70%),
-    linear-gradient(160deg, #2a2b2e 0%, #1f2023 50%, #18191b 100%) !important;
+    linear-gradient(160deg, #3a3b3f 0%, #303135 50%, #28292c 100%) !important; /* un tono más claro (v1.69.2) */
   background-size: 100% 100% !important;
 }
 
@@ -72,6 +72,6 @@ body.n8n input, body.n8n textarea { background: rgba(255,255,255,.12); border-co
 body.n8n input::placeholder, body.n8n textarea::placeholder { color: rgba(255,255,255,.55); }
 body.n8n #camara button { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.25); color: #fff; }
 body.n8n #camZoom { color: rgba(255,255,255,.8); }
-body.n8n .cajon { background: rgba(24, 25, 27, .70); border-left: 1px solid rgba(255,255,255,.20);
+body.n8n .cajon { background: rgba(40, 41, 44, .70); border-left: 1px solid rgba(255,255,255,.20);
   -webkit-backdrop-filter: blur(28px) saturate(160%); backdrop-filter: blur(28px) saturate(160%); }
 body.n8n .cajon-top { background: rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.16); }
