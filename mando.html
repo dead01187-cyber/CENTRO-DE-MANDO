@@ -22,6 +22,7 @@
     </div>
     <div class="der">
       <button class="chipbtn" id="b-tablero" title="Tablero: agentes, supervisores, tareas, errores, costos y seguridad">📊 Tablero</button>
+      <button class="chipbtn" id="b-fondo" title="Fondo de pantalla: usa tus propias imágenes" aria-haspopup="true" aria-expanded="false">🖼 Fondo</button>
       <button id="b-sonido" class="chipbtn" title="Efectos de sonido">🔇 Efectos</button>
       <span id="reloj">--:--</span>
     </div>
@@ -271,8 +272,18 @@
     <div><b>Ya hay otro Centro de Mando abierto.</b><p>Para que Capi no trabaje doble, usa la otra pestaña.</p></div>
   </div>
 
+  <!-- Fondo de pantalla propio (fondos.js) -->
+  <div id="fondoPanel" class="fondo-panel" hidden role="dialog" aria-label="Fondo de pantalla">
+    <div class="fondo-tit"><b>Fondo de pantalla</b><small id="fondoCuenta"></small></div>
+    <div id="fondoLista" class="fondo-lista"></div>
+    <button id="fondoAgregar" class="fondo-agregar">＋ Agregar imagen de tu computadora</button>
+    <input type="file" id="fondoArchivo" accept="image/*" multiple hidden>
+    <small class="fondo-hint">También puedes arrastrar una imagen aquí. JPG, PNG o WebP; las muy grandes se achican solas.</small>
+    <label class="fondo-velo">Oscurecer <input type="range" id="fondoVelo" min="0" max="70" step="1"></label>
+    <div id="fondoAviso" class="fondo-aviso" aria-live="polite"></div>
+  </div>
   <script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
-  <script src="mando.js"></script>
+  <script src="mando.js"></script><script src="fondos.js"></script>
 <script src="apagar.js"></script>
 </body>
 </html>

@@ -199,3 +199,41 @@ test("Vidrio (liquid-glass-react): el tablero lo monta, los botones adentro sigu
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });
+
+test("Fondo propio: subir una imagen la pone de fondo, sigue al recargar y al borrarla regresa el de siempre", async () => {
+  const amb = await abrir({});
+  try {
+    const m = await amb.pagina("mando.html"); await m.waitForTimeout(1500);
+    const fondo = () => m.evaluate(() => getComputedStyle(document.querySelector(".rejilla")).backgroundImage);
+    assert.match(await fondo(), /fondo-mando\.jpg/);
+    // una imagen PNG chiquita hecha en el momento (azul)
+    const png = Buffer.from(await m.evaluate(async () => {
+      const c = new OffscreenCanvas(64, 40); const g = c.getContext("2d"); g.fillStyle = "#2563eb"; g.fillRect(0, 0, 64, 40);
+      return [...new Uint8Array(await (await c.convertToBlob({ type: "image/png" })).arrayBuffer())];
+    }));
+    await m.click("#b-fondo");
+    assert.equal(await m.isVisible("#fondoPanel"), true);
+    await m.setInputFiles("#fondoArchivo", { name: "mi-fondo.png", mimeType: "image/png", buffer: png });
+    await m.waitForFunction(() => document.querySelectorAll("#fondoLista .fondo-mini").length === 2, null, { timeout: 10000 });
+    assert.match(await fondo(), /blob:/);
+    const { mandoFondo } = await amb.leer("mandoFondo"); assert.ok(mandoFondo);
+    // un texto que no es imagen se rechaza con aviso
+    await m.setInputFiles("#fondoArchivo", { name: "notas.txt", mimeType: "text/plain", buffer: Buffer.from("hola") });
+    await m.waitForFunction(() => /no es una imagen/.test(document.getElementById("fondoAviso").textContent));
+    // oscurecer
+    await m.fill("#fondoVelo", "50"); await m.dispatchEvent("#fondoVelo", "input"); await m.waitForTimeout(300);
+    assert.equal((await amb.leer("mandoFondoVelo")).mandoFondoVelo, 0.5);
+    // sigue al recargar
+    await m.reload(); await m.waitForTimeout(1500);
+    assert.match(await fondo(), /blob:/);
+    // borrar → regresa el de siempre
+    await m.click("#b-fondo");
+    m.once("dialog", (d) => d.accept());
+    await m.hover("#fondoLista .fondo-mini:nth-child(2)");
+    await m.click("#fondoLista .fondo-mini:nth-child(2) .fondo-quitar");
+    await m.waitForFunction(() => document.querySelectorAll("#fondoLista .fondo-mini").length === 1);
+    assert.match(await fondo(), /fondo-mando\.jpg/);
+    assert.equal((await amb.leer("mandoFondo")).mandoFondo, "");
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});
