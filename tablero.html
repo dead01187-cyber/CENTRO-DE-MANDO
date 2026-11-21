@@ -18,7 +18,8 @@
   .apr { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   .wrap-tabla { overflow-x: auto; }
   /* Efecto vidrio (liquid-glass-react): lo que va adentro del vidrio se vuelve transparente para que se vea la refracción */
-  html[data-mod] .en-vidrio { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+  /* (con html.n8n para ganarle al tema n8n, que también usa !important; el margen ya lo tiene el anfitrión afuera del vidrio) */
+  html[data-mod] .en-vidrio, html.n8n[data-mod] .en-vidrio { background: transparent !important; border-color: transparent !important; box-shadow: none !important; margin: 0 !important; }
   .vidrio-anfitrion { margin: 0; }
   #vidrioBtn.activo { border-color: var(--acc, var(--c)); color: var(--acc, var(--c)); font-weight: 600; }
 </style>

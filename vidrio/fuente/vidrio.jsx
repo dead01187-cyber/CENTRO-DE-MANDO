@@ -36,7 +36,7 @@ function Vidrio({ nodo, ancho, op, letra }) {
       overLight={op.sobreClaro}
     >
       {/* la librería fija "500 20px/1 system-ui" y sombra de texto: aquí se regresa la letra de la página */}
-      <div style={{ width: ancho ? `${ancho}px` : "auto", font: letra, textShadow: "none", textAlign: "left" }}><Contenido nodo={nodo} /></div>
+      <div className="vidrio-contenido" style={{ display: "flow-root", width: ancho ? `${ancho}px` : "auto", font: letra, textShadow: "none", textAlign: "left" }}><Contenido nodo={nodo} /></div>
     </LiquidGlass>
   );
 }
@@ -50,23 +50,37 @@ function envolver(nodo, opciones = {}) {
   const anfitrion = document.createElement("div");
   anfitrion.className = "vidrio-anfitrion";
   anfitrion.style.cssText = "position:relative;width:100%;";
+  // El margen del elemento pasa al anfitrión (afuera del vidrio); adentro el elemento queda sin margen.
+  // Si no, el margen se sumaba al vidrio y su marco quedaba más grande que el bloque (borde doble).
+  const margenOriginal = nodo.style.margin;
+  anfitrion.style.margin = getComputedStyle(nodo).margin;
+  nodo.style.margin = "0";
   nodo.parentNode.insertBefore(anfitrion, nodo);
   const raiz = createRoot(anfitrion);
   const letra = getComputedStyle(anfitrion.parentNode).font; // la letra que tenía el elemento antes de entrar al vidrio
   let ancho = anfitrion.clientWidth;
   const pintar = () => raiz.render(<Vidrio nodo={nodo} ancho={ancho} op={op} letra={letra} />);
+  let alto = -1, avisar = 0;
   const medir = () => {
-    const w = anfitrion.clientWidth;
+    // el alto se mide DENTRO del vidrio: ahí los márgenes del contenido sí cuentan (afuera no, y el vidrio quedaba 12 px más alto)
+    const dentro = anfitrion.querySelector(".vidrio-contenido");
+    const w = anfitrion.clientWidth, h = dentro ? dentro.offsetHeight : nodo.offsetHeight;
+    const cambio = Math.abs(w - ancho) > 1 || Math.abs(h - alto) > 1;
     if (Math.abs(w - ancho) > 1) { ancho = w; pintar(); }
-    anfitrion.style.height = `${nodo.offsetHeight}px`; // el vidrio es absoluto: el anfitrión reserva su alto
+    alto = h;
+    anfitrion.style.height = `${h}px`; // el vidrio es absoluto: el anfitrión reserva su alto
+    // La librería mide el vidrio solo al crearlo y cuando cambia la ventana ("resize"). Si el contenido cambió de tamaño,
+    // se le avisa para que su marco y brillos vuelvan a medir (si no, quedaba un borde doble abajo).
+    if (cambio) { cancelAnimationFrame(avisar); avisar = requestAnimationFrame(() => window.dispatchEvent(new Event("resize"))); }
   };
   const ro = new ResizeObserver(medir);
   pintar();
-  requestAnimationFrame(() => { medir(); ro.observe(anfitrion); ro.observe(nodo); });
+  requestAnimationFrame(() => { medir(); ro.observe(anfitrion); ro.observe(nodo); const d = anfitrion.querySelector(".vidrio-contenido"); if (d) ro.observe(d); });
   const control = {
     quitar() {
       ro.disconnect();
       anfitrion.parentNode && anfitrion.parentNode.insertBefore(nodo, anfitrion);
+      nodo.style.margin = margenOriginal;
       raiz.unmount(); anfitrion.remove(); delete nodo.__vidrio;
     },
   };

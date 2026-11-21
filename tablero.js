@@ -112,7 +112,8 @@ function ponerVidrio(on) {
   document.querySelectorAll(".en-vidrio").forEach((e) => e.classList.remove("en-vidrio"));
   $("vidrioBtn").classList.toggle("activo", on); // (no "primary": esa clase estira el botón)
   if (!on || !window.Vidrio) return;
-  for (const [sel, op] of VIDRIOS) { const e = document.querySelector(sel); if (e) { e.classList.add("en-vidrio"); vidrios.push(Vidrio.envolver(e, op)); } }
+  // primero se envuelve (el vidrio toma el margen original del bloque) y después se vuelve transparente
+  for (const [sel, op] of VIDRIOS) { const e = document.querySelector(sel); if (e) { vidrios.push(Vidrio.envolver(e, op)); e.classList.add("en-vidrio"); } }
 }
 $("vidrioBtn").onclick = async () => { const { mandoVidrio } = await chrome.storage.local.get("mandoVidrio"); const on = mandoVidrio === false; await chrome.storage.local.set({ mandoVidrio: on }); ponerVidrio(on); };
 chrome.storage.local.get("mandoVidrio").then(({ mandoVidrio }) => ponerVidrio(mandoVidrio !== false));
