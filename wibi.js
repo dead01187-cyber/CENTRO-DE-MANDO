@@ -315,7 +315,7 @@ async function pintar() {
   $("nLeidos").textContent = leads.length; $("nListos").textContent = n("nuevo"); $("nYa").textContent = n("ya");
   const { wibiRes = {} } = await chrome.storage.local.get("wibiRes");
   $("nHoy").textContent = wibiRes.fecha === hoy() ? wibiRes.aLoftiHoy || 0 : 0;
-  $("subir").disabled = corriendo || !n("nuevo"); $("subir").textContent = `➡️ Pasar ${n("nuevo")} a Lofti`;
+  $("subir").disabled = corriendo || !n("nuevo"); $("subir").textContent = `→ Pasar ${n("nuevo")} a Lofti`;
   const orden = { nuevo: 0, error: 1, lofti: 2, subido: 2, ya: 3, fuera: 4 };
   const ls = [...leads].sort((a, b) => orden[a.estado] - orden[b.estado]);
   $("lista").innerHTML = ls.length ? ls.slice(0, 500).map((l) => `<li><div class="q"><b>${esc(`${l.first} ${l.last}`.trim() || "(sin nombre)")}</b> <span class="tag ${ETQ[l.estado][1]}">${ETQ[l.estado][0]}</span>

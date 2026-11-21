@@ -165,7 +165,7 @@ async function hacer(aMano) {
         const paraTeams = !r.fotoRes ? {} : r.fotoRes.ok ? { teams: yaEnTeams ? "enviado" : "pendiente", teamsError: "", fotoT: Date.now() }
           : { teams: yaEnTeams ? "enviado" : "error", teamsError: "no salió la captura del borrador: " + r.fotoRes.error };
         await marcar(l.leadIdZb, { borrador: "hecho", borradorT: Date.now(), nCapturas: r.imagenes || 0, ...paraTeams });
-        svLog && svLog(`✉ Borrador listo en Gmail: reclamo de ${l.nombre} a zBuyer${r.imagenes ? ` con ${r.imagenes} captura(s)` : ""} (sin enviar).`);
+        svLog && svLog(`Borrador listo en Gmail: reclamo de ${l.nombre} a zBuyer${r.imagenes ? ` con ${r.imagenes} captura(s)` : ""} (sin enviar).`);
         if (r.fotoRes && r.fotoRes.error) svLog && svLog(`No pude tomar la captura del borrador de ${l.nombre} para Teams: ${r.fotoRes.error}.`, "error");
       } else {
         await marcar(l.leadIdZb, { borrador: "error", borradorError: r.motivo });
@@ -190,7 +190,7 @@ async function vista() {
   const ej = porHacer(zbLeads)[0] || Object.values(zbLeads).find(reclamable) || {
     nombre: "Jane Doe", tel: "(714) 555-0100", direccion: "123 Main St, Irvine, CA 92618", leadIdZb: "000000-0000000",
     fechaCorreo: Date.now(), loftyCreado: Date.now() - 86400000 * 200, loftyFuente: "zBuyer", coincide: ["teléfono"] };
-  $("vista").textContent = `Para: ${$("para").value}${$("cc").value ? "\nCC: " + $("cc").value : ""}\nAsunto: ${llenar($("asunto").value, ej)}\n\n${llenar($("cuerpo").value, ej).replace(MARCA, $("capturas").checked ? "📷 [aquí van las capturas: primero la ficha de Lofty y debajo el correo de zBuyer]" : "")}`;
+  $("vista").textContent = `Para: ${$("para").value}${$("cc").value ? "\nCC: " + $("cc").value : ""}\nAsunto: ${llenar($("asunto").value, ej)}\n\n${llenar($("cuerpo").value, ej).replace(MARCA, $("capturas").checked ? "[aquí van las capturas: primero la ficha de Lofty y debajo el correo de zBuyer]" : "")}`;
 }
 ["asunto", "cuerpo", "para", "cc"].forEach((id) => $(id).addEventListener("input", vista));
 $("capturas").addEventListener("change", vista);
@@ -210,11 +210,11 @@ async function pintar() {
   for (const l of verRep.sort((a, b) => (!!a.realizado - !!b.realizado) || b.fechaCorreo - a.fechaCorreo).slice(0, 300)) {
     const li = document.createElement("li");
     if (l.realizado) li.style.opacity = ".6";
-    const est = l.realizado ? `<span class="tag" style="background:#dcfce7;color:#15803d">✔ realizado ${fechaCorta(l.realizadoT)}</span>` : l.borrador === "hecho" ? `<span class="tag" style="background:#ede9fe;color:#5b21b6">✉ borrador listo${l.nCapturas ? " · 📷 " + l.nCapturas : ""}</span>`
+    const est = l.realizado ? `<span class="tag" style="background:#dcfce7;color:#15803d">✓ realizado ${fechaCorta(l.realizadoT)}</span>` : l.borrador === "hecho" ? `<span class="tag" style="background:#ede9fe;color:#5b21b6">borrador listo${l.nCapturas ? " · " + l.nCapturas : ""}</span>`
       : l.borrador === "error" ? `<span class="tag" style="background:#fee2e2;color:#b91c1c" title="${esc(l.borradorError)}">falló</span>` : '<span class="tag" style="background:#fef3c7;color:#92400e">pendiente</span>';
     li.innerHTML = `<div class="addr"><b>${esc(l.nombre)}</b> ${est}<small>${esc(l.direccion)} · en Lofty (${esc(l.loftyFuente || "—")}) desde ${fechaCorta(l.loftyCreado)} · zBuyer ${fechaCorta(l.fechaCorreo)}${l.aMano ? " · a mano" : ""}</small></div>`;
     const r = document.createElement("button"); r.className = "mini";
-    r.textContent = l.realizado ? "↩ Desmarcar" : "✔ Realizado";
+    r.textContent = l.realizado ? "↩ Desmarcar" : "✓ Realizado";
     r.title = l.realizado ? "Regresarlo a la lista de pendientes" : "Marcar este reclamo como ya realizado (ya lo enviaste o ya se resolvió)";
     r.onclick = async () => { await marcar(l.leadIdZb, l.realizado ? { realizado: false, realizadoT: null } : { realizado: true, realizadoT: Date.now() }); pintar(); };
     li.appendChild(r);
@@ -234,7 +234,7 @@ $("todosReal").onclick = async () => {
   const { zbLeads = {} } = await chrome.storage.local.get("zbLeads");
   const ls = Object.values(zbLeads).filter((l) => reclamable(l) && l.borrador === "hecho" && !l.realizado);
   if (!ls.length) return;
-  if (!(await preguntar(`¿Marco como realizados los ${ls.length} reclamos que ya tienen borrador listo?`, "✔ Marcar", "Cancelar"))) return;
+  if (!(await preguntar(`¿Marco como realizados los ${ls.length} reclamos que ya tienen borrador listo?`, "✓ Marcar", "Cancelar"))) return;
   await zbPoner(Object.fromEntries(ls.map((l) => [l.leadIdZb, { realizado: true, realizadoT: Date.now() }])));
   decir(`Redi: marqué ${ls.length} reclamo(s) como realizados.`); pintar();
 };

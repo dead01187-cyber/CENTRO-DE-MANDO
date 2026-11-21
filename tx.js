@@ -29,7 +29,7 @@ let plantillas = [], selId = "", lista = [], corriendo = false, parar = false;
 // ---------- API de Lofty de la OTRA cuenta ----------
 async function api(path, opts = {}) {
   const { txKey } = await chrome.storage.local.get("txKey");
-  if (!txKey) throw Object.assign(new Error("Falta la API key de la cuenta de Lofty de Texi (arriba, en 🔑)."), { sinKey: true });
+  if (!txKey) throw Object.assign(new Error("Falta la API key de la cuenta de Lofty de Texi (arriba, en )."), { sinKey: true });
   let r;
   for (let intento = 0; ; intento++) { // 429 = Lofty pide ir más lento (no procesó nada): esperar y reintentar
     r = await fetch("https://api.lofty.com/v1.0" + path, {
@@ -203,7 +203,7 @@ let vista = "faltan";
 const grupo = (x) => (x.estado === "enviado" || (x.antes && x.estado !== "mandando") ? "mandados" : x.estado === "error" || x.estado === "saltado" ? "problema" : "faltan");
 function pintarVistas() {
   const n = { faltan: 0, mandados: 0, problema: 0 }; for (const x of lista) n[grupo(x)]++;
-  $("vFaltan").textContent = `⏳ Faltan (${n.faltan.toLocaleString()})`; $("vMandados").textContent = `✅ Ya mandados (${n.mandados.toLocaleString()})`; $("vProblema").textContent = `⚠️ Opt-out / error (${n.problema.toLocaleString()})`;
+  $("vFaltan").textContent = `Faltan (${n.faltan.toLocaleString()})`; $("vMandados").textContent = `Ya mandados (${n.mandados.toLocaleString()})`; $("vProblema").textContent = `Opt-out / error (${n.problema.toLocaleString()})`;
   for (const [id, v] of [["vFaltan", "faltan"], ["vMandados", "mandados"], ["vProblema", "problema"]]) $(id).classList.toggle("on", vista === v);
   $("marcarTodos").hidden = $("desmarcar").hidden = vista !== "faltan";
 }
@@ -218,8 +218,8 @@ function pintarLista() {
     return `<li><input type="checkbox" data-i="${i}" ${x.marcado && grupo(x) === "faltan" ? "checked" : ""} ${grupo(x) !== "faltan" || x.estado ? "disabled" : ""}>
       <div class="addr"><b>${esc(`${x.nombre === "there" ? "" : x.nombre} ${x.apellido}`.trim() || "(sin nombre)")}</b> ${est}
       <small>${x.creado ? `En Lofty desde ${dia(x.creado)} · ` : ""}${destinos(x).map(bonito).join(" · ")}${x.fuera ? ` · ${x.fuera} de fuera de CA (no se manda)` : ""}${x.calle ? ` · ${esc(x.calle)}` : ""}</small>
-      ${x.antes ? `<small>⚠️ Ya le mandé un SMS el ${fecha(x.antes)}</small>` : ""}
-      ${x.respondio ? `<small>💬 Ya contestó un SMS el ${fecha(x.respondio)}: síguelo en Resi (no lo marqué)</small>` : ""}
+      ${x.antes ? `<small>Ya le mandé un SMS el ${fecha(x.antes)}</small>` : ""}
+      ${x.respondio ? `<small>Ya contestó un SMS el ${fecha(x.respondio)}: síguelo en Resi (no lo marqué)</small>` : ""}
       ${x.estado === "error" ? `<small style="color:#b91c1c">${esc(x.detalle)}</small>` : x.estado === "saltado" ? `<small style="color:#854d0e">${esc(x.detalle)}</small>` : x.estado === "enviado" && x.detalle ? `<small style="color:#166534">${esc(x.detalle)}</small>` : ""}
       <div class="sms">${esc(mensaje(x))}</div></div></li>`;
   }).join("") + (idx.length > MAX ? `<li class="empty">…y ${(idx.length - MAX).toLocaleString()} más (enseño los primeros ${MAX}).</li>` : "");

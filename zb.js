@@ -123,11 +123,11 @@ function analizarTel(t) {
 }
 const apellido = (s) => norm(s).split(" ").filter(Boolean).pop() || "";
 const fmtTel = (n) => n.length === 10 ? `(${n.slice(0, 3)}) ${n.slice(3, 6)}-${n.slice(6)}` : n;
-// Resumen corto: "📵 (714) 555-0101: número ficticio (555) · 📞 (949) 222-3333: en Lofty es de Juan Pérez"
+// Resumen corto: "(714) 555-0101: número ficticio (555) · (949) 222-3333: en Lofty es de Juan Pérez"
 function resumenTels(ta) {
   return (ta || []).map((x) => {
     const malos = [...x.problemas, x.deOtro ? `en Lofty es de ${x.deOtro}` : "", x.fueraCA && !x.problemas.length ? "lada fuera de California" : ""].filter(Boolean);
-    return malos.length ? `${x.problemas.length ? "📵" : "⚠"} ${fmtTel(x.tel)}: ${malos.join(", ")}` : "";
+    return malos.length ? `${fmtTel(x.tel)}: ${malos.join(", ")}` : "";
   }).filter(Boolean).join(" · ");
 }
 
@@ -186,7 +186,7 @@ async function buscarEnLofty(z) {
 // Lo que se anota en la bitácora de cada lead ya comparado
 function avisar(l, nota = "") {
   if (l.telAviso) nota += ` Teléfonos: ${l.telAviso}.` + (l.telMalo ? " Ningún teléfono sirve: zBuyer suele reponer leads con contacto inválido." : "");
-  if (l.estado === "repetido") decir(`⚠ ${l.nombre} (${l.direccion}) ya estaba en Lofty desde ${fecha(l.loftyCreado)} con fuente zBuyer (coincide: ${(l.coincide || []).join(", ")}). zBuyer lo volvió a mandar el ${fecha(l.fechaCorreo)}: lo paso a Redi.${nota}`);
+  if (l.estado === "repetido") decir(`${l.nombre} (${l.direccion}) ya estaba en Lofty desde ${fecha(l.loftyCreado)} con fuente zBuyer (coincide: ${(l.coincide || []).join(", ")}). zBuyer lo volvió a mandar el ${fecha(l.fechaCorreo)}: lo paso a Redi.${nota}`);
   else if (l.estado === "otrafuente") decir(`↷ ${l.nombre} ya estaba en Lofty desde ${fecha(l.loftyCreado)}, pero venía de “${l.loftyFuente || "otra fuente"}” y no de zBuyer: no se reclama.${nota}`);
   else if (l.estado === "revisar") decir(`? ${l.nombre}: en Lofty solo coincide el nombre con un lead viejo de zBuyer. Revísalo tú.${nota}`);
   else svLog && svLog(`✓ ${l.nombre} es lead nuevo de zBuyer.${nota}`);
@@ -309,9 +309,9 @@ async function pintar() {
     const [t, bg, fg] = l.estado === "repetido" && l.aMano && !deZbuyer(l.loftyFuente) ? ["Reclamar · a mano", "#fee2e2", "#b91c1c"] : ETQ[l.estado] || [l.estado, "#e2e8f0", "#334155"];
     const li = document.createElement("li");
     const loft = l.loftyCreado ? `<small>Lofty: ${esc(l.loftyNombre || "lead")} · fuente ${esc(l.loftyFuente || "—")} · desde ${fecha(l.loftyCreado)} · ${esc(l.loftyEtapa)}${l.coincide && l.coincide.length ? " · coincide " + esc(l.coincide.join(", ")) : ""}${l.recheck ? " · por recomparar" : ""}</small>` : "";
-    const bor = l.borrador !== "hecho" ? "" : l.estado === "repetido" ? ' <span class="tag" style="background:#ede9fe;color:#5b21b6">✉ borrador</span>'
-      : ' <span class="tag" style="background:#ffedd5;color:#9a3412" title="Este borrador se hizo antes, con la regla anterior. Bórralo en Gmail para no mandarlo.">✉ borrador de antes: bórralo</span>';
-    const telTag = l.telMalo ? ' <span class="tag" style="background:#fee2e2;color:#b91c1c" title="Ningún teléfono del lead sirve">📵 tel. inválido</span>' : l.telAviso ? ' <span class="tag" style="background:#fef3c7;color:#92400e">⚠ teléfono</span>' : "";
+    const bor = l.borrador !== "hecho" ? "" : l.estado === "repetido" ? ' <span class="tag" style="background:#ede9fe;color:#5b21b6">borrador</span>'
+      : ' <span class="tag" style="background:#ffedd5;color:#9a3412" title="Este borrador se hizo antes, con la regla anterior. Bórralo en Gmail para no mandarlo.">borrador de antes: bórralo</span>';
+    const telTag = l.telMalo ? ' <span class="tag" style="background:#fee2e2;color:#b91c1c" title="Ningún teléfono del lead sirve">tel. inválido</span>' : l.telAviso ? ' <span class="tag" style="background:#fef3c7;color:#92400e">teléfono</span>' : "";
     li.innerHTML = `<div class="addr"><b>${esc(l.nombre)}</b> <span class="tag" style="background:${bg};color:${fg}">${t}</span>${telTag}${bor}
       <small>${esc(l.direccion)} · ${esc(l.tel)}${l.correo ? " · " + esc(l.correo) : ""}</small>
       <small>zBuyer: ${fecha(l.fechaCorreo)} · ID ${esc(l.leadIdZb)}</small>${loft}${l.telAviso ? `<small style="color:${l.telMalo ? "#b91c1c" : "#92400e"}">${esc(l.telAviso)}${l.telMalo ? " · ningún teléfono sirve" : ""}</small>` : ""}</div>`;

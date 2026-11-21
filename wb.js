@@ -718,7 +718,7 @@ async function trabajarUnaVez(aMano) {
     const hora = new Date(pz).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     if (Date.now() - segundoClic > 15000) { // (los avisos de "confirmar" no salen dentro del panel: se confirma con un 2º clic)
       segundoClic = Date.now();
-      ver(`⏸ En pausa hasta las ${hora} porque Propwire bloqueó el acceso. Lo recomendable es esperar. Si de todos modos quieres seguir, dale otra vez a “Hacer skip trace” (en los próximos 15 s).`);
+      ver(`En pausa hasta las ${hora} porque Propwire bloqueó el acceso. Lo recomendable es esperar. Si de todos modos quieres seguir, dale otra vez a “Hacer skip trace” (en los próximos 15 s).`);
       return;
     }
     segundoClic = 0;
@@ -928,7 +928,7 @@ async function diagnostico() {
   if (corriendo) return;
   const pz = await pausaHasta();
   const { wbPregunta, [K("wbAutoAntes")]: wbAutoAntes } = await chrome.storage.local.get(["wbPregunta", K("wbAutoAntes")]);
-  if (pz) ver(`⏸ En pausa hasta las ${new Date(pz).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} porque Propwire bloqueó el acceso.` + (wbAutoAntes ? " A esa hora sigue solo." : ""));
+  if (pz) ver(`En pausa hasta las ${new Date(pz).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} porque Propwire bloqueó el acceso.` + (wbAutoAntes ? " A esa hora sigue solo." : ""));
   else if (wbPregunta) ver("Esperando tu OK para el cobro de Propwire (arriba).");
   else if (!cfg.auto) ver((await porHacer()).length ? `Tengo ${(await porHacer()).length} domicilio(s) por hacer, pero “Trabajar solo” está apagado: dale “Hacer skip trace” o prende “Trabajar solo”.` : await sinTrabajo());
 }

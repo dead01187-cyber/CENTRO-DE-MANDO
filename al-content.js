@@ -153,7 +153,7 @@ async function callNumber(phone, maxCallMs) {
     saving = true;
     let ok;
     try { ok = await saveCallResult(); } finally { saving = false; }
-    flashBadge(ok ? "✔ Llamada guardada" : "⚠ No pude darle Save");
+    flashBadge(ok ? "✓ Llamada guardada" : "No pude darle Save");
     await sleep(2000);
     if (!ok) return { ok: false, error: "La llamada terminó pero no pude darle Save." };
     return { ok: true };
@@ -182,7 +182,7 @@ async function tick() {
     saving = true;
     try {
       const ok = await saveCallResult();
-      flashBadge(ok ? "✔ Llamada guardada" : "⚠ No pude darle Save");
+      flashBadge(ok ? "✓ Llamada guardada" : "No pude darle Save");
     } finally { saving = false; }
   }
 }

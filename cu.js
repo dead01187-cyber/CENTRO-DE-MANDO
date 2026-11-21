@@ -10,7 +10,7 @@ async function auditar() {
     const r = CUMPLI.auditar(st, { dias: Number($("dias").value) || 30 });
     const s = r.resumen;
     llenar("nums", numero(s.smsRevisados, "SMS revisados"), numero(s.altas, "graves"), numero(s.medias, "medios"), numero(s.leves, "leves"), numero(s.bajasPorNumero, "números con baja"));
-    llenar("lista", r.hallazgos.length ? r.hallazgos.map((x) => h("li", {}, etiqueta(x.gravedad, x.gravedad), h("div", { class: "q" }, h("b", { text: x.regla }), h("small", { text: [x.detalle, x.cuando].filter(Boolean).join(" · ") })))) : [vacio("Sin hallazgos. ✔")]);
+    llenar("lista", r.hallazgos.length ? r.hallazgos.map((x) => h("li", {}, etiqueta(x.gravedad, x.gravedad), h("div", { class: "q" }, h("b", { text: x.regla }), h("small", { text: [x.detalle, x.cuando].filter(Boolean).join(" · ") })))) : [vacio("Sin hallazgos. ✓")]);
     const { cuRes: antes = {} } = await chrome.storage.local.get("cuRes");
     await chrome.storage.local.set({ cuRes: { altas: s.altas, medias: s.medias, leves: s.leves, t: Date.now() } });
     const txt = s.altas || s.medias ? `Encontré ${s.altas} hallazgo(s) grave(s) y ${s.medias} medio(s) en ${s.smsRevisados} SMS de ${s.dias} días.` : `Sin problemas en ${s.smsRevisados} SMS de ${s.dias} días.`;

@@ -60,7 +60,7 @@ async function pintar() {
     t.costos.porQuien.filter((c) => c.llamadas || ["capi", "GEO", "CRM", "GROW", "OPS"].includes(c.quien)).map((c) => fila(h("b", { text: c.quien }), num(c.llamadas), num(miles(c.entrada)), num(miles(c.salida)), h("td", {}, medidor(c.porciento), h("small", { text: c.porciento + "%" })), num(c.dolares == null ? "" : "$" + c.dolares))));
   // Errores
   llenar("errores", t.errores.recientes.length ? [...t.errores.recientes.map((e) => h("li", {}, etiqueta("falla", e.nombre), h("div", { class: "q" }, e.texto, h("small", { text: hace(e.hace) })))),
-    t.errores.bitacoraLimite ? h("li", { class: "empty", text: "La bitácora guarda solo los últimos 150 eventos: puede haber más errores." }) : null] : [vacio("Sin errores en las últimas 24 h. ✔")]);
+    t.errores.bitacoraLimite ? h("li", { class: "empty", text: "La bitácora guarda solo los últimos 150 eventos: puede haber más errores." }) : null] : [vacio("Sin errores en las últimas 24 h. ✓")]);
   // Seguridad
   const S = t.seguridad, si = (v) => (v ? "sí" : "no");
   const filasS = [
@@ -104,7 +104,7 @@ $("act").onclick = pintarPronto;
 setInterval(pintarPronto, 30e3); // "sin señal" y "hace X min" cambian aunque no cambie storage
 pintar().catch((e) => { $("sub").textContent = "No pude cargar el tablero: " + e.message; });
 
-// ---------- Efecto vidrio (liquid-glass-react vía vidrio/vidrio.js). Prendido por defecto; se apaga con ✨ Vidrio ----------
+// ---------- Efecto vidrio (liquid-glass-react vía vidrio/vidrio.js). Prendido por defecto; se apaga con Vidrio ----------
 const VIDRIOS = [[".semaforo", { radio: 16 }], ["#secAprob", { radio: 16 }], ["#secMision", { radio: 16 }]];
 let vidrios = [];
 function ponerVidrio(on) {

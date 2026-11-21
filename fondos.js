@@ -1,6 +1,6 @@
 // =====================================================================
 // Fondos de pantalla propios para el Centro de Mando (v1.74.0)
-// · Botón "🖼 Fondo" en la barra de arriba: abre un panel con el fondo de
+// · Botón "Fondo" en la barra de arriba: abre un panel con el fondo de
 //   siempre y los que el jefe agregó desde su computadora.
 // · Las imágenes viven en IndexedDB de la extensión (no en chrome.storage,
 //   para no gastar el espacio que usan los agentes). Se achican a 3200 px

@@ -136,7 +136,7 @@ async function trabajar(aMano) {
     const r = await corre(tab, prBuscar, [FILTROS, cfg.pausa * 1000, cfg.pausa * 2000, cfg.max, saltar, CUPO_MINIMO]);
     clearInterval(mirar); mirar = null;
     if (!r) throw new Error("no pude correr en la pestaña de Properant");
-    if (r.sesion) { decir("⏸ Properant no me dejó entrar: inicia sesión en properant.com en la ventana HECM (o revisa si ya se acabó la prueba gratis) y dale otra vez a Prope.", "error"); window.robot && robot.set("error", "Properant pide iniciar sesión"); return; }
+    if (r.sesion) { decir("Properant no me dejó entrar: inicia sesión en properant.com en la ventana HECM (o revisa si ya se acabó la prueba gratis) y dale otra vez a Prope.", "error"); window.robot && robot.set("error", "Properant pide iniciar sesión"); return; }
     if (r.error) throw new Error(r.error);
     for (const p of r.items || []) {
       if (p.error) continue;
@@ -199,7 +199,7 @@ async function pintar() {
   if (!c.length) { $("lista").innerHTML = `<li class="empty">Aquí salen las hipotecas inversas en ejecución que encuentre en Properant.</li>`; return; }
   $("lista").innerHTML = c.map((x) => {
     const debe = +x.saldo || +x.puja || 0, queda = debe && +x.valor ? +x.valor - debe : null;
-    return `<li style="${x.hecm ? "" : "opacity:.55"}"><b>${esc(x.street)}, ${esc(x.city)}</b> ${x.hecm ? (x.dudoso ? `<span class="tag gris">revisar</span>` : `<span class="tag">hipoteca inversa</span>`) : `<span class="tag gris">otro acreedor</span>`}${x.fallecido ? ` <span class="tag">👪 sucesión</span>` : ""}${x.pasoAHud ? ` <span class="tag" title="la HECM pasó a HUD: Celink administra las de HUD">HUD → Celink</span>` : ""}${x.pasadoAHeri ? ` <span class="tag gris">con Heri</span>` : ""}
+    return `<li style="${x.hecm ? "" : "opacity:.55"}"><b>${esc(x.street)}, ${esc(x.city)}</b> ${x.hecm ? (x.dudoso ? `<span class="tag gris">revisar</span>` : `<span class="tag">hipoteca inversa</span>`) : `<span class="tag gris">otro acreedor</span>`}${x.fallecido ? ` <span class="tag">sucesión</span>` : ""}${x.pasoAHud ? ` <span class="tag" title="la HECM pasó a HUD: Celink administra las de HUD">HUD → Celink</span>` : ""}${x.pasadoAHeri ? ` <span class="tag gris">con Heri</span>` : ""}
     <small>${esc(x.dueno || x.owner)}${x.duenoActual && x.dueno && !mismoNombre(x.duenoActual, x.dueno) ? ` (título: ${esc(x.owner)})` : ""} · ${esc(x.etapa)}${x.avisoMdy ? " " + esc(x.avisoMdy) : ""}${x.subastaMdy ? ` · remate ${esc(x.subastaMdy)}${x.subastaPasada ? " (ya pasó: revisar si se vendió)" : ""}` : ""} · ${esc(x.motivo)}</small>
     <small>${esc([x.trustee && `Trustee ${x.trustee}${x.trusteeTel ? " " + x.trusteeTel : ""}`, (x.herederos || []).join(" · "), debe ? `debe ${miles(debe)}${queda != null ? ` · vale ${miles(+x.valor)} · ${queda >= 0 ? "le quedarían " + miles(queda) : "debe " + miles(-queda) + " más de lo que vale"}` : ""}` : ""].filter(Boolean).join(" · "))}</small></li>`;
   }).join("");

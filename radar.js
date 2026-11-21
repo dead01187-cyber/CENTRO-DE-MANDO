@@ -311,7 +311,7 @@ async function propwire(lista) {
       if (j.campo === "preforeclosure" || j.campo === "preprobate") val["prev_" + j.campo] = p[j.campo] ?? null; // para avisar si sube
       await poner(j.z.zip, "propwire", val);
       if ((j.campo === "preforeclosure" || j.campo === "preprobate") && p[j.campo] != null && r.n - p[j.campo] >= 3)
-        decir(`🔥 Radar: ${j.z.zip} subió de ${p[j.campo]} a ${r.n} en ${j.label} desde la última vez.`);
+        decir(`Radar: ${j.z.zip} subió de ${p[j.campo]} a ${r.n} en ${j.label} desde la última vez.`);
     }
     await esperar(azar(15000, 40000), "Ritmo humano: pausa en Propwire");
     if (hechas % Math.round(azar(15, 25)) === 0) await esperar(azar(4, 8) * 60000, "Ritmo humano: descanso de Propwire");
@@ -377,7 +377,7 @@ $("guardarKey").onclick = async () => {
   try {
     const r = await fetch(`https://api.census.gov/data/2023/acs/acs5?get=B25003_001E&for=zip%20code%20tabulation%20area:92620&key=${encodeURIComponent(cfg.censusKey)}`);
     const tx = await r.text();
-    ver(r.ok && tx.trim().startsWith("[") ? `✅ La llave del Census funciona (${cfg.censusKey.length} caracteres).` : `❌ El Census no aceptó la llave (${cfg.censusKey.length} caracteres; normalmente son 40). Revisa que la copiaste completa del correo.`);
+    ver(r.ok && tx.trim().startsWith("[") ? `La llave del Census funciona (${cfg.censusKey.length} caracteres).` : `El Census no aceptó la llave (${cfg.censusKey.length} caracteres; normalmente son 40). Revisa que la copiaste completa del correo.`);
   } catch (e) { ver("No pude probar la llave: " + e.message); }
 };
 

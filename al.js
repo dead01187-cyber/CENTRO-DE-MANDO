@@ -92,7 +92,7 @@ function setCurrent(lead) {
   $("current").innerHTML =
     `<div class="name"></div><div class="addr"></div><div class="precio"></div><div class="phones"></div>`;
   $("current").querySelector(".name").textContent = name;
-  $("current").querySelector(".addr").textContent = "📍 " + (leadAddress(lead) || "Sin domicilio en Lofty");
+  $("current").querySelector(".addr").textContent = (leadAddress(lead) || "Sin domicilio en Lofty");
   pintarTels(lead);
   pintarPrecio(lead);
 }
@@ -131,15 +131,15 @@ async function pintarPrecio(lead) {
   const box = $("current").querySelector(".precio"); if (!box) return;
   const dir = leadAddress(lead);
   if (!dir) { box.textContent = ""; return; }
-  box.textContent = "💲 Buscando el precio en Zillow…";
+  box.textContent = "Buscando el precio en Zillow…";
   let z; try { z = await zillowDe(dir); } catch (e) { z = { error: e.message }; }
   if (actual !== lead && actual && actual.leadId !== lead.leadId) return; // ya cambió de lead
   box.innerHTML = "";
-  if (!z || z.error || z.noEncontrada || (!z.zest && !z.precio)) { box.textContent = z && z.noEncontrada ? "💲 Zillow no encontró esta dirección" : "💲 No pude leer el precio en Zillow"; box.classList.add("sin"); return; }
+  if (!z || z.error || z.noEncontrada || (!z.zest && !z.precio)) { box.textContent = z && z.noEncontrada ? "Zillow no encontró esta dirección" : "No pude leer el precio en Zillow"; box.classList.add("sin"); return; }
   box.classList.remove("sin");
   const venta = /FOR_SALE|PENDING/.test(z.estado) && z.precio ? ` · En venta: ${money(z.precio)}` : "";
   const a = document.createElement("a"); a.href = z.url; a.target = "_blank"; a.title = "Ver en Zillow";
-  a.textContent = `💲 ${money(z.zest || z.precio)}`;
+  a.textContent = `${money(z.zest || z.precio)}`;
   const s2 = document.createElement("span"); s2.className = "fuente"; s2.textContent = `Zestimate${venta}${z.renta ? ` · Renta ${money(z.renta)}/mes` : ""} · Zillow`;
   box.append(a, s2);
 }
@@ -156,7 +156,7 @@ function pintarTels(lead) {
     const t = document.createElement("span"); t.className = "tel" + (quitado ? " quitado" : "");
     t.textContent = fmt(p);
     if (!quitado) {
-      const b = document.createElement("button"); b.type = "button"; b.className = "borrarTel"; b.title = "Borrar este número del lead en Lofty"; b.textContent = "🗑";
+      const b = document.createElement("button"); b.type = "button"; b.className = "borrarTel"; b.title = "Borrar este número del lead en Lofty"; b.textContent = "Borrar";
       b.onclick = () => borrarTel(p);
       t.appendChild(b);
     } else t.title = "Borrado del lead";
@@ -177,9 +177,9 @@ async function borrarTel(p) {
     const sigue = (((ver && (ver.lead || ver)) || {}).phones || []).some((x) => d10(x) === d10(p));
     if (sigue) throw new Error("Lofty no lo quitó");
     borrados.add(d10(p));
-    log(`  🗑 Borré ${fmt(p)} de ${name} (número malo).`);
+    log(`  Borré ${fmt(p)} de ${name} (número malo).`);
     pintarTels(lead);
-  } catch (e) { stats.errors++; setCounts(); log(`  ⚠ No pude borrar ${fmt(p)}: ${e.message}`); alert("No pude borrar el número: " + e.message); }
+  } catch (e) { stats.errors++; setCounts(); log(`  No pude borrar ${fmt(p)}: ${e.message}`); alert("No pude borrar el número: " + e.message); }
 }
 function setRunningUI(on) {
   mascotSay(on ? "Trabajando en tus leads…" : "¡Listo para trabajar!", on);
@@ -432,7 +432,7 @@ async function removeNonCaPhones(lead, keep, drop) {
   const l = (fresh && (fresh.lead || fresh)) || {};
   const still = (l.phones || []).filter((p) => !isCA(p));
   if (still.length) throw new Error("Lofty no quitó: " + still.map(fmt).join(", "));
-  log(`  🗑 Borrados (no son de CA): ${drop.map(fmt).join(", ")}`);
+  log(`  Borrados (no son de CA): ${drop.map(fmt).join(", ")}`);
 }
 
 // ---------- Fase 1: bajas y DNC por número ----------
@@ -459,7 +459,7 @@ async function processLead(lead) {
   setCurrent({ ...lead, phones });
   log(`▶ ${name} (${phones.length} números${nonCa.length ? `, ${nonCa.length} fuera de CA` : ""})`);
   const addr = leadAddress(lead);
-  if (addr) log(`  📍 ${addr}`);
+  if (addr) log(`  ${addr}`);
 
   if (cfg.caOnly && !caPhones.length) {
     log("  ↷ No tiene números de California. Se deja sin cambios para que lo revises.");
@@ -467,12 +467,12 @@ async function processLead(lead) {
   }
   if (cfg.deleteNonCA && nonCa.length) {
     try { await removeNonCaPhones(lead, caPhones, nonCa); }
-    catch (e) { stats.errors++; log("  ⚠ No pude borrar números fuera de CA: " + e.message); }
+    catch (e) { stats.errors++; log("  No pude borrar números fuera de CA: " + e.message); }
   }
 
   // 1) Llamadas
   if (cfg.doCalls && lead.cannotCall) {
-    log("  ☎ Lofty tiene este lead marcado como 'no llamar'. No se marca.");
+    log("  Lofty tiene este lead marcado como 'no llamar'. No se marca.");
   }
   if (cfg.doCalls && phones.length && !lead.cannotCall) {
     const tabId = await openLeadPage(lead.leadId);
@@ -481,8 +481,8 @@ async function processLead(lead) {
       if (borrados.has(d10(p))) { log(`  ↷ ${fmt(p)} — lo borraste, no se marca`); continue; }
       setStatus(`Llamando a ${name}: ${fmt(p)}`);
       const r = await callOnPage(tabId, p);
-      if (r && r.ok) { stats.calls++; log(`  ☎ ${fmt(p)} — guardada`); }
-      else { log(`  ⚠ ${fmt(p)} — ${r ? r.error : "sin respuesta"}`); if (!stopRequested) stats.errors++; }
+      if (r && r.ok) { stats.calls++; log(`  ${fmt(p)} — guardada`); }
+      else { log(`  ${fmt(p)} — ${r ? r.error : "sin respuesta"}`); if (!stopRequested) stats.errors++; }
       setCounts();
       await sleep(1500);
     }
@@ -494,7 +494,7 @@ async function processLead(lead) {
   if (answeredFlag) {
     await updateLead(lead, cfg.answeredStage);
     stats.answered++; stats.done++;
-    log(`  ✔ Contestó → ${cfg.answeredStage}${cfg.removeTag ? `, sin "${cfg.removeTag}"` : ""}`);
+    log(`  ✓ Contestó → ${cfg.answeredStage}${cfg.removeTag ? `, sin "${cfg.removeTag}"` : ""}`);
     setCounts();
     return;
   }
@@ -504,7 +504,7 @@ async function processLead(lead) {
     setStatus(`Mandando SMS a ${name}`);
     // Fase 1 · revisión con el lead completo (bajas, DNC, unsubscription). Si no se puede leer, NO se manda.
     let fresco = null;
-    try { const f = await api(`/v1.0/leads/${lead.leadId}`); fresco = (f && (f.lead || f.data || f)) || null; } catch (e) { log(`  ⚠ No pude revisar en Lofty si ${name} se dio de baja (${e.message}); no le mando SMS.`); }
+    try { const f = await api(`/v1.0/leads/${lead.leadId}`); fresco = (f && (f.lead || f.data || f)) || null; } catch (e) { log(`  No pude revisar en Lofty si ${name} se dio de baja (${e.message}); no le mando SMS.`); }
     const cuenta = await cuentaSms();
     const bloqueoLead = !fresco ? "sin revisión" : (fresco.cannotText === true || fresco.unsubscription === true) ? "opt-out en Lofty" : "";
     if (fresco && bloqueoLead) await SMS.marcarBaja({ leadId: lead.leadId, cuenta, tels: phones, motivo: bloqueoLead, fuente: "Marki" });
@@ -514,19 +514,19 @@ async function processLead(lead) {
       const { rsNoEscribir = {} } = cuenta === "tx" ? await chrome.storage.local.get("rsNoEscribir") : {};
       const leadSlot = await nextRot();
       const primaryDone = cfg.skipPrimary ? await sameMessageSentToday(lead.leadId) : false;
-      if (rsNoEscribir && rsNoEscribir[String(lead.leadId)]) log(`  ✉ Resi lo tiene como “${rsNoEscribir[String(lead.leadId)].motivo}”; no se le manda SMS`);
-      else if (primaryDone === null) log("  ✉ Sin historial de SMS no sé si ya lo recibió hoy; no le mando (falla cerrada)");
+      if (rsNoEscribir && rsNoEscribir[String(lead.leadId)]) log(`  Resi lo tiene como “${rsNoEscribir[String(lead.leadId)].motivo}”; no se le manda SMS`);
+      else if (primaryDone === null) log("  Sin historial de SMS no sé si ya lo recibió hoy; no le mando (falla cerrada)");
       else for (let i = 0; i < phones.length; i++) {
         if (stopRequested) break;
         const p = phones[i];
         if (borrados.has(d10(p))) { log(`  ↷ ${fmt(p)} — lo borraste, no se le manda SMS`); continue; }
-        if (fuera.has(d10(p))) { log(`  ✉ ${fmt(p)} — marcado Do Not Text / DNC en Lofty, no se le manda`); continue; }
-        if (i === 0 && primaryDone) { log(`  ✉ ${fmt(p)} — ya lo recibió hoy, no se repite`); continue; }
-        if (await alreadySentLocally(lead.leadId, p)) { log(`  ✉ ${fmt(p)} — ya se lo mandé hoy`); continue; }
+        if (fuera.has(d10(p))) { log(`  ${fmt(p)} — marcado Do Not Text / DNC en Lofty, no se le manda`); continue; }
+        if (i === 0 && primaryDone) { log(`  ${fmt(p)} — ya lo recibió hoy, no se repite`); continue; }
+        if (await alreadySentLocally(lead.leadId, p)) { log(`  ${fmt(p)} — ya se lo mandé hoy`); continue; }
         const pol = await SMS.puedeMandar({ tel: p, leadId: lead.leadId, cuenta, fuente: "Marki" });
         if (!pol.ok) {
           await SMS.anotar({ fuente: "Marki", leadId: lead.leadId, tel: d10(p), estado: "bloqueado", motivo: pol.motivo });
-          log(`  ✉ ${fmt(p)} — no se manda: ${pol.motivo}`);
+          log(`  ${fmt(p)} — no se manda: ${pol.motivo}`);
           if (pol.horario || pol.tope || /política/.test(pol.motivo)) { stopRequested = true; log(`■ Me detengo: ${pol.motivo}.`); }
           continue;
         }
@@ -536,18 +536,18 @@ async function processLead(lead) {
           await markSentLocally(lead.leadId, p);
           await SMS.anotar({ fuente: "Marki", leadId: lead.leadId, tel: d10(p), estado: "enviado", texto: msg.text });
           stats.sms++;
-          log(`  ✉ ${fmt(p)} — SMS ${msg.n} enviado`);
+          log(`  ${fmt(p)} — SMS ${msg.n} enviado`);
         } catch (e) {
           await SMS.devolverLugar();
           await SMS.anotar({ fuente: "Marki", leadId: lead.leadId, tel: d10(p), estado: "error", motivo: e.message });
           if (/unsubscri|opt.?out|consent|do not (text|call)|cannot text|can'?t text/i.test(e.message)) await SMS.marcarBaja({ tel: p, motivo: "Lofty rechazó por opt-out", fuente: "Marki" });
           stats.errors++;
-          log(`  ⚠ SMS ${fmt(p)} — ${e.message}`);
+          log(`  SMS ${fmt(p)} — ${e.message}`);
         }
         setCounts();
         await sleep(1200);
       }
-    } else log(`  ✉ No se le manda SMS a ${name} (${bloqueoLead}).`);
+    } else log(`  No se le manda SMS a ${name} (${bloqueoLead}).`);
     if (stopRequested) { log("  ■ Detenido antes de mover el pipeline."); return; }
   } else if (lead.cannotText) {
     log("  (Lead marcado como 'no enviar textos', no se manda SMS)");
@@ -557,7 +557,7 @@ async function processLead(lead) {
   // 3) Pipeline y tag
   await updateLead(lead, cfg.targetStage);
   stats.done++;
-  log(`  ✔ → ${cfg.targetStage}${cfg.removeTag ? `, sin "${cfg.removeTag}"` : ""}`);
+  log(`  ✓ → ${cfg.targetStage}${cfg.removeTag ? `, sin "${cfg.removeTag}"` : ""}`);
   setCounts();
 }
 
@@ -594,13 +594,13 @@ async function run() {
         await processLead(next);
       } catch (e) {
         stats.errors++;
-        log("  ⚠ Error: " + e.message);
+        log("  Error: " + e.message);
         setCounts();
       }
       await sleep(800);
     }
   } catch (e) {
-    log("⚠ " + e.message);
+    log("Error: " + e.message);
   }
 
   // Antes de terminar, asegurar que no quede ninguna llamada sin Save.
@@ -628,7 +628,7 @@ $("test").onclick = async () => {
   try {
     const { total } = await fetchMatchingLeads(1);
     log(`Conexión OK. Leads con el filtro: ${total}`);
-  } catch (e) { log("⚠ " + e.message); }
+  } catch (e) { log("Error: " + e.message); }
 };
 $("preview").onclick = $("test").onclick;
 $("start").onclick = () => { if (!running) run(); };

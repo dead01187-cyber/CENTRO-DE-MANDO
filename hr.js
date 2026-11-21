@@ -688,7 +688,7 @@ async function traerDeProperant(hasta) {
     pp.pasadoAHeri = Date.now(); pp.heriNota = res ? "HECM en el registro" : "sin trust deed de HECM a ese nombre en el registro (se queda por Properant)";
     pc[p.id] = pp; await chrome.storage.local.set({ prCasos: pc });
     n++;
-    decir(`🏚️ De Properant: ${llave} · ${p.street}, ${p.city} · ${lender} · ${cl.celink ? "Celink: " : ""}${cl.celinkMotivo}${p.fallecido ? " · sucesión: " + (p.herederos || []).join(", ") : ""}.`);
+    decir(`De Properant: ${llave} · ${p.street}, ${p.city} · ${lender} · ${cl.celink ? "Celink: " : ""}${cl.celinkMotivo}${p.fallecido ? " · sucesión: " + (p.herederos || []).join(", ") : ""}.`);
     pintar();
   }
   if (refrescar.length) await domicilios("hecmInfo", { items: refrescar.map(itemDe) });
@@ -845,7 +845,7 @@ async function trabajar(aMano, opts = {}) {
           ...(mu ? { muerte: `${mu.ty} ${mu.doc} (${mu.dt})`, preNod: !nod && !nts && !c.nod && !c.nts } : {}) });
         hrCasos[w.dueno] = c;
         await chrome.storage.local.set({ hrCasos });
-        decir(`🏚️ Hipoteca inversa en el registro${c.preNod ? " (todavía SIN aviso de ejecución: el dueño murió)" : ""}: ${w.dueno} · ${res.lender}${res.asignadaHud ? ` · pasó a HUD ${res.asignadaHud}` : ""} · ${cl.celink ? "Celink: " : ""}${cl.celinkMotivo}.`);
+        decir(`Hipoteca inversa en el registro${c.preNod ? " (todavía SIN aviso de ejecución: el dueño murió)" : ""}: ${w.dueno} · ${res.lender}${res.asignadaHud ? ` · pasó a HUD ${res.asignadaHud}` : ""} · ${cl.celink ? "Celink: " : ""}${cl.celinkMotivo}.`);
       }
       await ponerPasos({ revisados, hecm: hecmN });
       pintar();
@@ -883,7 +883,7 @@ async function trabajar(aMano, opts = {}) {
       const { hrCasos = {} } = await chrome.storage.local.get("hrCasos");
       const cc = hrCasos[c.dueno]; if (!cc) continue;
       cc.bvIntento = Date.now(); cc.bvAmpliado = Date.now();
-      if (u.alto) { decir(`⏸ ${u.alto}. Resuélvelo y dale otra vez a Heri.`, "error"); await chrome.storage.local.set({ hrCasos }); break; }
+      if (u.alto) { decir(`${u.alto}. Resuélvelo y dale otra vez a Heri.`, "error"); await chrome.storage.local.set({ hrCasos }); break; }
       if (u.dom) {
         if (cc.prop && cc.street) Object.assign(cc, { fallecido: !!u.fallecido || !!cc.fallecidoProp, fallecidoBV: !!u.fallecido, bvNombre: u.nombre, bvReporte: u.reporte, estado: "ubicada" }); // el domicilio de Properant se queda
         else Object.assign(cc, { street: u.dom.street, city: u.dom.city, zip: u.dom.zip, dir: `${u.dom.street}, ${u.dom.city}, CA ${u.dom.zip}`,
@@ -967,7 +967,7 @@ async function pintar() {
     return a.bvSearched ? " · herederos buscados" : a.lofty === "no" ? (a.via === "wb" ? " · con Wibi 3" : " · con Veri 3") : " · en Chequi 3";
   };
   $("lista").innerHTML = c.map((x) => `<li><b>${esc(x.dueno)}</b> ${x.preNod ? `<span class="tag" title="${esc(x.muerte || "")}">antes del NOD</span> ` : ""}${x.prop ? `<span class="tag gris" title="${esc((x.prop.herederos || []).join(" · ") || "de Properant")}">Properant</span> ` : ""}${x.celink ? `<span class="tag" title="${esc(x.celinkMotivo || "")}">Celink${x.celinkProbable ? "?" : ""}</span>` : `<span class="tag gris" title="servicer sin confirmar">${esc(corto(x.lender))}</span>`}
-    <small>${x.dir ? esc(x.dir) : "<i>sin domicilio todavía</i>"}${x.dir ? (x.domConfirmado ? " ✓" : " (sin confirmar)") : ""}${x.fallecido ? " · dueño fallecido" : ""}${x.probate && x.probate.abierto ? " · ⚖️ probate en el registro" : x.probate && (x.probate.representantes.length || x.probate.docs.length) ? " · ⚖️ docs de sucesión" : ""}${x.probate && x.probate.familia.length ? ` · familia: ${esc(x.probate.familia.slice(0, 2).join(", "))}` : ""}${(x.telsDueno || []).length ? ` · ☎ ${esc(x.telsDueno.map((t) => `(${t.num.slice(0, 3)}) ${t.num.slice(3, 6)}-${t.num.slice(6)}${t.tipo ? " " + t.tipo : ""}`).join(", "))}` : ""}${x.estado === "porNombre" && (x.otrosDoms || []).length ? ` · otros domicilios en CA: ${esc(x.otrosDoms.join(" / "))}` : ""}${(x.parientes || []).length ? ` · 👪 ${esc(x.parientes.filter((p) => p.vivo !== false).map((p) => `${p.nombre.split(" ")[0]} (${p.relEs}${p.tels.length ? " ☎" : ""})`).join(", ") || "familiares fallecidos")}` : ""} · ${esc(ETIQ[x.estado] || x.estado)}${esc(enBrazo(x))}</small>
+    <small>${x.dir ? esc(x.dir) : "<i>sin domicilio todavía</i>"}${x.dir ? (x.domConfirmado ? " ✓" : " (sin confirmar)") : ""}${x.fallecido ? " · dueño fallecido" : ""}${x.probate && x.probate.abierto ? " · probate en el registro" : x.probate && (x.probate.representantes.length || x.probate.docs.length) ? " · docs de sucesión" : ""}${x.probate && x.probate.familia.length ? ` · familia: ${esc(x.probate.familia.slice(0, 2).join(", "))}` : ""}${(x.telsDueno || []).length ? ` · ${esc(x.telsDueno.map((t) => `(${t.num.slice(0, 3)}) ${t.num.slice(3, 6)}-${t.num.slice(6)}${t.tipo ? " " + t.tipo : ""}`).join(", "))}` : ""}${x.estado === "porNombre" && (x.otrosDoms || []).length ? ` · otros domicilios en CA: ${esc(x.otrosDoms.join(" / "))}` : ""}${(x.parientes || []).length ? ` · ${esc(x.parientes.filter((p) => p.vivo !== false).map((p) => `${p.nombre.split(" ")[0]} (${p.relEs}${p.tels.length ? " " : ""})`).join(", ") || "familiares fallecidos")}` : ""} · ${esc(ETIQ[x.estado] || x.estado)}${esc(enBrazo(x))}</small>
     <small>${esc([x.nod && `NOD ${x.nod}`, x.nts && `NTS ${x.nts}`, x.origen && `HECM desde ${x.origen}`, x.asignadaHud && `pasó a HUD ${x.asignadaHud}`, x.subst && x.subst.length && `Substitution ${x.subst.join(", ")}`, x.monto && `debe ${x.monto}`].filter(Boolean).join(" · "))}</small></li>`).join("");
 }
 $("run").onclick = () => trabajar(true);

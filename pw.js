@@ -183,7 +183,7 @@ async function revisarFondo() {
     av.style.cssText = "background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.5);color:#fca5a5;border-radius:12px;padding:10px 12px;font-size:12.5px";
     document.querySelector("main").prepend(av);
   }
-  av.textContent = "⚠ El fondo de la extensión no está corriendo, así que no se guarda lo que encuentra Propwire. Ve a chrome://extensions, dale ↻ a Agente Geo Farming y si aparece un botón rojo de \"Errores\", mándale captura a Claude.";
+  av.textContent = "El fondo de la extensión no está corriendo, así que no se guarda lo que encuentra Propwire. Ve a chrome://extensions, dale ↻ a Agente Geo Farming y si aparece un botón rojo de \"Errores\", mándale captura a Claude.";
 }
 load();
 revisarFondo();

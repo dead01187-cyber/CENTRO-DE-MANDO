@@ -207,7 +207,7 @@ function pwCerrarDialogo() { const x = [...document.querySelectorAll("button")].
 
 async function skipVarias(nombresElegidos) {
   if (corriendo) return;
-  const pz = await pausa(); if (pz) { ver("⏸ Propwire está en pausa por un bloqueo."); return; }
+  const pz = await pausa(); if (pz) { ver("Propwire está en pausa por un bloqueo."); return; }
   const inv = (await pintar()).inv || [];
   const nombres = nombresElegidos || inv.filter((x) => x.c.skip).map((x) => x.l.nombre);
   if (!nombres.length) { ver("No hay listas pendientes de skip trace. Dale “Revisar listas” primero."); return; }
@@ -313,7 +313,7 @@ async function rescatarSinLeer(tab) {
     const { wbListas: wl = {}, wbBajados: wb2 = [] } = await chrome.storage.local.get(["wbListas", "wbBajados"]);
     if (wl[nombre]) { wl[nombre].estado = "leida"; wl[nombre].t = Date.now(); wl[nombre].archivo = ok.res.href; wl[nombre].conTels = rr.lofti; }
     await chrome.storage.local.set({ wbListas: wl, wbBajados: [...wb2, ok.res.href].slice(-50) });
-    decir(`📥 Rescaté el archivo de la lista “${nombre}” que Wibi no alcanzó a leer: ${rr.lofti} con teléfonos van a Lofti.`);
+    decir(`Rescaté el archivo de la lista “${nombre}” que Wibi no alcanzó a leer: ${rr.lofti} con teléfonos van a Lofti.`);
   }
 }
 // Aviso en cuanto Wibi deja una lista sin skip trace (y Wibi la reusa en su próxima vuelta)
@@ -323,7 +323,7 @@ chrome.storage.onChanged.addListener((ch, area) => {
   for (const [n, r] of Object.entries(ahora)) {
     const a = antes[n] || {};
     if (r.estado === "sinSkip" && a.estado !== "sinSkip" && r.href) {
-      decir(`⚠ La lista “${n}” se quedó sin skip trace (${r.motivo || "sin motivo"}). Wibi la reusa en su próxima vuelta; si prefieres, dale aquí “Skip trace a las listas pendientes”.`, "error");
+      decir(`La lista “${n}” se quedó sin skip trace (${r.motivo || "sin motivo"}). Wibi la reusa en su próxima vuelta; si prefieres, dale aquí “Skip trace a las listas pendientes”.`, "error");
       window.robot && robot.set("ayuda", `Lista “${n}” sin skip trace`);
     }
   }
@@ -365,7 +365,7 @@ function clasificar(l, reg, imp) {
 async function revisar(aMano) {
   if (corriendo) return null;
   const pz = await pausa();
-  if (pz) { ver(`⏸ Propwire en pausa hasta las ${new Date(pz).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} por un bloqueo.`); return null; }
+  if (pz) { ver(`Propwire en pausa hasta las ${new Date(pz).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} por un bloqueo.`); return null; }
   corriendo = true; $("run").disabled = $("borrar").disabled = $("skip").disabled = true;
   window.robot && robot.set("trabajando", "Revisando las listas de Propwire…");
   try {
@@ -415,7 +415,7 @@ async function borrar(aMano) {
     const { wbListas = {} } = await chrome.storage.local.get("wbListas");
     for (const n of r.borradas) if (wbListas[n]) wbListas[n].borrada = Date.now();
     await chrome.storage.local.set({ wbListas });
-    decir(`🗑️ Borré ${r.borradas.length} lista(s) de Propwire${r.quedan && r.quedan.length ? `; no pude con ${r.quedan.length}` : ""}.`);
+    decir(`Borré ${r.borradas.length} lista(s) de Propwire${r.quedan && r.quedan.length ? `; no pude con ${r.quedan.length}` : ""}.`);
   } finally { corriendo = false; $("run").disabled = $("borrar").disabled = false; await revisar(false); }
 }
 

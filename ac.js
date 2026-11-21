@@ -122,7 +122,7 @@ async function actualizarLead(f) {
     ? `${nuevo.first} ${nuevo.last}`.trim() + ` · +${agregados} teléfono(s)`
     : `Antes: ${t.nombre || "(sin nombre)"} → ahora: ${`${nuevo.first} ${nuevo.last}`.trim()} · +${agregados} teléfono(s) (los de antes se conservan)`;
   t.t = Date.now();
-  decir(`✔ Actualicé ${t.direccion}: ${t.detalle}. Tag “${cfg().tag}”.`);
+  decir(`✓ Actualicé ${t.direccion}: ${t.detalle}. Tag “${cfg().tag}”.`);
 }
 async function procesar() {
   if (procesando) return;

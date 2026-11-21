@@ -29,7 +29,7 @@ let cfg = { ...DEF }, corriendo = false, parar = false;
 async function api(path, opts = {}) {
   const k = cfg.cuenta === "tx" ? "txKey" : "loftyKey";
   const key = (await chrome.storage.local.get(k))[k];
-  if (!key) throw Object.assign(new Error(cfg.cuenta === "tx" ? "Falta la API key de la cuenta de Texi (pestaña Texi, 🔑)." : "Falta la API key de Lofty (pestaña Lofty)."), { sinKey: true });
+  if (!key) throw Object.assign(new Error(cfg.cuenta === "tx" ? "Falta la API key de la cuenta de Texi (pestaña Texi, )." : "Falta la API key de Lofty (pestaña Lofty)."), { sinKey: true });
   let r;
   for (let intento = 0; ; intento++) {
     r = await fetch("https://api.lofty.com" + path, {

@@ -50,7 +50,7 @@
 <body>
 <main>
   <details class="card" id="ajustes">
-    <summary>⚙️ Ajustes de Resi</summary>
+    <summary>Ajustes de Resi</summary>
     <div class="grid" style="margin-top:8px">
       <label class="chk"><input type="checkbox" id="auto"> <span><b>Revisar solo</b></span></label>
       <label class="f">Cada (minutos)<input type="number" id="cadaMin" min="5" max="240" value="10"></label>
@@ -63,7 +63,7 @@
     </div>
   </details>
   <details class="card" id="nuevo">
-    <summary>✉️ Mandar un SMS personalizado a un lead</summary>
+    <summary>Mandar un SMS personalizado a un lead</summary>
     <div class="row" style="margin-top:8px"><input type="text" id="qLead" placeholder="Nombre, teléfono o correo del lead (cuenta de Texi)" style="flex:1"><button id="buscarLead" class="mini">Buscar</button></div>
     <ul id="resLeads" style="margin-top:6px"></ul>
     <div id="compo" hidden style="margin-top:8px">
@@ -71,10 +71,10 @@
       <div class="row"><label class="f" style="flex:1">Número<select id="compoTel"></select></label></div>
       <label class="f" style="margin-top:6px">Mensaje <span class="hint">Puedes usar {nombre}, {apellido}, {direccion} y {ciudad}. <span id="compoLargo"></span></span><textarea id="compoTxt" placeholder="Hi {nombre}, this is Christopher with Rubio Real Estate…"></textarea></label>
       <div id="compoVista" class="hint" style="white-space:pre-wrap;margin-top:4px"></div>
-      <div class="row"><button id="compoMandar" class="primary" style="flex:1">📨 Mandar (te pregunto antes)</button><button id="compoCerrar" class="mini">Cerrar</button></div>
+      <div class="row"><button id="compoMandar" class="primary" style="flex:1">Mandar (te pregunto antes)</button><button id="compoCerrar" class="mini">Cerrar</button></div>
     </div>
   </details>
-  <div class="row"><button id="run" class="primary">💬 Revisar respuestas de SMS</button></div>
+  <div class="row"><button id="run" class="primary">Revisar respuestas de SMS</button></div>
   <div id="status" class="card">Listo.</div>
   <div class="nums">
     <div class="card"><span id="nAbiertos" class="count">0</span><small>por atender</small></div>

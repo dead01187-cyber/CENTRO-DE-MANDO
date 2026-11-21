@@ -141,9 +141,9 @@ async function revisar(aMano) {
       await domicilios("lofty", { pares: [{ key: a.key, valor, ...(valor === "no" ? { via: destino() } : {}) }] });
       n++;
       if (valor === "si") decir(`↷ HECM de ${dueno}: ya está en Lofty ${detalle}. No pasa a ${quien()}.`);
-      else if (valor === "sinRevisar") decir(`⚠ HECM de ${dueno}: no la pude revisar en Lofty; NO pasa a ${quien()}. Dale “volver a revisar” cuando Lofty conteste.`, "error");
-      else if (valor === "filtrada") decir(`⏭ HECM de ${dueno}: la filtré (${detalle}). Si la quieres, dale “Dejar pasar” en Chequi 3.`);
-      else decir(`✔ HECM de ${dueno} pasa a ${quien()} · prioridad ${pr.p}${pr.por.length ? ` (${pr.por.join(", ")})` : ""}.`);
+      else if (valor === "sinRevisar") decir(`HECM de ${dueno}: no la pude revisar en Lofty; NO pasa a ${quien()}. Dale “volver a revisar” cuando Lofty conteste.`, "error");
+      else if (valor === "filtrada") decir(`HECM de ${dueno}: la filtré (${detalle}). Si la quieres, dale “Dejar pasar” en Chequi 3.`);
+      else decir(`✓ HECM de ${dueno} pasa a ${quien()} · prioridad ${pr.p}${pr.por.length ? ` (${pr.por.join(", ")})` : ""}.`);
       await cargar();
     }
   } finally {
@@ -170,7 +170,7 @@ function pintar() {
     return `<li><div class="addr"><b>${esc(dueno)}</b>${r.prioridad != null && a.lofty !== "si" ? ` <span class="tag p${Math.min(3, Math.floor((r.prioridad || 0) / 3))}">prioridad ${r.prioridad}</span>` : ""}
       <small>${esc(a.street)}, ${esc(a.city)} · ${esc(h.lender || "")}${h.nts ? " · NTS " + esc(h.nts) : h.nod ? " · NOD " + esc(h.nod) : ""}${h.subasta ? " · remate " + esc(h.subasta) : ""}</small>
       ${r.detalle ? `<small>${a.lofty === "si" ? "Ya en Lofty " : "Motivo: "}${esc(r.detalle)}</small>` : ""}
-      ${(r.por || []).length && a.lofty !== "si" ? `<small>⭐ ${esc(r.por.join(" · "))}</small>` : ""}</div>${botones ? botones(a) : ""}</li>`;
+      ${(r.por || []).length && a.lofty !== "si" ? `<small>${esc(r.por.join(" · "))}</small>` : ""}</div>${botones ? botones(a) : ""}</li>`;
   };
   const dejar = (a) => `<button class="mini" data-k="${esc(a.key)}" data-a="pasar">Dejar pasar</button>`;
   const ord = (l) => l.slice().sort((x, y) => ((res[y.key] || {}).prioridad || 0) - ((res[x.key] || {}).prioridad || 0));

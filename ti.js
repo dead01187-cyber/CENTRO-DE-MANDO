@@ -142,7 +142,7 @@ async function mandar(aMano, soloId) {
       if (res.ok) {
         hechos++;
         await zbPoner({ [l.leadIdZb]: { teams: "enviado", teamsT: Date.now(), teamsError: "" } });
-        svLog && svLog(`📤 Mandé a Teams (“${cfg.chat}”) la captura del reclamo de ${l.nombre}.`);
+        svLog && svLog(`Mandé a Teams (“${cfg.chat}”) la captura del reclamo de ${l.nombre}.`);
       } else {
         await zbPoner({ [l.leadIdZb]: { teams: res.dudoso ? "revisar" : "error", teamsError: res.motivo } });
         decir(`No pude mandar a Teams la captura de ${l.nombre}: ${res.motivo}.${res.dudoso ? " Revisa el chat antes de reenviarla." : ""}`, "error");

@@ -43,7 +43,7 @@
 <body>
 <main>
   <details class="card" id="cuenta">
-    <summary>🔑 Cuenta de Lofty para los SMS <span id="cuentaTxt" class="hint"></span></summary>
+    <summary>Cuenta de Lofty para los SMS <span id="cuentaTxt" class="hint"></span></summary>
     <div class="grid" style="margin-top:8px">
       <label class="f" style="grid-column:1/-1">API key de la OTRA cuenta de Lofty<input type="password" id="key" placeholder="Pega aquí la API key (Settings → Integrations → API)" autocomplete="off"></label>
       <div class="row" style="grid-column:1/-1"><button id="guardarKey" class="mini">Guardar y probar</button><button id="quitarKey" class="mini">Quitar</button></div>
@@ -70,14 +70,14 @@
   </div>
 
   <div class="row">
-    <button id="buscar" class="primary">🔎 Buscar leads y armar la lista</button>
+    <button id="buscar" class="primary">Buscar leads y armar la lista</button>
     <button id="stop" class="stop">Parar</button>
   </div>
   <div id="status" class="card">Listo.</div>
 
   <div id="confirma" class="card" hidden>
     <div id="confTxt"></div>
-    <div class="row" style="margin-top:8px"><button id="si" class="primary">📨 Sí, mandar</button><button id="no">Cancelar</button></div>
+    <div class="row" style="margin-top:8px"><button id="si" class="primary">Sí, mandar</button><button id="no">Cancelar</button></div>
   </div>
 
   <div class="nums">
@@ -85,8 +85,8 @@
     <div class="card"><span id="nMarcados" class="count">0</span><small>marcados para mandar</small></div>
     <div class="card"><span id="nHoy" class="count">0</span><small>SMS mandados hoy</small></div>
   </div>
-  <div class="row"><button id="mandar" class="primary" disabled>📨 Revisar y mandar los marcados</button><button id="marcarTodos" class="mini">Marcar todos</button><button id="desmarcar" class="mini">Ninguno</button></div>
-  <div class="row vistas"><button id="vFaltan" class="mini on">⏳ Faltan</button><button id="vMandados" class="mini">✅ Ya mandados</button><button id="vProblema" class="mini">⚠️ Opt-out / error</button></div>
+  <div class="row"><button id="mandar" class="primary" disabled>Revisar y mandar los marcados</button><button id="marcarTodos" class="mini">Marcar todos</button><button id="desmarcar" class="mini">Ninguno</button></div>
+  <div class="row vistas"><button id="vFaltan" class="mini on">Faltan</button><button id="vMandados" class="mini">Ya mandados</button><button id="vProblema" class="mini">Opt-out / error</button></div>
   <ul id="lista"><li class="empty">Escribe una etapa o un tag y dale “Buscar leads”. Te enseño a quién le voy a mandar y qué dice el mensaje antes de mandar nada.</li></ul>
   <div class="hint">Solo mando a leads Seller y a números de California. Un SMS mandado ya no se puede borrar, por eso nada sale sin tu OK.</div>
 </main>

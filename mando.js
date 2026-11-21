@@ -149,7 +149,7 @@ $("b-tablero").onclick = () => mostrar("tb"); // Fase 5
 chrome.storage.local.set({ mandoTema: "n8n" }); // si estaba guardado "neon", se reemplaza
 ponerTema();
 
-function pintarSonido() { $("b-sonido").textContent = sonido ? "🔊 Efectos" : "🔇 Efectos"; }
+function pintarSonido() { $("b-sonido").textContent = sonido ? "Sonido: sí" : "Sonido: no"; }
 $("b-sonido").onclick = () => { sonido = !sonido; chrome.storage.local.set({ mandoSonido: sonido }); pintarSonido(); bip(880, .1); };
 
 // =====================================================================
@@ -496,7 +496,7 @@ function pintarLog() {
     d.style.setProperty("--c", COLOR[e.mod] || "#94a3b8");
     const h = new Date(e.t).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     d.innerHTML = `<span class="h">${h}</span> <span class="q">${NOMBRE[e.mod] || e.mod}</span> `;
-    d.append(document.createTextNode((e.nivel === "error" ? "⚠ " : "") + e.texto));
+    d.append(document.createTextNode(e.texto));
     $("log").append(d);
   }
 }
@@ -523,7 +523,7 @@ async function pintarMision() {
   $("mTxt").textContent = corrido ? `Trabajo corrido · ${mision.zona}` : `${mision.meta} leads de ${mision.zona}`;
   $("mBarra").style.width = Math.min(100, (loftyListos / mision.meta) * 100) + "%";
   $("mNum").textContent = corrido ? `${loftyListos} entregados a Lofti` : `${loftyListos} / ${mision.meta} listos`;
-  $("mFase").textContent = mision.estado === "pausada" ? "⏸ En pausa" : mision.estado === "esperando_ok" ? "✅ Esperando tu OK" : (FASE[mision.fase] || "Trabajando");
+  $("mFase").textContent = mision.estado === "pausada" ? "En pausa" : mision.estado === "esperando_ok" ? "Esperando tu OK" : (FASE[mision.fase] || "Trabajando");
   $("mPausa").textContent = mision.estado === "pausada" ? "▶ Seguir" : "Pausar";
   $("mPausa").hidden = mision.estado === "esperando_ok";
   $("mSubir").hidden = mision.estado !== "esperando_ok";

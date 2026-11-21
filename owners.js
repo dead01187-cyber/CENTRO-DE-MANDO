@@ -325,7 +325,7 @@ $("btnActual").onclick = async () => {
   try {
     const r = await extraerDeTab(tab.id);
     const res = agregarResultado(r);
-    estado("Listo ✅ " + resumen(r, res), !r.owners.length && !r.sinAsignar.length);
+    estado("Listo " + resumen(r, res), !r.owners.length && !r.sinAsignar.length);
   } catch (e) {
     estado("No se pudo leer: " + e.message, true);
   }
@@ -352,7 +352,7 @@ $("btnLista").onclick = async () => {
       if (tab) chrome.tabs.remove(tab.id).catch(() => {});
     }
   }
-  estado(`Terminado: ${total} propiedad(es) nueva(s)` + (fallas ? ` · ${fallas} página(s) con error` : " ✅"), fallas > 0);
+  estado(`Terminado: ${total} propiedad(es) nueva(s)` + (fallas ? ` · ${fallas} página(s) con error` : " "), fallas > 0);
   bloquear(false);
 };
 
@@ -428,7 +428,7 @@ $("btnPestanas").onclick = async () => {
   if (vacias) partes.push(`${vacias} sin owner ni teléfonos`);
   if (empresas) partes.push(`${empresas} solo con trust/compañía`);
   if (fallas) partes.push(`${fallas} con error`);
-  estado("Listo ✅ " + partes.join(" · "), fallas > 0);
+  estado("Listo " + partes.join(" · "), fallas > 0);
   bloquear(false);
   listarPestanas();
 };
@@ -762,12 +762,12 @@ $("btnCsv").onclick = () => {
   a.download = `owners-lofty-${fecha}.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  estado(`CSV descargado con ${lote.length} owner(s) ✅`);
+  estado(`CSV descargado con ${lote.length} owner(s) `);
 };
 
 $("btnCopiar").onclick = async () => {
   if (!lote.length) return;
-  try { await navigator.clipboard.writeText(textoLimpio()); estado("Texto copiado 📋"); }
+  try { await navigator.clipboard.writeText(textoLimpio()); estado("Texto copiado "); }
   catch { estado("No se pudo copiar.", true); }
 };
 

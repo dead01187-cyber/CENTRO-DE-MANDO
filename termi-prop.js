@@ -81,7 +81,7 @@ $("sacar").onclick = async () => {
   }
   if (!trabajos.length) { ver("Radar dice que esos ZIP no tienen propiedades de esos tipos."); return; }
   const min = Math.round((trabajos.length * (maxPag * 25 + 30)) / 60);
-  const ok = await preguntar(`¿Busco propiedades en Propwire?\n\n${zips.length} ZIP × ${tipos.length} tipos = ${trabajos.length} búsquedas, hasta ${maxPag} página(s) cada una${estim ? ` (≈${estim} propiedades)` : ""}.\nSolo leo la lista: no exporto ni gasto créditos. Con ritmo humano tardo ~${min} min.\n\nAl terminar te dejo la lista de domicilios aquí en Termi.`, "🔎 Buscar", "Cancelar");
+  const ok = await preguntar(`¿Busco propiedades en Propwire?\n\n${zips.length} ZIP × ${tipos.length} tipos = ${trabajos.length} búsquedas, hasta ${maxPag} página(s) cada una${estim ? ` (≈${estim} propiedades)` : ""}.\nSolo leo la lista: no exporto ni gasto créditos. Con ritmo humano tardo ~${min} min.\n\nAl terminar te dejo la lista de domicilios aquí en Termi.`, "Buscar", "Cancelar");
   if (!ok) return;
   sacando = true; window.sacandoProp = true; pararProp = false; pintarSel();
   window.robot && robot.set("trabajando", "Leyendo propiedades en Propwire…");
