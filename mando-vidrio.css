@@ -1,0 +1,79 @@
+/* =====================================================================
+   Centro de Mando · vidrio esmerilado sobre fondo de colores (estilo macOS)
+   Va DESPUÉS de mando-n8n.css. Solo cambia lo visual.
+   - Fondo: degradado de manchas de color difuminadas, original (no es un
+     fondo de pantalla de Apple).
+   - Tarjetas de los robots, barra de arriba, tarjetas laterales y cajón:
+     vidrio translúcido con desenfoque, orilla brillante y texto blanco.
+   Los estados (trabajando, terminó, error, pausa) conservan sus colores.
+   ===================================================================== */
+body.n8n {
+  --vid-fondo: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.07));
+  --vid-borde: rgba(255,255,255,.30);
+  --vid-luz: inset 0 1px 0 rgba(255,255,255,.40), inset 0 -1px 0 rgba(255,255,255,.08);
+  --vid-sombra: 0 10px 30px rgba(10, 8, 40, .30);
+  --vid-blur: blur(22px) saturate(170%);
+  --t: #ffffff; --m: rgba(255,255,255,.72);
+  background: #1b1440;
+  color: #fff;
+}
+
+/* ---------- Fondo estilo macOS: manchas de color grandes y suaves ---------- */
+body.n8n .rejilla {
+  opacity: 1; animation: none;
+  background:
+    radial-gradient(60% 55% at 12% 18%, #ff8a3d 0%, rgba(255,138,61,0) 60%),
+    radial-gradient(55% 60% at 88% 12%, #ff4f8b 0%, rgba(255,79,139,0) 62%),
+    radial-gradient(70% 65% at 78% 85%, #3d7bff 0%, rgba(61,123,255,0) 62%),
+    radial-gradient(60% 60% at 20% 92%, #8b3dff 0%, rgba(139,61,255,0) 60%),
+    radial-gradient(45% 45% at 50% 50%, #ffc46b 0%, rgba(255,196,107,0) 70%),
+    linear-gradient(160deg, #2a1b6e 0%, #4b1d77 45%, #1d3a8a 100%) !important;
+  background-size: 100% 100% !important;
+}
+
+/* ---------- Tarjetas de los robots ---------- */
+body.n8n .arbol .estacion {
+  background: var(--vid-fondo);
+  -webkit-backdrop-filter: var(--vid-blur); backdrop-filter: var(--vid-blur);
+  border-width: 1px; border-style: solid; border-radius: 16px;
+  box-shadow: var(--vid-luz), var(--vid-sombra);
+  color: #fff;
+}
+/* orilla clara solo cuando no hay un estado que pinte su propio color */
+body.n8n .arbol .estacion:not(.trabajando):not(.pensando):not(.feliz):not(.error):not(.ayuda):not(.pausa) { border-color: var(--vid-borde); }
+body.n8n .arbol .estacion.nube { background: rgba(255,255,255,.08); border-style: dashed; }
+body.n8n .arbol .estacion:hover { box-shadow: var(--vid-luz), 0 0 0 1px var(--rc, #fff), 0 14px 34px -8px var(--rc, rgba(0,0,0,.4)); }
+body.n8n .arbol .estacion .nombre { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+body.n8n .arbol .estacion .rol,
+body.n8n .arbol .estacion .cuenta,
+body.n8n .arbol .estacion .msg { color: rgba(255,255,255,.78); }
+body.n8n .arbol .estacion .cuenta b { color: #fff; }
+/* círculo del robot: vidrio más claro */
+body.n8n .arbol .aro, body.n8n .arbol .estacion .aro {
+  border-radius: 12px; background: rgba(255,255,255,.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.18) !important;
+}
+/* "Listo", "Trabajando"…: pastilla de vidrio */
+body.n8n .chip { background: rgba(255,255,255,.18) !important; color: #fff !important; border-radius: 999px; padding: 1px 7px; }
+body.n8n .etq-col { background: rgba(255,255,255,.16); color: #fff; border: 1px solid rgba(255,255,255,.30); border-radius: 999px;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+
+/* ---------- Barra de arriba, tarjetas laterales, burbuja, cajón y controles ---------- */
+body.n8n .hud { background: rgba(255,255,255,.08); border-bottom: 1px solid rgba(255,255,255,.18);
+  -webkit-backdrop-filter: var(--vid-blur); backdrop-filter: var(--vid-blur); }
+body.n8n .logo, body.n8n #reloj { color: #fff; }
+body.n8n .logo small { color: rgba(255,255,255,.7); }
+body.n8n .met, body.n8n .chipbtn, body.n8n .tarjeta, body.n8n .burbuja, body.n8n #camara {
+  background: var(--vid-fondo); border: 1px solid var(--vid-borde); box-shadow: var(--vid-luz), var(--vid-sombra);
+  -webkit-backdrop-filter: var(--vid-blur); backdrop-filter: var(--vid-blur); color: #fff;
+}
+body.n8n .met { border-radius: 14px; } body.n8n .tarjeta { border-radius: 18px; } body.n8n .chipbtn { border-radius: 10px; }
+body.n8n .met b { color: #fff !important; } body.n8n .met span { color: rgba(255,255,255,.72); }
+body.n8n .tarjeta .t, body.n8n .tarjeta label, body.n8n .tarjeta small, body.n8n .tarjeta .hint { color: rgba(255,255,255,.85); }
+body.n8n input, body.n8n textarea { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.28); color: #fff; }
+body.n8n input::placeholder, body.n8n textarea::placeholder { color: rgba(255,255,255,.55); }
+body.n8n #camara button { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.25); color: #fff; }
+body.n8n #camZoom { color: rgba(255,255,255,.8); }
+body.n8n .cajon { background: rgba(20, 16, 50, .55); border-left: 1px solid rgba(255,255,255,.20);
+  -webkit-backdrop-filter: blur(28px) saturate(160%); backdrop-filter: blur(28px) saturate(160%); }
+body.n8n .cajon-top { background: rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.16); }

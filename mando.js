@@ -292,7 +292,7 @@ function dibujarLazosN8n(t) {
   for (const l of lazos) {
     if (!l.n8n) continue;
     const activo = estado[l.a] === "trabajando" || estado[l.a] === "pensando";
-    xL.strokeStyle = activo ? "#ff6d5a" : l.tipo === "mando" ? "#5a5a5a" : "#7a7a7a";
+    xL.strokeStyle = activo ? "#ff6d5a" : l.tipo === "mando" ? "rgba(255,255,255,.45)" : "rgba(255,255,255,.62)"; // blancas translúcidas sobre el fondo de colores
     xL.lineWidth = 2; xL.globalAlpha = 1;
     xL.setLineDash(activo ? [7, 5] : l.tipo === "mando" ? [3, 5] : []); xL.lineDashOffset = activo ? -t / 30 : 0;
     xL.beginPath(); xL.moveTo(l.pts[0].x, l.pts[0].y); for (const q of l.pts.slice(1)) xL.lineTo(q.x, q.y); xL.stroke();
