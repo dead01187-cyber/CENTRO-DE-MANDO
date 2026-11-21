@@ -110,7 +110,7 @@ let vidrios = [];
 function ponerVidrio(on) {
   vidrios.forEach((v) => v && v.quitar()); vidrios = [];
   document.querySelectorAll(".en-vidrio").forEach((e) => e.classList.remove("en-vidrio"));
-  $("vidrioBtn").classList.toggle("primary", on);
+  $("vidrioBtn").classList.toggle("activo", on); // (no "primary": esa clase estira el botón)
   if (!on || !window.Vidrio) return;
   for (const [sel, op] of VIDRIOS) { const e = document.querySelector(sel); if (e) { e.classList.add("en-vidrio"); vidrios.push(Vidrio.envolver(e, op)); } }
 }
