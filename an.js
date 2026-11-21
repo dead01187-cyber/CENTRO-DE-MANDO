@@ -13,12 +13,12 @@ async function calcular() {
     llenar("porDia", h("tr", {}, h("th", { text: "Día" }), h("th", { text: "SMS" }), h("th", { text: "" })),
       Object.entries(m.sms.porDia).map(([d, n]) => h("tr", {}, h("td", { text: d }), h("td", { text: String(n) }), h("td", {}, h("div", { class: "barra", style: `width:${Math.round((100 * n) / max)}%` })))));
     const det = [
-      ["SMS por robot", filas(m.sms.porRobot)], ["Por qué se bloquearon SMS", filas(m.sms.motivosBloqueo)],
+      ["SMS por agente", filas(m.sms.porRobot)], ["Por qué se bloquearon SMS", filas(m.sms.motivosBloqueo)],
       ["Respuestas por tipo (Resi)", filas(m.respuestas.porCategoria)], ["Interés entre los que contestaron", m.respuestas.tasaInteres + "%"],
       ["Bajas / enojados / equivocados", String(m.respuestas.bajas)], ["Números con baja permanente", String(m.leads.bajasPermanentes)],
       ["Leads listos para subir", String(m.leads.listosParaSubir)], ["Domicilios guardados", String(m.leads.domicilios)],
       ["Tareas por estado", filas(m.tareas.porEstado)], ["Duración promedio de una tarea", m.tareas.duracionPromedioSeg + " s"],
-      ["Errores por robot (bitácora)", filas(m.errores)], ["Claude hoy (llamadas)", filas(m.claude, (u) => `${u.llamadas || 0}`)],
+      ["Errores por agente (bitácora)", filas(m.errores)], ["Claude hoy (llamadas)", filas(m.claude, (u) => `${u.llamadas || 0}`)],
     ];
     llenar("detalle", det.map(([k, v]) => h("tr", {}, h("th", { text: k }), h("td", { text: v }))));
     await chrome.storage.local.set({ anRes: { sms: m.sms.enviados, respuesta: m.respuestas.tasaRespuesta, interesados: m.respuestas.interesados, t: Date.now() } });

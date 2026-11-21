@@ -25,9 +25,9 @@ function bloquear() {
   $("bloqueo").hidden = false;
 }
 
-// ---------- Robots pintados ----------
+// ---------- Íconos de los agentes ----------
 for (const m of [...MODS, "crm", "gm", "tm"]) { const e = document.getElementById("e-" + m); if (e && COLOR[m]) e.style.setProperty("--rc", COLOR[m]); } // color de cada nodo (efectos)
-for (const m of MODS) {
+for (const m of [...MODS, "gm", "tm", "crm"]) {
   const r = document.querySelector(`#e-${m} .robot`);
   if (r && window.robotSVG) r.innerHTML = robotSVG(m);
 }

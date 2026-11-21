@@ -464,7 +464,7 @@ async function irA(tab, url) {
   for (let i = 0; i < 60; i++) { const x = await chrome.tabs.get(tab).catch(() => null); if (!x || x.status === "complete") break; await sleep(400); }
   await sleep(1500 + Math.random() * 1500);
 }
-const turno = () => turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los robots ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min…` : `Esperando turno de Propwire (otro robot la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar });
+const turno = () => turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los agentes ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min…` : `Esperando turno de Propwire (otro agente la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar });
 
 // Registro de las listas que Wibi crea en Propwire (lo usa Carpi para organizarlas y borrarlas)
 async function registrar(nombre, datos) {
@@ -760,12 +760,12 @@ async function trabajarUnaVez(aMano) {
       window.robot && robot.set("trabajando", `Skip trace en Propwire: ${a.street}…`);
       ver(`Buscando en Propwire: ${dir}…`);
       await trabajo(a.key, { direccion: dir, estado: "buscando", detalle: "" });
-      if (!(await turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los robots ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min para no ser bloqueados…` : `Esperando turno de Propwire (otro robot la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar }))) break;
+      if (!(await turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los agentes ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min para no ser bloqueados…` : `Esperando turno de Propwire (otro agente la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar }))) break;
       const tab = await pestanaPW(true);
       const volver = await alFrente(tab);
       let quedarse = false;
       try {
-      if (!(await turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los robots ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min para no ser bloqueados…` : `Esperando turno de Propwire (otro robot la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar }))) break;
+      if (!(await turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los agentes ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min para no ser bloqueados…` : `Esperando turno de Propwire (otro agente la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar }))) break;
       let r = await corre(tab, pwAbrir, [a.street, a.city, a.zip || ""]).catch((e) => ({ error: e.message }));
       if (!r || r.error) {
         if ((r && r.bloqueo) || (await corre(tab, pwBloqueo).catch(() => false))) { await bloqueado(a.key, dir); quedarse = true; break; }

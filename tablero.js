@@ -19,7 +19,7 @@ async function pintar() {
   $("titulo").textContent = { verde: "Todo en orden", amarillo: "Hay cosas que revisar", rojo: "Hay problemas" }[t.semaforo];
   $("sub").textContent = `Actualizado ${new Date(t.generado).toLocaleTimeString("es-MX")} · se refresca solo`;
   const r = t.robots, vivas = t.tareas.lista.filter((x) => x.viva).length;
-  llenar("nums", numero(r.filter((x) => ["trabajando", "pensando"].includes(x.estado)).length, "robots trabajando"), numero(r.filter((x) => ["error", "ayuda", "sin señal"].includes(x.estado)).length, "con problema"),
+  llenar("nums", numero(r.filter((x) => ["trabajando", "pensando"].includes(x.estado)).length, "agentes trabajando"), numero(r.filter((x) => ["error", "ayuda", "sin señal"].includes(x.estado)).length, "con problema"),
     numero(r.filter((x) => x.estado === "apagado").length, "apagados"), numero(vivas, "tareas vivas"), numero(t.seguridad.aprobacionesPendientes, "esperan tu OK"),
     numero(t.errores.ultimas24h, "errores 24 h"), numero(t.leads.smsHoy, "SMS hoy"), numero(t.costos.total.dolares != null ? "$" + t.costos.total.dolares : miles(t.costos.total.llamadas), t.costos.total.dolares != null ? "Claude hoy" : "llamadas a Claude"));
   // Aprobaciones (botones del jefe)
@@ -37,11 +37,11 @@ async function pintar() {
     llenar("mision", h("div", { class: "row" }, h("b", { text: `${m.meta} leads de ${m.zona}` }), etiqueta(m.estado === "corriendo" ? "ok" : "aviso", m.estado === "esperando_ok" ? "esperando tu OK" : m.estado), h("span", { class: "hint", text: `${m.listos} listos · fase ${m.fase || "—"} · ${hace(m.desde)}` })), medidor(pct)); }
   // Supervisores
   llenar("sups", t.supervisores.map((s) => h("div", { class: "card sup" }, h("h4", { text: s.id }), h("div", { class: "hint", text: s.rol }),
-    h("div", { text: `${s.robots} robots · ${s.trabajando} trabajando · ${s.conProblema} con problema${s.apagados ? ` · ${s.apagados} apagados` : ""}` }),
+    h("div", { text: `${s.robots} agentes · ${s.trabajando} trabajando · ${s.conProblema} con problema${s.apagados ? ` · ${s.apagados} apagados` : ""}` }),
     h("div", { class: "hint", text: `${s.tareasVivas} tareas vivas · ${s.errores24} errores 24 h · Claude ${s.presupuesto}% del tope (${s.llamadas} llamadas)` }), medidor(s.presupuesto))));
   // Robots
   const orden = { error: 0, ayuda: 1, "sin señal": 2, trabajando: 3, pensando: 3, pausa: 4, feliz: 5, idle: 6, "sin datos": 7, apagado: 8 };
-  llenar("robots", h("tr", {}, ...["Robot", "Sup.", "Estado", "Último mensaje", "Errores 24 h", "Tareas ✓/✗", "Éxito", "Duración"].map((x, i) => h("th", { class: i >= 4 ? "num" : "", text: x }))),
+  llenar("robots", h("tr", {}, ...["Agente", "Sup.", "Estado", "Último mensaje", "Errores 24 h", "Tareas ✓/✗", "Éxito", "Duración"].map((x, i) => h("th", { class: i >= 4 ? "num" : "", text: x }))),
     [...r].sort((a, b) => (orden[a.estado] ?? 9) - (orden[b.estado] ?? 9) || a.nombre.localeCompare(b.nombre)).map((x) => fila(h("b", { text: x.nombre }), x.supervisor, etiqueta(CLASE[x.estado] || "gris", TXT[x.estado] || x.estado),
       h("span", { class: "hint", text: `${x.texto.slice(0, 90)}${x.hace != null ? ` · ${hace(x.hace)}` : ""}` }), num(x.errores24), num(`${x.tareasHechas}/${x.tareasFallidas}`), num(x.exito == null ? "—" : x.exito + "%"), num(x.duracionSeg == null ? "—" : x.duracionSeg + " s"))));
   // Tareas
@@ -79,7 +79,7 @@ async function pintar() {
 // ---- Fase 6: lanzamiento gradual. Solo el jefe, con clic y confirmación, cambia de etapa. ----
 function pintarEtapas(st) {
   const l = TABLERO.lanzamiento(st, REGISTRO);
-  $("etapaActual").textContent = l.actual ? `hoy estás en la etapa ${l.actual} (${TABLERO.ETAPAS[l.actual - 1].nombre})` : "todos los robots están apagados";
+  $("etapaActual").textContent = l.actual ? `hoy estás en la etapa ${l.actual} (${TABLERO.ETAPAS[l.actual - 1].nombre})` : "todos los agentes están apagados";
   llenar("etapas", l.etapas.map((e) => h("div", { class: "card sup" }, h("h4", {}, `${e.n}. ${e.nombre} `, e.n === l.actual ? etiqueta("ok", "actual") : null), h("div", { class: "hint", text: e.desc }),
     h("small", { text: e.robots.map((r) => `${r.prendido ? "●" : "○"} ${r.nombre}`).join("  ") }),
     h("div", { class: "row", style: "margin-top:6px" }, h("button", { class: "mini", text: e.n === l.actual ? "Volver a aplicar" : `Pasar a etapa ${e.n}`, onclick: () => cambiarEtapa(e.n) })))));

@@ -13,7 +13,7 @@
     // Si el robot necesita ayuda (captcha o login), avisar en voz alta (máx. una vez por minuto)
     if (/pide (verificación|iniciar sesi)|captcha/i.test(texto) && Date.now() - (window.__ultimaVoz || 0) > 60000) {
       window.__ultimaVoz = Date.now();
-      const quien = (window.robot && window.robot.nombre) || "Tu robot";
+      const quien = (window.robot && window.robot.nombre) || "Tu agente";
       chrome.storage.local.get(["svVoz", "svVozNombre", "svVelocidad"]).then(({ svVoz, svVozNombre, svVelocidad }) => {
         if (svVoz === false) return;
         const o = { lang: "es-MX", rate: Number(svVelocidad) || 1, enqueue: true };

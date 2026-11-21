@@ -75,11 +75,11 @@
     cu: R("Cumpli", "Audita el cumplimiento de los SMS y los ajustes riesgosos", "OPS", "cu.html", [],
       [{ id: "auditar", desc: "Auditar los SMS de los últimos días y los ajustes actuales", aprobacion: false, boton: "run" }]),
     qa: R("Qai", "Revisa la salud técnica de la extensión", "OPS", "qa.html", [],
-      [{ id: "revisar", desc: "Revisar almacenamiento, tareas, llaves, errores y robots", aprobacion: false, boton: "run" }]),
+      [{ id: "revisar", desc: "Revisar almacenamiento, tareas, llaves, errores y agentes", aprobacion: false, boton: "run" }]),
     an: R("Ana", "Saca los números: SMS, respuestas, leads, tareas y errores", "OPS", "an.html", [],
       [{ id: "calcular", desc: "Calcular las métricas de los últimos días", aprobacion: false, boton: "run" }]),
     // ---- Supervisor principal ----
-    sv: R("Capi", "Coordina a los robots y te habla", "capi", "sv.html", []),
+    sv: R("Capi", "Coordina a los agentes y te habla", "capi", "sv.html", []),
   };
 
   const nombre = (id) => (ROBOTS[id] && ROBOTS[id].nombre) || id;

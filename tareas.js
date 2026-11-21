@@ -16,7 +16,7 @@
 // =====================================================================
 (function (g) {
   const VIVAS = ["aprobacion", "pendiente", "corriendo"];
-  const LATIDO_MAX = 2 * 60e3;          // sin latido en 2 min = robot perdido
+  const LATIDO_MAX = 2 * 60e3;          // sin latido en 2 min = agente perdido
   const APROBACION_MAX = 24 * 3600e3;   // una aprobación sin respuesta vence en 24 h
   const GUARDAR_TERMINADAS = 300;       // historial de tareas terminadas que se conserva
 
@@ -33,7 +33,7 @@
 
   async function crear({ robot, accion, entrada = {}, origen = "capi", idem = "", motivo = "" }) {
     const reg = g.REGISTRO;
-    if (!reg || !reg.ROBOTS[robot]) error(`El robot “${robot}” no está en el registro.`);
+    if (!reg || !reg.ROBOTS[robot]) error(`El agente “${robot}” no está en el registro.`);
     const acc = reg.accion(robot, accion);
     if (!acc) error(`${reg.nombre(robot)} no tiene la acción “${accion}” en el registro.`);
     return conCandado(async () => {
@@ -68,7 +68,7 @@
       const tareas = await leer(), t = tareas[id];
       if (!t) error("No existe esa tarea.");
       if (!VIVAS.includes(t.estado)) return t;
-      if (t.estado === "corriendo") t.cancelarPedido = true; // el robot lo ve en su siguiente latido
+      if (t.estado === "corriendo") t.cancelarPedido = true; // el agente lo ve en su siguiente latido
       else cambiar(t, "cancelada", { error: "cancelada" + (por ? " por " + por : "") });
       await guardar(tareas);
       return t;
@@ -117,9 +117,9 @@
       for (const t of Object.values(tareas)) {
         if (t.estado === "corriendo" && ahora - (t.latido || t.inicio || 0) > LATIDO_MAX) {
           n++;
-          if (t.cancelarPedido) cambiar(t, "cancelada", { error: "cancelada (el robot dejó de responder)" });
-          else if (t.intentos < t.maxIntentos) cambiar(t, "pendiente", { error: "el robot dejó de responder; se reintenta", dueno: null });
-          else cambiar(t, "fallida", { error: "el robot dejó de responder", fin: ahora });
+          if (t.cancelarPedido) cambiar(t, "cancelada", { error: "cancelada (el agente dejó de responder)" });
+          else if (t.intentos < t.maxIntentos) cambiar(t, "pendiente", { error: "el agente dejó de responder; se reintenta", dueno: null });
+          else cambiar(t, "fallida", { error: "el agente dejó de responder", fin: ahora });
         } else if (t.estado === "aprobacion" && ahora - t.creada > APROBACION_MAX) {
           n++; cambiar(t, "cancelada", { error: "nadie la aprobó en 24 h" });
         }

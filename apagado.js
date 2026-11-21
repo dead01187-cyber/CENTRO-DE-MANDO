@@ -1,7 +1,7 @@
 const m = new URLSearchParams(location.search).get("m") || "";
   const NOMBRE = window.REGISTRO ? Object.fromEntries(REGISTRO.ids().map((x) => [x, REGISTRO.nombre(x)])) : {}; // Fase 2: del registro central
-  document.getElementById("titulo").textContent = (NOMBRE[m] || "Robot") + " está apagado";
-  document.title = (NOMBRE[m] || "Robot") + " apagado";
+  document.getElementById("titulo").textContent = (NOMBRE[m] || "Agente") + " está apagado";
+  document.title = (NOMBRE[m] || "Agente") + " apagado";
   const base = m.replace(/[23]$/, "");
   if (window.robotSVG) document.getElementById("robot").innerHTML = robotSVG(base);
   document.getElementById("prender").onclick = async () => {

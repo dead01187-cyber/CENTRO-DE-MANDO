@@ -85,7 +85,7 @@
         smsRegistro.push({ t: Date.now(), ...ev });
         await chrome.storage.local.set({ smsRegistro: smsRegistro.slice(-REGISTRO_MAX) });
       });
-    } catch (e) { /* el registro nunca debe tumbar al robot */ }
+    } catch (e) { /* el registro nunca debe tumbar al agente */ }
   }
 
   // ---------- La pregunta antes de cada SMS ----------

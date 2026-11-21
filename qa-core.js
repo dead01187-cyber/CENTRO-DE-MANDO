@@ -13,7 +13,7 @@
     const add = (estado, nombre, detalle) => c.push({ estado, nombre, detalle });
     // 1) Almacenamiento
     const pct = Math.round((bytes / CUOTA) * 100);
-    add(pct >= 85 ? "falla" : pct >= 60 ? "aviso" : "ok", "Almacenamiento", `${(bytes / 1048576).toFixed(1)} MB de 10 MB (${pct}%)${pct >= 60 ? ". Al llenarse, los robots dejan de poder guardar." : ""}`);
+    add(pct >= 85 ? "falla" : pct >= 60 ? "aviso" : "ok", "Almacenamiento", `${(bytes / 1048576).toFixed(1)} MB de 10 MB (${pct}%)${pct >= 60 ? ". Al llenarse, los agentes dejan de poder guardar." : ""}`);
     const grandes = Object.entries(st).map(([k, v]) => [k, JSON.stringify(v === undefined ? null : v).length]).sort((a, b) => b[1] - a[1]).slice(0, 5);
     add("ok", "Lo que más ocupa", grandes.map(([k, n]) => `${k} ${(n / 1024).toFixed(0)} KB`).join(" · "));
     // 2) Bus de tareas
@@ -23,11 +23,11 @@
     const enFila = ts.filter((t) => t.estado === "pendiente" && ahora - t.creada > 60 * 60e3);
     add(atoradas.length ? "falla" : "ok", "Tareas atoradas", atoradas.length ? atoradas.map((t) => `${t.robot}:${t.accion}`).join(", ") : "ninguna");
     add(fallidas.length ? "aviso" : "ok", "Tareas fallidas (24 h)", fallidas.length ? fallidas.map((t) => `${t.robot}:${t.accion} (${t.error || "?"})`).join("; ") : "ninguna");
-    add(enFila.length ? "aviso" : "ok", "Tareas en fila hace más de 1 h", enFila.length ? enFila.map((t) => `${t.robot}:${t.accion} — ¿su página está cerrada o el robot apagado?`).join("; ") : "ninguna");
+    add(enFila.length ? "aviso" : "ok", "Tareas en fila hace más de 1 h", enFila.length ? enFila.map((t) => `${t.robot}:${t.accion} — ¿su página está cerrada o el agente apagado?`).join("; ") : "ninguna");
     // 3) Registro de robots
     if (registro) {
       const malos = Object.entries(registro.ROBOTS).filter(([, r]) => !registro.SUPERVISORES[r.supervisor] || !r.pagina).map(([id]) => id);
-      add(malos.length ? "falla" : "ok", "Registro de robots", malos.length ? `sin supervisor o página: ${malos.join(", ")}` : `${Object.keys(registro.ROBOTS).length} robots, todos con supervisor y página`);
+      add(malos.length ? "falla" : "ok", "Registro de agentes", malos.length ? `sin supervisor o página: ${malos.join(", ")}` : `${Object.keys(registro.ROBOTS).length} agentes, todos con supervisor y página`);
     }
     // 4) Llaves (solo si existen)
     const llaves = { "Lofty (Chequi, Lofti, Acti…)": st.loftyKey, "Lofty de Texi/Resi": st.txKey, "Anthropic (Capi)": st.svKey };
@@ -45,7 +45,7 @@
     if (codigo.length) add("falla", "Errores de código", codigo.slice(-3).map((e) => `${nombre(e.mod)}: ${e.texto.slice(0, 120)}`).join(" · "));
     // 7) Robots apagados
     const ap = Object.keys(st.robotsApagados || {}).filter((k) => st.robotsApagados[k]);
-    add("ok", "Robots apagados", ap.length ? ap.map(nombre).join(", ") : "ninguno");
+    add("ok", "Agentes apagados", ap.length ? ap.map(nombre).join(", ") : "ninguno");
     // 8) Crecimiento sin tope conocido
     const n = (k) => Object.keys(st[k] || {}).length;
     const crecen = [["addresses", n("addresses"), 20000], ["prCasos", n("prCasos"), 3000], ["hrCasos", n("hrCasos"), 3000], ["hrVistos", n("hrVistos"), 5000], ["lote", (st.lote || []).length, 2000]].filter(([, v, max]) => v > max);

@@ -254,3 +254,6 @@ html.n8n[data-mod=sv] #chat .m.sv { background: #2e2e2e !important; border: 1px 
 html.n8n[data-mod=sv] #chat .m.yo { background: var(--n8n) !important; color: #fff !important; }
 html.n8n[data-mod=sv] #chat .m.aviso { background: #3b3522 !important; color: #e8d9a8 !important; border: 1px dashed #5a5132; }
 html.n8n[data-mod=sv] form { background: #262626; border-top: 1px solid #333; }
+
+/* Íconos de línea de los agentes (v1.72.0) */
+html[data-mod] .rb .ico svg.ico-linea { width: 22px !important; height: 22px !important; filter: none !important; image-rendering: auto; }

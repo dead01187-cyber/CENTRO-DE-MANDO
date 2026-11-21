@@ -14,7 +14,7 @@
   const instancia = `${MOD || "pagina"}:${Math.random().toString(36).slice(2, 9)}`;
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   const manejadores = {}, alCancelar = {};
-  let ocupado = false, actual = null; // actual = tarea que este robot está haciendo ahora
+  let ocupado = false, actual = null; // actual = tarea que este agente está haciendo ahora
 
   async function pedir(msg) {
     const r = await chrome.runtime.sendMessage({ type: "tarea", ...msg });
@@ -32,7 +32,7 @@
         const t = await pedir({ op: "reclamar", robot: MOD, instancia });
         if (!t) break;
         const fn = manejadores[t.accion];
-        if (!fn) { await pedir({ op: "terminar", id: t.id, instancia, ok: false, error: `este robot no sabe hacer “${t.accion}”` }); continue; }
+        if (!fn) { await pedir({ op: "terminar", id: t.id, instancia, ok: false, error: `este agente no sabe hacer “${t.accion}”` }); continue; }
         window.svLog && svLog(`Tarea del bus: ${t.accion}${t.origen ? ` (la pidió ${t.origen === "capi" ? "Capi" : t.origen})` : ""}.`);
         actual = t;
         // Latido cada 10 s; si el jefe/Capi canceló la tarea, se le avisa al robot para que se detenga
@@ -80,7 +80,7 @@
   async function esperarLibre(estaOcupado, ms = 10 * 60e3) {
     const t0 = Date.now();
     while (estaOcupado() && Date.now() - t0 < ms) await espera(2000);
-    if (estaOcupado()) throw new Error("el robot siguió ocupado más de 10 minutos");
+    if (estaOcupado()) throw new Error("el agente siguió ocupado más de 10 minutos");
   }
 
   // Cliente: Capi y el Centro de Mando

@@ -12,7 +12,7 @@
   header h1 { font-size: 15px; margin: 0; font-weight: 700; flex: 1; }
   #b-sv { display: flex; align-items: center; gap: 5px; border: 1px solid #fcd34d; background: #fffbeb; color: #92400e; border-radius: 99px;
     padding: 4px 10px 4px 5px; font: 600 12px -apple-system, system-ui, sans-serif; cursor: pointer; position: relative; }
-  #b-sv img, #b-sv .rbm svg { width: 20px; height: 19px; display: block; image-rendering: pixelated; }
+  #b-sv img, #b-sv .rbm svg { width: 18px; height: 18px; display: block; }
   #b-sv.on { background: #b45309; border-color: #b45309; color: #fff; }
   #b-sv .n { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: #dc2626; border: 2px solid #fff; }
   #b-sv .n:empty { display: none; }
@@ -21,7 +21,7 @@
     border-bottom: 0; background: transparent; padding: 7px 2px 8px; border-radius: 8px 8px 0 0; font: 600 11.5px -apple-system, system-ui, sans-serif;
     color: #64748b; cursor: pointer; position: relative; top: 1px; }
   nav button .rbm { flex-basis: 100%; display: flex; justify-content: center; }
-  nav button img, nav button .rbm svg { width: 20px; height: 18px; display: block; image-rendering: pixelated; }
+  nav button img, nav button .rbm svg { width: 18px; height: 18px; display: block; }
   nav button.on { background: #fff; border-color: #e2e8f0; color: #0f172a; }
   nav button .n { min-width: 16px; padding: 0 4px; margin-left: 1px; border-radius: 9px; font-size: 10px; line-height: 16px; color: #fff; }
   nav button .n:empty { display: none; }
@@ -40,7 +40,7 @@
 </style>
 </head>
 <body>
-  <header><img src="icons/icon48.png" alt=""><h1>Agente Geo Farming</h1><button id="b-mando" title="Abrir el Centro de Mando en pestaña completa">🚀 Mando</button><button id="b-sv" title="Capi: coordina a los robots, arregla errores y te habla"><span class="rbm" data-r="sv"></span>Capi<span class="n"></span></button></header>
+  <header><img src="icons/icon48.png" alt=""><h1>Agente Geo Farming</h1><button id="b-mando" title="Abrir el Centro de Mando en pestaña completa">🚀 Mando</button><button id="b-sv" title="Capi: coordina a los agentes, arregla errores y te habla"><span class="rbm" data-r="sv"></span>Capi<span class="n"></span></button></header>
   <nav>
     <button id="b-ac" data-m="ac" title="Actualizar leads que ya están en Lofty"><span class="rbm" data-r="ac"></span>Actualizar <span class="n"></span></button>
     <button id="b-bv2" data-m="bv2" title="Veri 2: busca los leads de Acti"><span class="rbm" data-r="bv2"></span>BV 2 <span class="n"></span></button>
@@ -68,7 +68,7 @@
     <span class="flecha">›</span>
     <button id="b-tx" data-m="tx" title="Texi: manda SMS a los leads que escojas (otra cuenta de Lofty)"><span class="rbm" data-r="tx"></span>SMS <span class="n"></span></button>
   </nav>
-  <div id="aviso-mando"><b>El Centro de Mando está abierto</b><span>Capi y los robots están trabajando allá para no hacer doble trabajo.</span><button id="ir-mando">Ir al Centro de Mando</button></div>
+  <div id="aviso-mando"><b>El Centro de Mando está abierto</b><span>Capi y los agentes están trabajando allá para no hacer doble trabajo.</span><button id="ir-mando">Ir al Centro de Mando</button></div>
   <div class="marcos">
     <iframe id="f-ac" src="ac.html"></iframe>
     <iframe id="f-bv2" src="bv.html?linea=ac" allow="clipboard-read; clipboard-write"></iframe>

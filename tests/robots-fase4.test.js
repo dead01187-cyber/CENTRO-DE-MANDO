@@ -56,7 +56,7 @@ test("Qai: almacenamiento, tareas atoradas, llaves, errores de código", () => {
   const r = QA.chequeos(st, { bytes: 9.5 * 1048576, registro: REGISTRO, ahora });
   const e = Object.fromEntries(r.chequeos.map((c) => [c.nombre, c.estado]));
   assert.equal(e["Almacenamiento"], "falla"); assert.equal(e["Tareas atoradas"], "falla"); assert.equal(e["API keys"], "aviso");
-  assert.equal(e["Errores de código"], "falla"); assert.equal(e["Política de SMS"], "falla"); assert.equal(e["Registro de robots"], "ok");
+  assert.equal(e["Errores de código"], "falla"); assert.equal(e["Política de SMS"], "falla"); assert.equal(e["Registro de agentes"], "ok");
   assert.ok(!JSON.stringify(r).includes('"x"')); // nunca muestra el valor de una llave
 });
 test("Punti: ordena por señales y explica", () => {

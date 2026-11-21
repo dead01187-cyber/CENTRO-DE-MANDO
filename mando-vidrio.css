@@ -92,3 +92,15 @@ body.n8n .etq-col { font-size: 12px; padding: 4px 12px; }
 /* Bitácora: del tamaño de lo que trae (sin hueco vacío enorme), con desplazamiento si crece */
 body.n8n .lateral .bitacora { flex: 0 1 auto; max-height: 100%; }
 body.n8n .lateral .bitacora #log { flex: 0 1 auto; max-height: 52vh; min-height: 60px; }
+
+/* =====================================================================
+   Íconos de línea en lugar de los robots de pixel art (v1.72.0)
+   ===================================================================== */
+body.n8n .arbol .robot { width: 22px; height: 22px; display: grid; place-items: center; }
+body.n8n .arbol .robot svg.ico-linea { width: 20px; height: 20px; image-rendering: auto; filter: none; animation: none; }
+/* el cuadro del ícono toma un tinte suave del color de su sección */
+body.n8n .arbol .estacion .aro { background: color-mix(in srgb, var(--rc, #888) 16%, rgba(255,255,255,.06)) !important; }
+/* trabajando: el ícono "respira" en lugar de brincar */
+body.n8n .estacion.trabajando .robot, body.n8n .estacion.pensando .robot { animation: icoRespira 1.6s ease-in-out infinite; }
+@keyframes icoRespira { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { body.n8n .estacion .robot { animation: none !important; } }

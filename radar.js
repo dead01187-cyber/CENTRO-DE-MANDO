@@ -299,7 +299,7 @@ async function propwire(lista) {
     if (parar || !(await quedan("propwire")) || (await pausado("propwire"))) break;
     const llave = j.label ? llaves[j.label] : null;
     if (j.label && !llave) continue;
-    if (typeof turnoPropwire === "function" && !(await turnoPropwire({ aviso: (ms) => ver(`Propwire: esperando turno (otro robot la usa)… ${Math.ceil(ms / 1000)} s`), parar: () => parar }))) break;
+    if (typeof turnoPropwire === "function" && !(await turnoPropwire({ aviso: (ms) => ver(`Propwire: esperando turno (otro agente la usa)… ${Math.ceil(ms / 1000)} s`), parar: () => parar }))) break;
     ver(`Propwire: ${j.label || "total de propiedades"} en ${j.z.zip}…`);
     await irA(tab, urlPW(j.z.zip, llave));
     const r = await corre(tab, pwConteo).catch((e) => ({ error: e.message }));

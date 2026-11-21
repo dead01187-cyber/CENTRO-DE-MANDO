@@ -341,7 +341,7 @@ async function pestana(url) {
   await sleep(1500 + Math.random() * 1500);
   return t.id;
 }
-const turno = () => turnoPropwire({ aviso: (ms) => ver(`Esperando turno de Propwire (otro robot la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => false });
+const turno = () => turnoPropwire({ aviso: (ms) => ver(`Esperando turno de Propwire (otro agente la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => false });
 async function pausa() { const { wbPausa = 0 } = await chrome.storage.local.get("wbPausa"); return wbPausa > Date.now() ? wbPausa : 0; }
 async function bloqueado() { const hasta = Date.now() + 3 * 3600e3; await chrome.storage.local.set({ wbPausa: hasta }); decir(`Propwire bloqueó el acceso: Carpi (y Wibi) no tocan Propwire hasta las ${new Date(hasta).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`, "error"); }
 
