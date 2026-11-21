@@ -1,33 +1,31 @@
 /* =====================================================================
-   Centro de Mando · vidrio esmerilado sobre fondo de colores (estilo macOS)
+   Centro de Mando · vidrio esmerilado sobre fondo gris oscuro (estilo macOS grafito)
    Va DESPUÉS de mando-n8n.css. Solo cambia lo visual.
-   - Fondo: degradado de manchas de color difuminadas, original (no es un
-     fondo de pantalla de Apple).
+   - Fondo: gris oscuro casi liso con luces grises suaves (estilo grafito).
    - Tarjetas de los robots, barra de arriba, tarjetas laterales y cajón:
      vidrio translúcido con desenfoque, orilla brillante y texto blanco.
    Los estados (trabajando, terminó, error, pausa) conservan sus colores.
    ===================================================================== */
 body.n8n {
-  --vid-fondo: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.07));
-  --vid-borde: rgba(255,255,255,.30);
-  --vid-luz: inset 0 1px 0 rgba(255,255,255,.40), inset 0 -1px 0 rgba(255,255,255,.08);
-  --vid-sombra: 0 10px 30px rgba(10, 8, 40, .30);
+  --vid-fondo: linear-gradient(135deg, rgba(255,255,255,.11), rgba(255,255,255,.04));
+  --vid-borde: rgba(255,255,255,.16);
+  --vid-luz: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.04);
+  --vid-sombra: 0 10px 28px rgba(0, 0, 0, .35);
   --vid-blur: blur(22px) saturate(170%);
   --t: #ffffff; --m: rgba(255,255,255,.72);
-  background: #1b1440;
+  background: #1c1d1f;
   color: #fff;
 }
 
-/* ---------- Fondo estilo macOS: manchas de color grandes y suaves ---------- */
+/* ---------- Fondo: gris oscuro, serio (estilo grafito de macOS en modo oscuro) ----------
+   Casi liso, con dos o tres luces grises muy suaves para que el vidrio de las tarjetas se note. */
 body.n8n .rejilla {
   opacity: 1; animation: none;
   background:
-    radial-gradient(60% 55% at 12% 18%, #ff8a3d 0%, rgba(255,138,61,0) 60%),
-    radial-gradient(55% 60% at 88% 12%, #ff4f8b 0%, rgba(255,79,139,0) 62%),
-    radial-gradient(70% 65% at 78% 85%, #3d7bff 0%, rgba(61,123,255,0) 62%),
-    radial-gradient(60% 60% at 20% 92%, #8b3dff 0%, rgba(139,61,255,0) 60%),
-    radial-gradient(45% 45% at 50% 50%, #ffc46b 0%, rgba(255,196,107,0) 70%),
-    linear-gradient(160deg, #2a1b6e 0%, #4b1d77 45%, #1d3a8a 100%) !important;
+    radial-gradient(55% 50% at 18% 15%, rgba(255,255,255,.07) 0%, rgba(255,255,255,0) 65%),
+    radial-gradient(50% 55% at 85% 85%, rgba(255,255,255,.05) 0%, rgba(255,255,255,0) 65%),
+    radial-gradient(40% 40% at 60% 40%, rgba(160,170,190,.06) 0%, rgba(160,170,190,0) 70%),
+    linear-gradient(160deg, #2a2b2e 0%, #1f2023 50%, #18191b 100%) !important;
   background-size: 100% 100% !important;
 }
 
@@ -74,6 +72,6 @@ body.n8n input, body.n8n textarea { background: rgba(255,255,255,.12); border-co
 body.n8n input::placeholder, body.n8n textarea::placeholder { color: rgba(255,255,255,.55); }
 body.n8n #camara button { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.25); color: #fff; }
 body.n8n #camZoom { color: rgba(255,255,255,.8); }
-body.n8n .cajon { background: rgba(20, 16, 50, .55); border-left: 1px solid rgba(255,255,255,.20);
+body.n8n .cajon { background: rgba(24, 25, 27, .70); border-left: 1px solid rgba(255,255,255,.20);
   -webkit-backdrop-filter: blur(28px) saturate(160%); backdrop-filter: blur(28px) saturate(160%); }
 body.n8n .cajon-top { background: rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.16); }
