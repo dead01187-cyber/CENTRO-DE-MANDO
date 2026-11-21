@@ -302,3 +302,26 @@ test("Datos: descargar respaldo, importar solo llaves y restaurar todo (con resp
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });
+
+test("Datos: importa llaves también de un volcado directo o de datos dentro de otra sección; si no, dice qué trae", async () => {
+  const fs = require("fs"), os = require("os"), path = require("path");
+  const amb = await abrir({});
+  try {
+    const m = await amb.pagina("mando.html"); await m.waitForTimeout(1000);
+    const probar = async (contenido) => {
+      const arch = path.join(os.tmpdir(), "resp-" + Math.random().toString(36).slice(2) + ".json"); fs.writeFileSync(arch, JSON.stringify(contenido));
+      if (!(await m.isVisible("#datosPanel"))) await m.click("#b-datos");
+      await m.evaluate(() => { document.getElementById("datosAviso").textContent = ""; });
+      const [fc] = await Promise.all([m.waitForEvent("filechooser"), m.click("#datosLlaves")]); await fc.setFiles(arch);
+      await m.waitForFunction(() => document.getElementById("datosAviso").textContent.length > 0);
+      return m.textContent("#datosAviso");
+    };
+    assert.match(await probar({ loftyKey: "D1", addresses: [] }), /Llaves importadas: Lofty/);
+    assert.equal((await amb.leer("loftyKey")).loftyKey, "D1");
+    assert.match(await probar({ fecha: "x", data: { svKey: "D2", tareas: {} } }), /Llaves importadas: Claude/);
+    assert.equal((await amb.leer("svKey")).svKey, "D2");
+    const t = await probar({ hola: 1, otra: [1, 2] });
+    assert.match(t, /No reconozco.*Trae: hola, otra/);
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});

@@ -40,7 +40,21 @@
       i.click();
     });
   }
-  const datosDe = (r) => (r && r.storage && typeof r.storage === "object" ? r.storage : null);
+  // Acepta varias formas de respaldo: { storage: {...} } (el de este panel), el volcado directo de
+  // chrome.storage ({ loftyKey, addresses, ... }) o los datos metidos en otra sección ({ data: {...} }, etc.)
+  const CONOCIDAS = ["loftyKey", "txKey", "svKey", "elKey", "alCfg", "radarCfg", "addresses", "zbLeads", "txPlantillas", "smsBajas", "svEventos", "tareas", "loftyLeads", "mandoSonido", "tabActiva"];
+  const esObj = (x) => x && typeof x === "object" && !Array.isArray(x);
+  const pareceStorage = (x) => esObj(x) && CONOCIDAS.some((k) => k in x);
+  function datosDe(r) {
+    if (!esObj(r)) return null;
+    if (esObj(r.storage)) return r.storage;
+    if (pareceStorage(r)) return r;
+    for (const v of Object.values(r)) { if (pareceStorage(v)) return v; if (esObj(v)) for (const w of Object.values(v)) if (pareceStorage(w)) return w; }
+    return null;
+  }
+  // Para el aviso: qué trae el archivo (solo nombres de secciones, nunca valores)
+  const queTrae = (r) => esObj(r) ? Object.keys(r).slice(0, 12).join(", ") || "nada" : Array.isArray(r) ? `una lista de ${r.length}` : typeof r;
+  const noReconocido = (r) => aviso(`No reconozco ese archivo como respaldo. Trae: ${queTrae(r)}. Mándale esa línea a quien te ayuda (no trae tus llaves).`, true);
   function aviso(t, malo) { const a = $("datosAviso"); a.textContent = t; a.classList.toggle("malo", !!malo); }
 
   // ---------- Acciones ----------
@@ -52,7 +66,7 @@
 
   // Solo las llaves; si el respaldo no las trae, no cambia nada
   async function importarLlaves(r) {
-    const s = datosDe(r); if (!s) { aviso("Ese archivo no parece un respaldo del Centro de Mando.", true); return []; }
+    const s = datosDe(r); if (!s) { noReconocido(r); return []; }
     const act = await chrome.storage.local.get(["alCfg", "radarCfg"]), poner = {}, hechas = [];
     for (const k of LLAVES) if (s[k]) { poner[k] = s[k]; hechas.push(NOMBRE_LLAVE[k]); }
     if (s.alCfg && s.alCfg.apiKey) { poner.alCfg = { ...(act.alCfg || {}), apiKey: s.alCfg.apiKey }; hechas.push(NOMBRE_LLAVE.alCfg); }
@@ -64,7 +78,7 @@
 
   // Reemplaza todo. Antes baja un respaldo de lo actual (para poder regresar).
   async function restaurarTodo(r, confirmar = (t) => prompt(t)) {
-    const s = datosDe(r); if (!s) { aviso("Ese archivo no parece un respaldo del Centro de Mando.", true); return false; }
+    const s = datosDe(r); if (!s) { noReconocido(r); return false; }
     const cuando = r.creado ? new Date(r.creado).toLocaleString("es-MX") : "sin fecha";
     const resp = confirmar(`Vas a REEMPLAZAR todos los datos actuales por los del respaldo del ${cuando} (versión ${r.version || "?"}, ${Object.keys(s).length} datos).\n\nAntes bajo un respaldo de lo que tienes ahora.\n\nEscribe RESTAURAR para seguir:`);
     if (String(resp || "").trim().toUpperCase() !== "RESTAURAR") { aviso("No se restauró nada."); return false; }
@@ -90,5 +104,5 @@
     $("datosRestaurar").onclick = async () => { const r = await elegirArchivo(); if (r) restaurarTodo(r); };
   }
   armar();
-  window.Respaldo = { armarRespaldo, importarLlaves, restaurarTodo }; // para pruebas
+  window.Respaldo = { armarRespaldo, importarLlaves, restaurarTodo, datosDe }; // para pruebas
 })();
