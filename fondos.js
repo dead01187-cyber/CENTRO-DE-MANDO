@@ -1,5 +1,5 @@
 // =====================================================================
-// Fondos de pantalla propios para el Centro de Mando (v1.74.0)
+// Apariencia del Centro de Mando: intensidad del vidrio (v1.80.0) y fondos de pantalla propios (v1.74.0)
 // · Botón "Fondo" en la barra de arriba: abre un panel con el fondo de
 //   siempre y los que el jefe agregó desde su computadora.
 // · Las imágenes viven en IndexedDB de la extensión (no en chrome.storage,
@@ -82,6 +82,29 @@
     pintar();
   }
 
+
+  // ---------- Intensidad del vidrio (v1.80.0) ----------
+  // 0 = materiales sólidos estilo macOS oscuro (sin desenfoque: lo más fluido).
+  // 100 = vidrio fuerte (más transparente y desenfocado). Se guarda en mandoVidrioNivel.
+  const VIDRIO_DEF = 45;
+  function aplicarVidrio(nivel) {
+    const v = Math.min(100, Math.max(0, Number(nivel))) / 100, b = document.body.style;
+    const blur = (px, sat) => (v < 0.03 ? "none" : `blur(${Math.round(px)}px) saturate(${Math.round(sat)}%)`);
+    b.setProperty("--vid-fondo", `linear-gradient(135deg, rgba(255,255,255,${(0.035 + 0.085 * v).toFixed(3)}), rgba(255,255,255,${(0.015 + 0.025 * v).toFixed(3)})), rgba(38,38,40,${(0.96 - 0.9 * v).toFixed(3)})`);
+    b.setProperty("--vid-blur", blur(6 + 20 * v, 100 + 80 * v));
+    b.setProperty("--vid-borde", `rgba(255,255,255,${(0.09 + 0.07 * v).toFixed(3)})`);
+    b.setProperty("--vid-luz", `inset 0 1px 0 rgba(255,255,255,${(0.06 + 0.16 * v).toFixed(3)})`);
+    b.setProperty("--mat", `rgba(30,30,32,${(0.97 - 0.27 * v).toFixed(3)})`);        // barra, cajón y ventanitas
+    b.setProperty("--mat-blur", blur(14 + 18 * v, 120 + 60 * v));
+    document.body.classList.toggle("sin-vidrio", v < 0.03);
+    const out = $("vidrioValor"); if (out) out.textContent = String(Math.round(v * 100));
+    const r = $("vidrioNivel"); if (r && Number(r.value) !== Math.round(v * 100)) r.value = String(Math.round(v * 100));
+  }
+  async function cargarVidrio() {
+    const { mandoVidrioNivel } = await chrome.storage.local.get("mandoVidrioNivel");
+    aplicarVidrio(mandoVidrioNivel == null ? VIDRIO_DEF : mandoVidrioNivel);
+  }
+
   // ---------- Panel ----------
   async function pintar() {
     const lista = $("fondoLista"); if (!lista) return;
@@ -125,6 +148,11 @@
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pan.hidden) abrir(false); });
     $("fondoArchivo").onchange = (e) => { agregar(e.target.files); e.target.value = ""; };
     $("fondoAgregar").onclick = () => $("fondoArchivo").click();
+    let guardarVidrio = null;
+    $("vidrioNivel").oninput = (e) => {
+      aplicarVidrio(e.target.value); // al instante mientras mueves
+      clearTimeout(guardarVidrio); guardarVidrio = setTimeout(() => chrome.storage.local.set({ mandoVidrioNivel: Number(e.target.value) }), 250);
+    };
     $("fondoVelo").oninput = async (e) => {
       const v = Math.min(0.7, Math.max(0, Number(e.target.value) / 100));
       document.body.style.setProperty("--fondo-velo", String(v));
@@ -136,9 +164,14 @@
   }
 
   // Si se cambia el fondo en otra pestaña del Mando, esta también se actualiza
-  chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch.mandoFondo || ch.mandoFondoVelo)) { aplicar(); if (!$("fondoPanel").hidden) pintar(); } });
+  chrome.storage.onChanged.addListener((ch, area) => {
+    if (area !== "local") return;
+    if (ch.mandoFondo || ch.mandoFondoVelo) { aplicar(); if (!$("fondoPanel").hidden) pintar(); }
+    if (ch.mandoVidrioNivel && ch.mandoVidrioNivel.newValue != null && Number($("vidrioNivel").value) !== ch.mandoVidrioNivel.newValue) aplicarVidrio(ch.mandoVidrioNivel.newValue);
+  });
 
   armar();
+  cargarVidrio().catch(() => aplicarVidrio(VIDRIO_DEF));
   aplicar().catch(() => {});
-  window.Fondos = { aplicar, agregar, listar }; // para pruebas
+  window.Fondos = { aplicar, agregar, listar, aplicarVidrio }; // para pruebas
 })();

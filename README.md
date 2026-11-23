@@ -11,7 +11,6 @@ Las llaves (Lofty, Anthropic, etc.) se ponen dentro de la extensión; no van en 
 ## Documentación
 - `docs/auditoria/MISION-01-auditoria.md`: auditoría técnica integral.
 - `docs/FASE-0.md` … `docs/FASE-6.md` y `docs/FASE-2b.md`: qué cambió en cada fase, cómo verificarlo y qué falta.
-- `docs/VIDRIO.md`: efecto Liquid Glass (liquid-glass-react + React 19) en el Tablero.
 
 ## Pruebas
 - Unitarias: `npm test`.

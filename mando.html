@@ -13,7 +13,7 @@
   <div class="rejilla"></div>
 
   <header class="hud">
-    <div class="logo"><span class="pulso"></span>CENTRO DE MANDO<small>Agente Geo Farming</small></div>
+    <div class="logo"><span class="pulso"></span>Centro de Mando<small>Agente Geo Farming</small></div>
     <div class="metricas">
       <div class="met" data-c="pw"><b id="m-dom">0</b><span>domicilios</span></div>
       <div class="met" data-c="bv"><b id="m-bus">0</b><span>por buscar</span></div>
@@ -23,7 +23,7 @@
     <div class="der">
       <button class="chipbtn" id="b-tablero" title="Tablero: agentes, supervisores, tareas, errores, costos y seguridad">Tablero</button>
       <button class="chipbtn" id="b-datos" title="Respaldar, importar llaves o restaurar tus datos" aria-haspopup="true" aria-expanded="false">Datos</button>
-      <button class="chipbtn" id="b-fondo" title="Fondo de pantalla: usa tus propias imágenes" aria-haspopup="true" aria-expanded="false">Fondo</button>
+      <button class="chipbtn" id="b-fondo" title="Apariencia: intensidad del vidrio y fondo de pantalla" aria-haspopup="true" aria-expanded="false">Apariencia</button>
       <button id="b-sonido" class="chipbtn" title="Efectos de sonido relajantes (sin música)">Sonido: no</button>
       <input type="range" id="volSonido" class="vol-sonido" min="0" max="100" step="1" value="60" title="Volumen de los efectos" aria-label="Volumen de los efectos" hidden>
       <span id="reloj">--:--</span>
@@ -286,8 +286,11 @@
     <div id="datosAviso" class="datos-aviso" aria-live="polite"></div>
   </div>
   <!-- Fondo de pantalla propio (fondos.js) -->
-  <div id="fondoPanel" class="fondo-panel" hidden role="dialog" aria-label="Fondo de pantalla">
-    <div class="fondo-tit"><b>Fondo de pantalla</b><small id="fondoCuenta"></small></div>
+  <div id="fondoPanel" class="fondo-panel" hidden role="dialog" aria-label="Apariencia">
+    <div class="fondo-tit"><b>Apariencia</b></div>
+    <label class="fondo-velo">Vidrio <input type="range" id="vidrioNivel" min="0" max="100" step="1" aria-label="Intensidad del vidrio"><output id="vidrioValor"></output></label>
+    <small class="fondo-hint">0 = sólido (como macOS oscuro, lo más fluido). 100 = vidrio fuerte, más transparente y desenfocado.</small>
+    <div class="fondo-tit fondo-sub"><b>Fondo de pantalla</b><small id="fondoCuenta"></small></div>
     <div id="fondoLista" class="fondo-lista"></div>
     <button id="fondoAgregar" class="fondo-agregar">＋ Agregar imagen de tu computadora</button>
     <input type="file" id="fondoArchivo" accept="image/*" multiple hidden>

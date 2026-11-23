@@ -174,3 +174,87 @@ body.n8n .der { display: flex; align-items: center; gap: 8px; flex: none; }
 .datos-btn.peligro { color: #fecaca; border-color: rgba(248,113,113,.45); background: rgba(248,113,113,.10); }
 .datos-btn.peligro:hover { background: rgba(248,113,113,.18); }
 .datos-aviso { font-size: 12px; color: #bbf7d0; } .datos-aviso.malo { color: #fca5a5; } .datos-aviso:empty { display: none; }
+
+/* =====================================================================
+   Estilo Apple y fluidez (v1.80.0)
+   - Tipografía del sistema (San Francisco en Mac), títulos sin mayúsculas forzadas.
+   - Azul del sistema (#0a84ff) para lo activo, en vez del coral de n8n.
+   - Materiales con intensidad ajustable (Apariencia → Vidrio); en 0 no hay
+     desenfoque (lo más fluido).
+   - Animaciones con la curva de resorte de Apple, solo con transform/opacity
+     (no repintan el vidrio).
+   ===================================================================== */
+body.n8n {
+  --acento: #0a84ff; --acento-suave: rgba(10,132,255,.18); --ok: #30d158;
+  --resorte: cubic-bezier(.32,.72,0,1); --suave: cubic-bezier(.25,.1,.25,1);
+  --mat: rgba(30,30,32,.85); --mat-blur: blur(24px) saturate(150%);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased; letter-spacing: -0.003em;
+}
+body.n8n button, body.n8n input, body.n8n textarea, body.n8n select { font-family: inherit; }
+
+/* Barra de arriba tipo barra de herramientas de macOS */
+body.n8n .hud { background: var(--mat); -webkit-backdrop-filter: var(--mat-blur); backdrop-filter: var(--mat-blur);
+  border-bottom: 1px solid rgba(255,255,255,.08); padding: 10px 18px; }
+body.n8n .logo { font-weight: 600; font-size: 15px; line-height: 1; font-family: inherit; letter-spacing: -0.01em; color: #fff; }
+body.n8n .logo small { font-weight: 400; font-size: 12px; letter-spacing: 0; }
+body.n8n .chipbtn { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10); box-shadow: none;
+  border-radius: 8px; padding: 5px 12px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,.92); }
+body.n8n .chipbtn:hover { background: rgba(255,255,255,.12); }
+body.n8n .chipbtn[aria-expanded="true"] { background: rgba(255,255,255,.16); }
+body.n8n #reloj { font-family: inherit; font-variant-numeric: tabular-nums; font-weight: 500; color: rgba(255,255,255,.7); }
+body.n8n .met { border-radius: 10px; }
+body.n8n .met b { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Sin mayúsculas forzadas: "Listo", "Leads nuevos", "Misión" */
+body.n8n .chip, body.n8n .etq-col, body.n8n .tarjeta .t, body.n8n .met span, body.n8n .rol, body.n8n .titulo-otros {
+  text-transform: none !important; letter-spacing: 0 !important; }
+body.n8n .chip { font-size: 10px; font-weight: 600; padding: 1px 7px; }
+body.n8n .tarjeta .t { font-size: 13px; font-weight: 600; color: #fff; }
+body.n8n .etq-col { background: var(--mat); -webkit-backdrop-filter: var(--mat-blur); backdrop-filter: var(--mat-blur);
+  border: 1px solid rgba(255,255,255,.14); font-weight: 600; font-size: 12px; }
+
+/* Tarjetas de los agentes */
+body.n8n .arbol .estacion { border-radius: 14px; transition: transform .35s var(--resorte), border-color .2s var(--suave); will-change: transform; }
+body.n8n .arbol .estacion:hover { transform: translateY(-2px); }
+body.n8n .arbol .estacion:active { transform: scale(.985); transition-duration: .12s; }
+/* Trabajando: orilla azul con un brillo que "respira" (solo opacidad: no repinta el vidrio) */
+body.n8n .estacion.trabajando, body.n8n .estacion.pensando { animation: none !important; border-color: var(--acento) !important; box-shadow: var(--vid-luz), 0 0 0 1px var(--acento) !important; }
+body.n8n .estacion.trabajando::before, body.n8n .estacion.pensando::before { content: ""; position: absolute; inset: -3px; border-radius: 17px; pointer-events: none;
+  background: none !important; box-shadow: 0 0 18px 2px var(--acento-suave); animation: respira 2s var(--suave) infinite !important; }
+@keyframes respira { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+body.n8n .estacion.trabajando .chip, body.n8n .estacion.pensando .chip { background: var(--acento-suave) !important; color: #64b5ff !important; }
+body.n8n .estacion.feliz .chip { background: rgba(48,209,88,.18) !important; color: #6ee39a !important; }
+
+/* Cajón: entra con resorte, material ajustable */
+body.n8n .cajon { background: var(--mat); -webkit-backdrop-filter: var(--mat-blur); backdrop-filter: var(--mat-blur);
+  border-left: 1px solid rgba(255,255,255,.10); box-shadow: -20px 0 50px rgba(0,0,0,.35);
+  transition: transform .5s var(--resorte); will-change: transform; }
+body.n8n .cajon-top { background: transparent; border-bottom: 1px solid rgba(255,255,255,.08); }
+body.n8n .cajon-top nav#cajonNav { background: var(--mat); -webkit-backdrop-filter: var(--mat-blur); backdrop-filter: var(--mat-blur); }
+body.n8n .cajon-top nav#cajonNav button.on { background: var(--acento) !important; color: #fff !important; box-shadow: none; }
+body.n8n .cajon-top nav#cajonNav button.on svg { color: #fff !important; }
+
+/* Ventanitas (Apariencia, Datos, menú): aparecen con resorte */
+body.n8n .fondo-panel { background: var(--mat); -webkit-backdrop-filter: var(--mat-blur); backdrop-filter: var(--mat-blur); border-radius: 14px;
+  transform-origin: top right; animation: aparece .32s var(--resorte); }
+body.n8n .cajon-top nav#cajonNav:not([hidden]) { transform-origin: top left; animation: aparece .32s var(--resorte); }
+@keyframes aparece { from { opacity: 0; transform: translateY(-6px) scale(.97); } to { opacity: 1; transform: none; } }
+.fondo-sub { margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.08); }
+.fondo-velo output { min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; color: rgba(255,255,255,.7); }
+body.n8n input[type=range] { accent-color: var(--acento); }
+
+/* Botones: se hunden un poquito al presionar, como en macOS/iOS */
+body.n8n button { transition: transform .12s var(--suave), background-color .15s var(--suave); }
+body.n8n button:active:not(:disabled) { transform: scale(.97); }
+body.n8n :focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+body.n8n .mision .primario { border-radius: 10px !important; font-weight: 600; }
+body.n8n input, body.n8n textarea { border-radius: 8px; }
+body.n8n input:focus, body.n8n textarea:focus { border-color: var(--acento); box-shadow: 0 0 0 3px var(--acento-suave); outline: none; }
+
+/* Vidrio en 0: sin desenfoque en ningún lado (lo más fluido) */
+body.n8n.sin-vidrio *, body.n8n.sin-vidrio .hud, body.n8n.sin-vidrio .cajon { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.n8n *, body.n8n *::before { animation: none !important; transition: none !important; }
+}

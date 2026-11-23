@@ -107,7 +107,7 @@ function zoomEn(f, cx, cy) {
 }
 function encuadrar() { // que quepa todo el flujo en la pantalla
   const E = $("escena"), a = arbolEl(); if (!a) return;
-  const w = a.offsetWidth, h = a.scrollHeight, W = E.clientWidth - 30, H = E.clientHeight - 30;
+  const w = Math.max(a.offsetWidth, a.scrollWidth), h = a.scrollHeight, W = E.clientWidth - 30, H = E.clientHeight - 30; // scrollWidth: las tarjetas se salen de la caja
   cam.s = Math.max(.35, Math.min(1, W / w, H / h));
   cam.x = (E.clientWidth - w * cam.s) / 2; cam.y = Math.max(10, (E.clientHeight - h * cam.s) / 2);
   aplicarCam();
@@ -193,6 +193,8 @@ function dibujarEstrellas(t) {
 // =====================================================================
 const cL = $("lazos"), xL = cL.getContext("2d");
 let centros = {}, cajas = {}, lazos = [], particulas = [];
+let sucio = true, estrellasLimpias = false; // ¿hay que redibujar las líneas?
+const ACENTO = "#0a84ff"; // azul del sistema de Apple para lo que está activo (antes coral de n8n)
 const TUBERIA = [["ac", "bv2"], ["bv2", "ow2"], ["ow2", "lf"], ["pw", "ch"], ["ch", "bv"], ["cp", "wb"], ["wb", "lf"], ["bv", "ow"], ["ow", "lf"], ["lf", "crm"], ["zb", "rd"], ["rd", "gm"], ["gm", "ti"], ["ti", "tm"], ["crm", "tx"], ["tx", "rs"], ["crm", "li"], ["crm", "al"], ["ra", "te"], ["pr", "hr"], ["hr", "ch3"], ["ch3", "bv3"], ["ch3", "wb3"], ["bv3", "ow3"], ["ow3", "lf"], ["wb3", "lf"]];
 const MANDO = [["sv", "ac"], ["sv", "zb"], ["sv", "cp"], ["sv", "pw"], ["sv", "pr"], ["sv", "ra"]];
 
@@ -201,8 +203,11 @@ function medir() {
   const alto = Math.max(E.clientHeight, E.scrollHeight);
   // si el lienzo baja con scroll (estilo n8n), el canvas cubre todo lo alto y las posiciones se miden desde arriba del contenido
   const esc = { left: r0.left, top: r0.top - E.scrollTop, width: r0.width, height: alto };
-  cL.style.height = alto + "px";
-  cL.width = esc.width * d; cL.height = alto * d; xL.setTransform(d, 0, 0, d, 0, 0);
+  // solo se vuelve a crear el lienzo si cambió de tamaño (crearlo en cada cuadro al mover la cámara trababa todo)
+  const W = Math.round(esc.width * d), H = Math.round(alto * d);
+  if (cL.width !== W || cL.height !== H) { cL.style.height = alto + "px"; cL.width = W; cL.height = H; }
+  xL.setTransform(d, 0, 0, d, 0, 0);
+  sucio = true;
   for (const m of [...MODS, "crm", "gm", "tm"]) {
     const a = document.querySelector(`#e-${m} .aro`); if (!a) continue;
     const r = a.getBoundingClientRect();
@@ -296,7 +301,7 @@ function dibujarLazosN8n(t) {
   for (const l of lazos) {
     if (!l.n8n) continue;
     const activo = estado[l.a] === "trabajando" || estado[l.a] === "pensando";
-    xL.strokeStyle = activo ? "#ff6d5a" : l.tipo === "mando" ? "rgba(255,255,255,.45)" : "rgba(255,255,255,.62)"; // blancas translúcidas sobre el fondo de colores
+    xL.strokeStyle = activo ? ACENTO : l.tipo === "mando" ? "rgba(255,255,255,.45)" : "rgba(255,255,255,.62)"; // blancas translúcidas sobre el fondo de colores
     xL.lineWidth = 2; xL.globalAlpha = 1;
     xL.setLineDash(activo ? [7, 5] : l.tipo === "mando" ? [3, 5] : []); xL.lineDashOffset = activo ? -t / 30 : 0;
     xL.beginPath(); xL.moveTo(l.pts[0].x, l.pts[0].y); for (const q of l.pts.slice(1)) xL.lineTo(q.x, q.y); xL.stroke();
@@ -304,7 +309,7 @@ function dibujarLazosN8n(t) {
     // punto de salida (como el "handle" de n8n) y flecha de entrada
     xL.fillStyle = "#9a9a9a"; xL.beginPath(); xL.arc(l.p0.x, l.p0.y, 3.5, 0, 6.28); xL.fill();
     const q = punto(l, 0.97), ang = Math.atan2(l.p3.y - q.y, l.p3.x - q.x);
-    xL.fillStyle = activo ? "#ff6d5a" : "#7a7a7a";
+    xL.fillStyle = activo ? ACENTO : "#7a7a7a";
     xL.beginPath(); xL.moveTo(l.p3.x, l.p3.y);
     xL.lineTo(l.p3.x - 8 * Math.cos(ang - .45), l.p3.y - 8 * Math.sin(ang - .45));
     xL.lineTo(l.p3.x - 8 * Math.cos(ang + .45), l.p3.y - 8 * Math.sin(ang + .45)); xL.closePath(); xL.fill();
@@ -314,7 +319,7 @@ function dibujarLazosN8n(t) {
   for (const p of particulas) {
     p.t += p.v; if (p.t < 0) continue;
     const q = punto(p.l, p.t);
-    xL.globalAlpha = 1; xL.fillStyle = "#ff6d5a"; xL.beginPath(); xL.arc(q.x, q.y, 3.2, 0, 6.28); xL.fill();
+    xL.globalAlpha = 1; xL.fillStyle = ACENTO; xL.beginPath(); xL.arc(q.x, q.y, 3.2, 0, 6.28); xL.fill();
     if (p.t >= 1 - p.v) llegada(p.l.b);
   }
 }
@@ -353,7 +358,15 @@ function llegada(m) {
 
 // Los pulsos SOLO salen cuando algo de verdad pasa de un robot a otro (un domicilio, un lead, un borrador, un SMS…):
 // los dispara contar() cuando sube un número real. Ya no hay pulsos de adorno mientras un robot "trabaja".
-function cuadro(t) { dibujarEstrellas(t); dibujarLazos(t); requestAnimationFrame(cuadro); }
+// Fluidez (v1.80.0): solo se dibuja cuando algo se mueve (un dato viajando o un agente trabajando)
+// o cuando cambió algo (medir, estados). En reposo el lienzo no se toca y el vidrio no se recalcula.
+const hayMovimiento = () => particulas.length > 0 || lazos.some((l) => estado[l.a] === "trabajando" || estado[l.a] === "pensando");
+function cuadro(t) {
+  if (N8N()) { if (!estrellasLimpias) { xE.clearRect(0, 0, innerWidth, innerHeight); estrellasLimpias = true; } }
+  else dibujarEstrellas(t);
+  if (sucio || hayMovimiento()) { sucio = false; dibujarLazos(t); }
+  requestAnimationFrame(cuadro);
+}
 
 // =====================================================================
 // Estados de los robots (leídos del robotsito de cada pestaña)
@@ -375,7 +388,7 @@ function leerEstados() {
     if (estado[m] !== st) {
       if (estado[m] !== undefined) {
       }
-      estado[m] = st;
+      estado[m] = st; sucio = true;
       for (const c of Object.keys(CHIP)) e.classList.toggle(c, c === st);
       e.querySelector(".chip").textContent = CHIP[st];
     }

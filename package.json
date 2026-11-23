@@ -1,19 +1,14 @@
 {
   "name": "agente-geo-farming",
-  "version": "1.79.1",
+  "version": "1.80.0",
   "private": true,
   "description": "Extensión de Chrome (MV3) Agente Geo Farming · Centro de Mando. Este archivo solo sirve para correr las pruebas; la extensión no usa npm.",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "test:e2e": "node --test --test-concurrency=1 tests/e2e/*.e2e.js",
-    "test:todo": "npm test && npm run test:e2e",
-    "build:vidrio": "node scripts/construir-vidrio.mjs"
+    "test:todo": "npm test && npm run test:e2e"
   },
   "devDependencies": {
-    "esbuild": "0.24.2",
-    "liquid-glass-react": "1.1.1",
-    "playwright": "1.63.0",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "playwright": "1.63.0"
   }
 }

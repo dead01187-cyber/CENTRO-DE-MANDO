@@ -184,18 +184,13 @@ test("Misión por el bus: pide Propi → Veri → espera tu OK, y al pausar canc
   } finally { await amb.cerrar(); }
 });
 
-test("Vidrio (liquid-glass-react): el tablero lo monta, los botones adentro siguen sirviendo y se apaga sin rastro", async () => {
+test("Tablero: rechazar una aprobación desde la pantalla", async () => {
   const amb = await abrir({});
   try {
     await amb.sw.evaluate(() => BUS.crear({ robot: "li", accion: "limpiar", origen: "capi" }));
     const tb = await amb.pagina("tablero.html"); await tb.waitForTimeout(2500);
-    assert.match(await tb.evaluate(() => window.Vidrio && Vidrio.version), /liquid-glass-react/);
-    assert.equal(await tb.evaluate(() => document.querySelectorAll(".vidrio-anfitrion").length), 3);
     await tb.click("#aprob button:has-text('Rechazar')"); await tb.waitForTimeout(800);
     assert.equal((await amb.sw.evaluate(() => BUS.listar())).find((t) => t.robot === "li").estado, "rechazada");
-    await tb.click("#vidrioBtn"); await tb.waitForTimeout(600);
-    assert.equal(await tb.evaluate(() => document.querySelectorAll(".vidrio-anfitrion").length), 0);
-    assert.equal((await amb.leer("mandoVidrio")).mandoVidrio, false);
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });
@@ -322,6 +317,27 @@ test("Datos: importa llaves también de un volcado directo o de datos dentro de 
     assert.equal((await amb.leer("svKey")).svKey, "D2");
     const t = await probar({ hola: 1, otra: [1, 2] });
     assert.match(t, /No reconozco.*Trae: hola, otra/);
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});
+
+test("Apariencia: el control de vidrio cambia la intensidad al instante, en 0 quita el desenfoque y se guarda; el lienzo no se redibuja en reposo", async () => {
+  const amb = await abrir({});
+  try {
+    const m = await amb.pagina("mando.html"); await m.waitForTimeout(2500);
+    const blur = () => m.evaluate(() => getComputedStyle(document.querySelector(".arbol .estacion")).backdropFilter);
+    assert.match(await blur(), /blur/);
+    await m.click("#b-fondo");
+    await m.fill("#vidrioNivel", "0"); await m.dispatchEvent("#vidrioNivel", "input"); await m.waitForTimeout(400);
+    assert.equal(await blur(), "none");
+    assert.equal(await m.evaluate(() => document.body.classList.contains("sin-vidrio")), true);
+    assert.equal((await amb.leer("mandoVidrioNivel")).mandoVidrioNivel, 0);
+    await m.fill("#vidrioNivel", "100"); await m.dispatchEvent("#vidrioNivel", "input"); await m.waitForTimeout(400);
+    assert.match(await blur(), /blur\(26px\)/);
+    await m.reload(); await m.waitForTimeout(2000);
+    assert.match(await blur(), /blur\(26px\)/);
+    const redibujos = await m.evaluate(async () => { let c = 0; const f = window.dibujarLazos; window.dibujarLazos = (t) => { c++; f(t); }; await new Promise((r) => setTimeout(r, 1500)); window.dibujarLazos = f; return c; });
+    assert.ok(redibujos <= 2, `se redibujó ${redibujos} veces en reposo`);
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });
