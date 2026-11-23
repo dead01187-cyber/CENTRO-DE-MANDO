@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="va">
+<head>
+<meta charset="utf-8">
+<title>Vali · validación</title>
+<link rel="stylesheet" href="fase4.css">
+<style>:root { --c: #0891b2; }</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card hint">Revisa los leads que están listos para Lofti (lotes de Owny, Wibi y HECM) con reglas del plan de numeración: números imposibles, de mentira, 800/900, repetidos entre leads, sin nombre o sin código postal. <b>No cambia nada</b>; Lofti ya quita solo los números “malos” al subir. No sabe si un número es celular o fijo (eso requiere un servicio de pago).</div>
+  <div class="row"><button id="run" class="primary">Revisar los lotes</button><select id="lote"><option value="lote">Owny (leads nuevos)</option><option value="lote_wb">Wibi</option><option value="lote_hr">Owny 3 (HECM)</option><option value="lote_wb_hr">Wibi 3 (HECM)</option><option value="lote_ac">Owny 2 (Acti)</option></select></div>
+  <div id="status">Listo.</div>
+  <div class="nums" id="nums"></div>
+  <h3>Leads con algo que revisar</h3><ul id="lista"></ul>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
+<script src="vista.js"></script><script src="vali-core.js"></script><script src="va.js"></script>
+</body>
+</html>

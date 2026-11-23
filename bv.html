@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="bv">
+<head>
+<meta charset="utf-8">
+<title>BeenVerified</title>
+<style>
+  :root { --c: #4f46e5; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; --ok: #0f766e; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  header { background: var(--c); color: #fff; padding: 12px 14px; display: flex; align-items: center; gap: 8px; }
+  header img { width: 22px; height: 22px; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  .conn { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; }
+  .dot.on { background: #10b981; } .dot.off { background: #ef4444; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  label.chk input[type=number] { padding: 3px 5px; border: 1px solid var(--b); border-radius: 6px; }
+  button:hover { filter: brightness(.96); }
+  #status { color: var(--m); min-height: 34px; }
+  .bar { display: flex; justify-content: space-between; align-items: baseline; }
+  .count { font-size: 22px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 48vh; overflow: auto; }
+  li { padding: 6px 10px; border-bottom: 1px solid var(--b); display: flex; align-items: center; gap: 6px; }
+  li:last-child { border-bottom: 0; }
+  li .addr { flex: 1; min-width: 0; }
+  li small { color: var(--m); }
+  li.done { background: #f0fdfa; }
+  li.done .addr { color: var(--m); }
+  li.current { outline: 2px solid var(--c); outline-offset: -2px; }
+  .mini { padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 0 5px; background: #ccfbf1; color: var(--ok); }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  details { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+  details input, details textarea { width: 100%; padding: 6px 8px; border: 1px solid var(--b); border-radius: 6px; font-size: 12px; margin: 4px 0 6px; font-family: inherit; }
+  .hint { color: var(--m); font-size: 11px; }
+  .tag.lofty { background: #fde68a; color: #92400e; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card">
+    <div id="conn">Cargando domicilios de Propwire…</div>
+    <div class="row" style="margin-top:6px">
+      <label class="chk"><input type="checkbox" id="onlyZone" checked> <span id="zoneLbl">Solo la zona actual de Propwire</span></label>
+      <label class="chk"><input type="checkbox" id="hideDone"> Ocultar ya buscados</label>
+    </div>
+  </div>
+
+  <div class="row">
+    <button id="cycle" class="primary">▶ Ciclo: buscar y clonar</button>
+    <button id="stop" class="stop">Parar</button>
+  </div>
+  <div class="row">
+    <label class="chk">Máx. pestañas <input id="maxTabs" type="number" min="1" max="100" value="10" style="width:56px"></label>
+    <label class="chk">Espera máx. tras buscar <input id="wait" type="number" min="2" max="60" value="6" style="width:48px"> seg</label>
+  </div>
+  <div class="row">
+    <label class="chk" title="Espera unos segundos al azar entre búsquedas y toma una pausa de ~1 minuto cada 8 a 12 reportes. Así BeenVerified casi no pide captcha."><input type="checkbox" id="humano" checked> Ritmo humano (menos captchas)</label>
+  </div>
+  <div class="row">
+    <button id="next" style="flex:1">Buscar solo el siguiente</button>
+    <button id="sync" title="Volver a leer los domicilios de Propwire">↻</button>
+  </div>
+  <div id="status" class="card">Listo. Abre BeenVerified con tu sesión y dale “Buscar siguiente”.</div>
+
+  <div class="bar"><div><span id="count" class="count">0</span> pendientes</div><small id="done"></small></div>
+  <ul id="list"><li class="empty">Todavía no hay domicilios.</li></ul>
+
+  <details>
+    <summary>Pegar domicilios a mano</summary>
+    <textarea id="manual" rows="4" placeholder="123 Main St, Irvine, CA 92618&#10;45 Oak Ave, Irvine, CA 92620"></textarea>
+    <div class="row"><button id="addManual">Agregar</button><button id="clearManual">Borrar los pegados</button></div>
+  </details>
+
+  <details>
+    <summary>Ajustes de BeenVerified</summary>
+    <label class="chk" style="margin:4px 0 8px"><input type="checkbox" id="directo" checked> Abrir el reporte con link directo (más rápido; si lo apagas, escribe el domicilio en la búsqueda)</label>
+    <div class="hint">Página donde está la búsqueda por dirección (se abre si no hay pestaña de BeenVerified):</div>
+    <input id="startUrl" type="text">
+    <div class="hint">Opcional: si la búsqueda tiene un link directo, pégalo aquí con <b>{address}</b> donde va el domicilio. Así el agente no tiene que escribir en la página.</div>
+    <input id="template" type="text" placeholder="https://www.beenverified.com/...{address}...">
+    <div class="row"><button id="resetDone">Marcar todos como no buscados</button></div>
+  </details>
+</main>
+<script src="linea.js"></script><script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
+<script src="bv.js"></script>
+</body>
+</html>

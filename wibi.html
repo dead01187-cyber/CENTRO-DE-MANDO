@@ -42,14 +42,14 @@
   <div class="card src">
     <b>Opción A · Archivo</b>
     <label class="f">CSV de Propwire con el skip trace hecho<input type="file" id="archivo" accept=".csv,text/csv"></label>
-    <div class="row"><button id="leerArchivo" class="primary">📄 Leer el archivo</button></div>
+    <div class="row"><button id="leerArchivo" class="primary">Leer el archivo</button></div>
   </div>
 
   <div class="card src">
     <b>Opción B · Directo de Propwire</b>
     <label class="f">Lista que limpió Carpi (y que importaste a Propwire con skip trace)<select id="carpeta"></select></label>
     <div class="hint">Abro cada propiedad en Propwire (pestaña Owner) y leo el owner y sus teléfonos. Voy despacio (6 a 12 s por propiedad) para no levantar sospechas. No doy skip trace ni gasto créditos.</div>
-    <div class="row"><button id="run" class="primary">🌐 Leer de Propwire</button><button id="stopBtn" class="stop" hidden>Parar</button></div>
+    <div class="row"><button id="run" class="primary">Leer de Propwire</button><button id="stopBtn" class="stop" hidden>Parar</button></div>
   </div>
 
   <div class="card grid">
@@ -66,7 +66,7 @@
     <div class="card"><div class="count" id="nHoy">0</div><small>a Lofti hoy</small></div>
   </div>
 
-  <div class="row"><button id="subir" class="primary" disabled>➡️ Pasar a Lofti</button><button id="bajarSkip" disabled title="Baja los domicilios que no tienen teléfono (Address, City, State, Zip) para importarlos a Propwire y hacerles skip trace">⬇️ Para skip trace</button><button id="bajarLimpio" disabled title="Baja un CSV con los leads limpios (owner, teléfonos, emails, domicilio y tags)">⬇️ Archivo limpio</button></div>
+  <div class="row"><button id="subir" class="primary" disabled>→ Pasar a Lofti</button><button id="bajarSkip" disabled title="Baja los domicilios que no tienen teléfono (Address, City, State, Zip) para importarlos a Propwire y hacerles skip trace">↓ Para skip trace</button><button id="bajarLimpio" disabled title="Baja un CSV con los leads limpios (owner, teléfonos, emails, domicilio y tags)">↓ Archivo limpio</button></div>
   <div id="status" class="card">Listo. Dame el archivo con skip trace o escoge la lista de Carpi.</div>
 
   <h3>Leads</h3>
@@ -74,7 +74,7 @@
 </main>
 <script src="papaparse.min.js"></script>
 <script src="lofty-core.js"></script>
-<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
 <script src="wibi.js"></script>
 </body>
 </html>

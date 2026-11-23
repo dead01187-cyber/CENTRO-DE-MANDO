@@ -15,7 +15,9 @@ const linkDirecto = (a) => "https://www.beenverified.com/rf/report/property?addr
 
 // ---------- Domicilios de la pestaña Propwire (mismo storage) ----------
 async function sync() {
-  const { addresses = {}, zone = "", chActivo, loftyKey, [K("chDestino")]: chDestino } = await chrome.storage.local.get(["addresses", "zone", "chActivo", "loftyKey", K("chDestino")]);
+  const st = await chrome.storage.local.get(["addresses", "zone", "chActivo", "ch3Config", "loftyKey", K("chDestino")]);
+  const { addresses = {}, zone = "", [K("chDestino")]: chDestino } = st;
+  const { chActivo, loftyKey } = filtroDe(LINEA, st); // Fase 1: Veri 3 usa el interruptor de Chequi 3
   const utiles = Object.entries(addresses).filter(([, a]) => sirve(a));
   // Solo llegan los que Chequi (filtro de Lofty) ya dejó pasar
   enFiltro = LINEA === "ac" ? 0 : utiles.filter(([, a]) => lineaDe(a) === LINEA && !a.lofty && !pasaFiltro(a, { chActivo, loftyKey })).length;
@@ -314,14 +316,14 @@ async function runCycle() {
       const prevUrl = (await chrome.tabs.get(tab.id)).url;
       setStatus(`(${done + 1}/${max}) Seleccionando Property y buscando ${line(next)}…`);
       const ok = await searchInTab(tab, next);
+      if (!ok) break; // Fase 1: si la búsqueda falló NO se marca como buscado (antes se marcaba y el domicilio se perdía)
       await markDone(next, true);
-      if (!ok) break;
       done++;
 
       await waitResult(tab.id, prevUrl);
       // ¿Salió captcha? Esperar a que lo resuelvas y volver a abrir el mismo domicilio
       if (await hayVerificacion(tab.id)) {
-        if (!(await esperarVerificacion(tab.id))) { setStatus("La verificación no se resolvió. Cuando esté lista, dale ▶ para seguir."); break; }
+        if (!(await esperarVerificacion(tab.id))) { await markDone(next, false); setStatus("La verificación no se resolvió. Cuando esté lista, dale ▶ para seguir (este domicilio se vuelve a buscar)."); break; }
         const p2 = (await chrome.tabs.get(tab.id)).url;
         await searchInTab(tab, next);
         await waitResult(tab.id, p2);
@@ -443,5 +445,14 @@ chrome.runtime.onMessage.addListener((m) => { if (m.type === "bvStatus") setStat
   if (state.wait) $("wait").value = state.wait;
   await sync();
   // va jalando lo nuevo que encuentre la pestaña Propwire
-  chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch.addresses || ch.zone || ch.chActivo || ch.loftyKey || ch.chDestino)) sync(); });
+  chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch.addresses || ch.zone || ch.chActivo || ch.ch3Config || ch.loftyKey || ch.chDestino || ch[K("chDestino")])) sync(); });
 })();
+
+// ---------- Fase 2b: acciones grandes por el bus de tareas (registro.js). Sin entrada, usan lo que ya está escrito en la pantalla. ----------
+window.Tareas && Tareas.atender("ciclo", async ({ maxPestanas } = {}) => {
+  await Tareas.esperarLibre(() => running);
+  if (maxPestanas) { $("maxTabs").value = String(maxPestanas); state.maxTabs = Number(maxPestanas); save(); }
+  paradoAMano = false;
+  await runCycle();
+  return $("status").textContent.trim() || "Ciclo terminado.";
+}, { alCancelar: () => $("stop").onclick() });

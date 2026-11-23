@@ -48,7 +48,7 @@ let cfg = { ...DEF }, casos = {}, corriendo = false, filtro = "abiertos", timer 
 // ---------- API de Lofty (cuenta de Texi) ----------
 async function api(path, opts = {}) {
   const { txKey } = await chrome.storage.local.get("txKey");
-  if (!txKey) throw Object.assign(new Error("Falta la API key de la cuenta de Texi (ponla en la pestaña de Texi, en 🔑)."), { sinKey: true });
+  if (!txKey) throw Object.assign(new Error("Falta la API key de la cuenta de Texi (ponla en la pestaña de Texi, en )."), { sinKey: true });
   let r;
   for (let intento = 0; ; intento++) {
     r = await fetch("https://api.lofty.com" + path, {
@@ -100,7 +100,7 @@ const guardarCasos = () => chrome.storage.local.set({ rsCasos: casos });
 
 // ---------- Clasificar ----------
 const RE = {
-  baja: /\b(stop|stop all|unsubscribe|remove me|take me off|opt[ -]?out|do ?n[o']?t (text|contact|message)|no (more )?(texts|messages)|no me (escrib|mand|contact)|d[eé]jame de (escribir|mandar)|b[oó]rrame|baja)\b|^\s*(stop|quit|end|cancel)\s*\.?\s*$/i,
+  baja: /\b(stop|stop all|unsubscribe|remove me|take me off|opt[ -]?out|do ?n[o']?t (text|contact|message)|no (more )?(texts|messages)|no me (escrib\w*|mand\w*|contact\w*)|d[eé]jame de (escribir|mandar)|b[oó]rrame|baja)\b|^\s*(stop|quit|end|cancel)\s*\.?\s*$/i,
   enojado: /\b(f+u+c+k|scam(mer)?|harass|report(ing)? you|lawyer|attorney|police|leave me alone|go away|piss off|estaf|acoso|abogado|polic[ií]a)/i,
   equivocado: /\b(wrong (number|person)|not the owner|i'?m not (the owner|\w+)|don'?t own|never owned|sold (it|the house|that) (years|a while)|no soy (el|la) (due[nñ]o|propietari)|n[uú]mero equivocado|ya no (es|vivo)|doesn'?t live here)\b/i,
   mas_tarde: /\b(maybe|not (right )?now|not yet|later|next year|in a (few|couple) (months|years)|someday|thinking about it|tal vez|quiz[aá]s|m[aá]s adelante|despu[eé]s|el pr[oó]ximo a[nñ]o|ahorita no)\b/i,
@@ -109,6 +109,7 @@ const RE = {
   pregunta: /\?|\b(who is this|who'?s this|how did you get|qui[eé]n (es|eres|habla)|c[oó]mo (consigui|obtuvi))/i,
 };
 function porReglas(texto) {
+  if (window.SMS && SMS.RE_BAJA.test(texto)) return "baja"; // Fase 1: también ALTO, PARA, CANCELAR, REVOKE, STOPALL…
   for (const k of ["baja", "enojado", "equivocado", "mas_tarde", "no", "interesado", "pregunta"]) if (RE[k].test(texto)) return k;
   return "otro";
 }
@@ -142,6 +143,7 @@ Escribe un borrador de respuesta SMS: en el mismo idioma del lead, máximo 280 c
 Contesta SOLO con JSON: {"categoria":"...","resumen":"una línea en español","summary":"the same summary in English (one line)","borrador":"...","urgente":true|false,"seguimientoDias":número o null}`;
   const usuario = `Lead: ${c.nombre} ${c.apellido}${c.calle ? `, dueño de ${c.calle}${c.ciudad ? `, ${c.ciudad}` : ""}` : ""}. Etapa en Lofty: ${c.etapa || "?"}.\n\nConversación:\n${historia}`;
   try {
+    if (window.PRESUPUESTO) { const pr = await PRESUPUESTO.revisar("resi"); if (!pr.ok) return null; } // Fase 3: tope diario (queda la clasificación por reglas)
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": svKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
@@ -149,6 +151,7 @@ Contesta SOLO con JSON: {"categoria":"...","resumen":"una línea en español","s
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) return null;
+    if (window.PRESUPUESTO) await PRESUPUESTO.registrar("resi", d.usage);
     const txt = (d.content || []).map((b) => b.text || "").join("");
     const j = JSON.parse((txt.match(/\{[\s\S]*\}/) || ["{}"])[0]);
     if (!CAT[j.categoria]) return null;
@@ -302,11 +305,17 @@ async function revisar(aMano) {
           borrador: res && res.borrador != null ? res.borrador : borradorBase(cat, c, texto), conIA: !!res, t: ahora, estado: contestado ? "respondido" : (SIN_RESPUESTA.has(cat) ? "atender" : "abierto"),
           proximo: cat === "mas_tarde" ? ultIn.t + ((res && res.seguimientoDias) || 90) * D : 0, avisado: false, texi: !!txEnviados[id] });
         c.conv = conv.slice(-8);
+        // Fase 1: baja PERMANENTE. Aunque después escriba otra cosa, ya no se le vuelve a mandar SMS.
+        if (["baja", "equivocado", "enojado"].includes(cat)) {
+          c.bajaPermanente = c.bajaPermanente || cat;
+          try { await SMS.marcarBaja({ leadId: id, cuenta: "tx", tels: c.telResp ? [c.telResp] : (c.tels || []), motivo: cat, fuente: "Resi" }); }
+          catch (e) { decir(`No pude guardar la baja de ${c.nombre || id}: ${e.message}`, "error"); }
+        }
         if (["no", "mas_tarde"].includes(cat)) c.nextYear = true;
         nuevos++;
         for (const m of desdeUlt) vistos.add(m.id);
         if (cfg.notas && !c.nota) {
-          try { await api("/v1.0/notes", { method: "POST", body: { leadId: Number(id), content: `💬 Resi (SMS): the lead replied “${texto.slice(0, 300)}”. Classified as: ${CAT_EN[cat] || cat}.${c.summary ? " " + c.summary : ""}` } }); c.nota = ultIn.id; }
+          try { await api("/v1.0/notes", { method: "POST", body: { leadId: Number(id), content: `Resi (SMS): the lead replied “${texto.slice(0, 300)}”. Classified as: ${CAT_EN[cat] || cat}.${c.summary ? " " + c.summary : ""}` } }); c.nota = ultIn.id; }
           catch (e) { /* la nota es opcional */ }
         }
         if (cat === "interesado" || cat === "pregunta") avisar.push(c);
@@ -369,8 +378,13 @@ chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch
 
 // Bajas, números equivocados y enojados: Texi ya no les vuelve a escribir
 async function pasarBajasATexi() {
+  // Fase 1: las bajas que ya existían antes de esta versión también quedan permanentes
+  for (const [k, c] of Object.entries(casos)) if (["baja", "equivocado", "enojado"].includes(c.categoria) && !c.bajaPermanente) {
+    c.bajaPermanente = c.categoria;
+    try { await SMS.marcarBaja({ leadId: k, cuenta: "tx", tels: c.telResp ? [c.telResp] : (c.tels || []), motivo: c.categoria, fuente: "Resi" }); } catch (e) {}
+  }
   const no = {};
-  for (const [k, c] of Object.entries(casos)) if (["baja", "equivocado", "enojado"].includes(c.categoria)) no[k] = { t: c.ultimoT || c.t, motivo: c.categoria };
+  for (const [k, c] of Object.entries(casos)) if (["baja", "equivocado", "enojado"].includes(c.categoria) || c.bajaPermanente) no[k] = { t: c.ultimoT || c.t, motivo: c.bajaPermanente || c.categoria };
   const respondieron = Object.fromEntries(Object.entries(casos).map(([k, c]) => [k, { t: c.ultimoT || c.t, categoria: c.categoria }]));
   await chrome.storage.local.set({ rsNoEscribir: no, rsRespondieron: respondieron });
 }
@@ -381,7 +395,7 @@ async function vigilar() {
     if (c.estado === "abierto" && ["interesado", "pregunta"].includes(c.categoria) && !c.avisado && ahora - (c.ultimoT || c.t) > cfg.horasAviso * H) { c.avisado = true; cambio = true; tarde.push(c); }
   }
   if (tarde.length) {
-    decir(`⏰ ${tarde.map((c) => `${c.nombre} ${c.apellido}`.trim()).join(", ")} te contestó hace más de ${cfg.horasAviso} h y sigue sin respuesta.`, "error");
+    decir(`${tarde.map((c) => `${c.nombre} ${c.apellido}`.trim()).join(", ")} te contestó hace más de ${cfg.horasAviso} h y sigue sin respuesta.`, "error");
     await chrome.storage.local.set({ rsAviso: { t: ahora, n: tarde.length, texto: `Jefe, ${tarde.length} lead(s) interesados llevan más de ${cfg.horasAviso} horas esperando respuesta por SMS. Están en Resi.` } });
   }
   if (cambio) guardarCasos();
@@ -395,15 +409,20 @@ async function mandar(id) {
   if (!texto) { ver("El mensaje está vacío."); return; }
   if (!num || !esCA(num)) { ver("Este lead no tiene número de California para contestarle."); return; }
   if (SIN_RESPUESTA.has(c.categoria) && !(await preguntar(`${c.nombre} está marcado como “${CAT[c.categoria].txt}”. ¿Seguro que le quieres escribir?`, "Sí, escribirle", "No"))) return;
-  if (!(await preguntar(`Mandar este SMS a ${`${c.nombre} ${c.apellido}`.trim()} · ${bonito(num)}:\n\n“${texto}”\n\nUn SMS mandado ya no se puede borrar.`, "📨 Mandar", "Cancelar"))) { ver("No mandé nada."); return; }
+  { const b = await SMS.bajaDe({ tel: num, leadId: id, cuenta: "tx" }); if (b || c.bajaPermanente) { ver(`No se puede: ${c.nombre || "este lead"} tiene baja permanente (${(b && b.motivo) || c.bajaPermanente}). No le mandé nada.`); return; } }
+  if (!(await preguntar(`Mandar este SMS a ${`${c.nombre} ${c.apellido}`.trim()} · ${bonito(num)}:\n\n“${texto}”\n\nUn SMS mandado ya no se puede borrar.`, "Mandar", "Cancelar"))) { ver("No mandé nada."); return; }
+  const pol = await SMS.puedeMandar({ tel: num, leadId: id, cuenta: "tx", fuente: "Resi" });
+  if (!pol.ok) { await SMS.anotar({ fuente: "Resi", leadId: id, tel: num, estado: "bloqueado", motivo: pol.motivo }); decir(`No mandé el SMS: ${pol.motivo}.`, "error"); return; }
   try {
-    await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(id), content: texto, phoneNumber: num, phoneCode: "1" } });
+    try { await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(id), content: texto, phoneNumber: num, phoneCode: "1" } }); }
+    catch (e) { await SMS.devolverLugar(); await SMS.anotar({ fuente: "Resi", leadId: id, tel: num, estado: "error", motivo: e.message }); throw e; }
+    await SMS.anotar({ fuente: "Resi", leadId: id, tel: num, estado: "enviado", texto });
     Object.assign(c, { estado: "respondido", respondidoT: Date.now(), enviado: texto, borrador: "", seguido: c.categoria === "seguimiento" ? c.seguido : 0 });
     if (c.categoria === "seguimiento") c.categoria = "otro";
     const { rsHoy = {} } = await chrome.storage.local.get("rsHoy");
     await chrome.storage.local.set({ rsHoy: { dia: hoy(), n: (rsHoy.dia === hoy() ? rsHoy.n || 0 : 0) + 1 } });
     await guardarCasos(); pintar();
-    decir(`📨 Le contesté a ${`${c.nombre} ${c.apellido}`.trim()} (${bonito(num)}). Si no vuelve a escribir en ${cfg.diasSeg} días, te lo pongo en Seguimiento.`);
+    decir(`Le contesté a ${`${c.nombre} ${c.apellido}`.trim()} (${bonito(num)}). Si no vuelve a escribir en ${cfg.diasSeg} días, te lo pongo en Seguimiento.`);
   } catch (e) { decir(`No se pudo mandar: ${e.message}`, "error"); }
 }
 async function moverBaja(id) {
@@ -440,29 +459,29 @@ function pintar() {
   $("lista").innerHTML = ver_.map((c) => {
     const cat = CAT[c.categoria] || CAT.otro, tels0 = (c.tels || []);
     const tels = c.telResp && tels0.includes(c.telResp) ? [c.telResp, ...tels0.filter((t) => t !== c.telResp)] : tels0; // el número que contestó va primero
-    const conv = (c.conv || []).slice(-4).map((m) => `<div class="b ${m.dir}">${m.dir === "in" && c.telResp && m.id === c.telRespId ? `<span class="num">📱 ${bonito(c.telResp)}</span>` : ""}${esc(m.texto || "(sin texto)")}<small>${fecha(m.t)}</small></div>`).join("");
+    const conv = (c.conv || []).slice(-4).map((m) => `<div class="b ${m.dir}">${m.dir === "in" && c.telResp && m.id === c.telRespId ? `<span class="num">${bonito(c.telResp)}</span>` : ""}${esc(m.texto || "(sin texto)")}<small>${fecha(m.t)}</small></div>`).join("");
     const abierto = c.estado === "abierto" || c.estado === "atender";
     return `<li data-id="${esc(c.leadId)}"><div class="addr">
       <div class="cab"><b>${esc(`${c.nombre} ${c.apellido}`.trim() || "(sin nombre)")}</b> <span class="tag ${cat.cls}">${cat.txt}</span>${c.urgente && abierto ? ` <span class="tag bad">urgente</span>` : ""}${c.conIA ? ` <span class="tag ia" title="Clasificado con Claude">IA</span>` : ""}
         <span class="hint">${fecha(c.ultimoT)}</span></div>
       <small>${tels.map(bonito).join(" · ") || "sin número de CA"}${c.calle ? ` · ${esc(c.calle)}${c.ciudad ? ", " + esc(c.ciudad) : ""}` : ""}${c.etapa ? ` · ${esc(c.etapa)}` : ""}${c.texi ? " · le escribió Texi" : ""}</small>
-      ${c.resumen ? `<small>🧠 ${esc(c.resumen)}</small>` : ""}
+      ${c.resumen ? `<small>${esc(c.resumen)}</small>` : ""}
       <div class="conv">${conv}</div>
       ${abierto && !SIN_RESPUESTA.has(c.categoria) ? `<textarea>${esc(c.borrador || "")}</textarea>
         <div class="row">${tels.length > 1 ? `<select>${tels.map((t) => `<option value="${t}">${bonito(t)}</option>`).join("")}</select>` : ""}
-        <button class="mini primary" data-a="mandar">📨 Mandar (te pregunto antes)</button><button class="mini" data-a="cerrar">Ya lo atendí</button></div>` : ""}
+        <button class="mini primary" data-a="mandar">Mandar (te pregunto antes)</button><button class="mini" data-a="cerrar">Ya lo atendí</button></div>` : ""}
       ${abierto && SIN_RESPUESTA.has(c.categoria) ? `<div class="row"><span class="hint">No le escribo. Texi ya no le vuelve a mandar.</span>${cfg.etapaBaja ? `<button class="mini" data-a="baja">Mover a “${esc(cfg.etapaBaja)}”</button>` : ""}<button class="mini" data-a="cerrar">Listo</button></div>` : ""}
-      ${!abierto ? `<div class="row">${c.enviado ? `<small>📨 Le contestaste: “${esc(c.enviado.slice(0, 120))}”</small>` : ""}<button class="mini" data-a="reabrir">Volver a abrir</button></div>` : ""}
-      ${!abierto || SIN_RESPUESTA.has(c.categoria) ? `<div class="barra">${c.categoria === "baja" ? `<small class="aviso">⚠️ Pidió STOP: escribirle otra vez puede ir contra las reglas de SMS. Hazlo solo si él te lo pidió.</small>` : ""}
+      ${!abierto ? `<div class="row">${c.enviado ? `<small>Le contestaste: “${esc(c.enviado.slice(0, 120))}”</small>` : ""}<button class="mini" data-a="reabrir">Volver a abrir</button></div>` : ""}
+      ${!abierto || SIN_RESPUESTA.has(c.categoria) ? `<div class="barra">${c.categoria === "baja" ? `<small class="aviso">Pidió STOP: escribirle otra vez puede ir contra las reglas de SMS. Hazlo solo si él te lo pidió.</small>` : ""}
         <textarea class="sms" placeholder="Escríbele un SMS personalizado… (puedes usar {nombre}, {direccion}, {ciudad})">${esc(c.borrador || "")}</textarea>
-        <div class="row">${tels.length > 1 ? `<select>${tels.map((t) => `<option value="${t}">${bonito(t)}</option>`).join("")}</select>` : ""}<button class="mini primary" data-a="mandar">📨 Mandar (te pregunto antes)</button></div></div>` : ""}
-      <div class="row"><a class="hint" target="_blank" href="https://crm.lofty.com/admin/home/detail?leadId=${encodeURIComponent(c.leadId)}">Abrir en Lofty ↗</a>${!c.telResp && (c.conv || []).some((m) => m.dir === "in") ? `<button class="mini" data-a="numero">📱 ¿De qué número contestó?</button>${c.telRespNo ? `<span class="hint">(no lo encontré en Lofty)</span>` : ""}` : ""}</div>
+        <div class="row">${tels.length > 1 ? `<select>${tels.map((t) => `<option value="${t}">${bonito(t)}</option>`).join("")}</select>` : ""}<button class="mini primary" data-a="mandar">Mandar (te pregunto antes)</button></div></div>` : ""}
+      <div class="row"><a class="hint" target="_blank" href="https://crm.lofty.com/admin/home/detail?leadId=${encodeURIComponent(c.leadId)}">Abrir en Lofty ↗</a>${!c.telResp && (c.conv || []).some((m) => m.dir === "in") ? `<button class="mini" data-a="numero">¿De qué número contestó?</button>${c.telRespNo ? `<span class="hint">(no lo encontré en Lofty)</span>` : ""}` : ""}</div>
     </div></li>`;
   }).join("");
   $("lista").querySelectorAll("textarea").forEach((t) => (t.oninput = () => { const id = t.closest("li").dataset.id; if (casos[id]) { casos[id].borrador = t.value; guardarCasos(); } }));
   $("lista").querySelectorAll("button[data-a]").forEach((b) => (b.onclick = () => {
     const id = b.closest("li").dataset.id;
-    ({ mandar, cerrar, reabrir, baja: moverBaja, numero: async (x) => { b.disabled = true; b.textContent = "📱 Buscando…"; await completarNumeros([x], true); } })[b.dataset.a](id);
+    ({ mandar, cerrar, reabrir, baja: moverBaja, numero: async (x) => { b.disabled = true; b.textContent = "Buscando…"; await completarNumeros([x], true); } })[b.dataset.a](id);
   }));
 }
 document.querySelectorAll("[data-f]").forEach((b) => (b.onclick = () => { filtro = b.dataset.f; pintar(); }));
@@ -513,18 +532,24 @@ async function mandarPersonalizado() {
   const num = $("compoTel").value, texto = personalizar($("compoTxt").value, elegido);
   if (!texto) { ver("Escribe el mensaje."); return; }
   if (!num || !esCA(num)) { ver("Este lead no tiene número de California."); return; }
+  // Fase 1: a una baja ya no se le puede escribir (antes bastaba un clic extra)
   const { rsNoEscribir = {} } = await chrome.storage.local.get("rsNoEscribir");
-  if (rsNoEscribir[elegido.id] && !(await preguntar(`${elegido.nombre} pidió no recibir SMS o es número equivocado (${rsNoEscribir[elegido.id].motivo}). ¿Seguro que le quieres escribir?`, "Sí, escribirle", "No"))) return;
-  if (!(await preguntar(`Mandar este SMS a ${`${elegido.nombre} ${elegido.apellido}`.trim()} · ${bonito(num)}:\n\n“${texto}”\n\nUn SMS mandado ya no se puede borrar.`, "📨 Mandar", "Cancelar"))) { ver("No mandé nada."); return; }
+  const b = await SMS.bajaDe({ tel: num, leadId: elegido.id, cuenta: "tx" });
+  if (b || rsNoEscribir[elegido.id]) { ver(`No se puede: ${elegido.nombre || "este lead"} tiene baja (${(b && b.motivo) || rsNoEscribir[elegido.id].motivo}). No le mandé nada.`); return; }
+  if (!(await preguntar(`Mandar este SMS a ${`${elegido.nombre} ${elegido.apellido}`.trim()} · ${bonito(num)}:\n\n“${texto}”\n\nUn SMS mandado ya no se puede borrar.`, "Mandar", "Cancelar"))) { ver("No mandé nada."); return; }
+  const pol = await SMS.puedeMandar({ tel: num, leadId: elegido.id, cuenta: "tx", fuente: "Resi" });
+  if (!pol.ok) { await SMS.anotar({ fuente: "Resi", leadId: elegido.id, tel: num, estado: "bloqueado", motivo: pol.motivo }); decir(`No mandé el SMS: ${pol.motivo}.`, "error"); return; }
   $("compoMandar").disabled = true;
   try {
-    await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(elegido.id), content: texto, phoneNumber: num, phoneCode: "1" } });
+    try { await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(elegido.id), content: texto, phoneNumber: num, phoneCode: "1" } }); }
+    catch (e) { await SMS.devolverLugar(); await SMS.anotar({ fuente: "Resi", leadId: elegido.id, tel: num, estado: "error", motivo: e.message }); throw e; }
+    await SMS.anotar({ fuente: "Resi", leadId: elegido.id, tel: num, estado: "enviado", texto });
     const ahora = Date.now();
     const { rsHoy = {}, txEnviados = {} } = await chrome.storage.local.get(["rsHoy", "txEnviados"]);
     txEnviados[elegido.id] = { ...(txEnviados[elegido.id] || {}), t: ahora, plantilla: "personalizado (Resi)", n: 1 }; // así Resi revisa si contesta
     await chrome.storage.local.set({ rsHoy: { dia: hoy(), n: (rsHoy.dia === hoy() ? rsHoy.n || 0 : 0) + 1 }, txEnviados });
     if (casos[elegido.id]) { Object.assign(casos[elegido.id], { estado: "respondido", respondidoT: ahora, enviado: texto, borrador: "" }); await guardarCasos(); pintar(); }
-    decir(`📨 Mandé un SMS personalizado a ${`${elegido.nombre} ${elegido.apellido}`.trim()} (${bonito(num)}). Si contesta, aparece aquí.`);
+    decir(`Mandé un SMS personalizado a ${`${elegido.nombre} ${elegido.apellido}`.trim()} (${bonito(num)}). Si contesta, aparece aquí.`);
     $("compoTxt").value = ""; vista();
   } catch (e) { decir(`No se pudo mandar: ${e.message}`, "error"); }
   finally { $("compoMandar").disabled = !elegido || !elegido.tels.length; }
@@ -542,10 +567,16 @@ function programar() {
 }
 setInterval(vigilar, 5 * 60e3);
 $("run").onclick = () => revisar(true);
+// ---------- Fase 2: acciones que se pueden pedir por el bus de tareas (registro.js) ----------
+window.Tareas && Tareas.atender("revisar", async () => {
+  await Tareas.esperarLibre(() => corriendo);
+  await revisar(true);
+  return $("status").textContent.trim() || "Revisión terminada.";
+});
 chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.rsCasos && !corriendo) { casos = ch.rsCasos.newValue || {}; pintar(); } });
 (async () => {
   await cargar(); pintar(); programar(); quitarLimpiados();
   const { txKey, rsUltimo } = await chrome.storage.local.get(["txKey", "rsUltimo"]);
-  if (!txKey) ver("Uso la misma cuenta de Lofty que Texi: pon su API key en la pestaña de Texi (🔑).");
+  if (!txKey) ver("Uso la misma cuenta de Lofty que Texi: pon su API key en la pestaña de Texi ().");
   else if (cfg.auto && (!rsUltimo || Date.now() - rsUltimo > cfg.cadaMin * 60e3)) setTimeout(() => revisar(false), 4000);
 })();

@@ -31,7 +31,8 @@ async function extractor(opts) {
         }
       }
     }
-    const duenos = tarjetas.filter((t) => /owner/i.test(t.rol));
+    // Fase 1: solo dueños actuales; "Previous Owner", "Former Owner", "Prior Owner" ya no cuentan (antes se tomaban sus teléfonos)
+    const duenos = tarjetas.filter((t) => /owner/i.test(t.rol) && !/\b(previous|former|prior|past|ex)[\s-]*owner/i.test(t.rol));
     const owners = duenos.length ? duenos.map((t) => ({ nombre: t.nombre, phones: t.phones }))
       : (nombreOwnership && !/^\$|^\d/.test(nombreOwnership) ? [{ nombre: nombreOwnership, phones: [] }] : []);
     const m2 = [L[0], document.title].join("\n").match(/\d{1,6}[A-Z]?\s+[^,\n]+?\s+[A-Za-z .'-]+,\s*[A-Z]{2}\s+\d{5}/);
@@ -324,7 +325,7 @@ $("btnActual").onclick = async () => {
   try {
     const r = await extraerDeTab(tab.id);
     const res = agregarResultado(r);
-    estado("Listo ✅ " + resumen(r, res), !r.owners.length && !r.sinAsignar.length);
+    estado("Listo " + resumen(r, res), !r.owners.length && !r.sinAsignar.length);
   } catch (e) {
     estado("No se pudo leer: " + e.message, true);
   }
@@ -351,7 +352,7 @@ $("btnLista").onclick = async () => {
       if (tab) chrome.tabs.remove(tab.id).catch(() => {});
     }
   }
-  estado(`Terminado: ${total} propiedad(es) nueva(s)` + (fallas ? ` · ${fallas} página(s) con error` : " ✅"), fallas > 0);
+  estado(`Terminado: ${total} propiedad(es) nueva(s)` + (fallas ? ` · ${fallas} página(s) con error` : " "), fallas > 0);
   bloquear(false);
 };
 
@@ -427,7 +428,7 @@ $("btnPestanas").onclick = async () => {
   if (vacias) partes.push(`${vacias} sin owner ni teléfonos`);
   if (empresas) partes.push(`${empresas} solo con trust/compañía`);
   if (fallas) partes.push(`${fallas} con error`);
-  estado("Listo ✅ " + partes.join(" · "), fallas > 0);
+  estado("Listo " + partes.join(" · "), fallas > 0);
   bloquear(false);
   listarPestanas();
 };
@@ -520,7 +521,13 @@ async function revisarResultados(tabId, address) {
 function esperarPestanaNueva(tabId, windowId, ms) {
   let listener, t;
   const promesa = new Promise((resolve) => {
-    listener = (tab) => { if (tab.openerTabId === tabId || tab.windowId === windowId) { fin(); resolve(tab); } };
+    // Fase 1: en la misma ventana solo se acepta si Chrome no dijo de dónde salió Y ya va a BeenVerified
+    // (Veri abre ahí pestañas en blanco para otros domicilios; antes Owny podía quedarse con una de esas)
+    listener = (tab) => {
+      const deEsta = tab.openerTabId === tabId;
+      const mismaVentanaBV = tab.openerTabId == null && tab.windowId === windowId && /beenverified\.com/i.test(tab.pendingUrl || tab.url || "");
+      if (deEsta || mismaVentanaBV) { fin(); resolve(tab); }
+    };
     const fin = () => { clearTimeout(t); chrome.tabs.onCreated.removeListener(listener); };
     t = setTimeout(() => { fin(); resolve(null); }, ms);
     chrome.tabs.onCreated.addListener(listener);
@@ -736,7 +743,7 @@ function ciudad(dir) {
   return m ? m[1].trim().toLowerCase() : "";
 }
 
-const csvCelda = (v) => (/[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v);
+const csvCelda = (v0) => { const v = /^[=+\-@\t\r]/.test(String(v0 ?? "")) ? "'" + v0 : v0; return /[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v; }; // Fase 1: sin fórmulas
 
 $("btnCsv").onclick = () => {
   if (!lote.length) return estado("El lote está vacío.", true);
@@ -755,12 +762,12 @@ $("btnCsv").onclick = () => {
   a.download = `owners-lofty-${fecha}.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  estado(`CSV descargado con ${lote.length} owner(s) ✅`);
+  estado(`CSV descargado con ${lote.length} owner(s) `);
 };
 
 $("btnCopiar").onclick = async () => {
   if (!lote.length) return;
-  try { await navigator.clipboard.writeText(textoLimpio()); estado("Texto copiado 📋"); }
+  try { await navigator.clipboard.writeText(textoLimpio()); estado("Texto copiado "); }
   catch { estado("No se pudo copiar.", true); }
 };
 
@@ -787,3 +794,13 @@ chrome.storage.local.get(["sinEmpresas", "tag1", "urls", K("lote"), "cerrarLeida
   if (Array.isArray(d.lote)) lote = d.lote;
   pintar();
 });
+
+// ---------- Fase 2b: acciones grandes por el bus de tareas (registro.js). Sin entrada, usan lo que ya está escrito en la pantalla. ----------
+window.Tareas && Tareas.atender("leer", async ({ vivo, auto, cerrarLeidas } = {}) => {
+  // ajustes que pide la misión (se guardan igual que si los marcaras tú)
+  for (const [id, v] of [["bvVivo", vivo], ["bvAuto", auto], ["cerrarLeidas", cerrarLeidas]]) if (typeof v === "boolean" && $(id).checked !== v) { $(id).checked = v; chrome.storage.local.set({ [id]: v }); }
+  await Tareas.esperarLibre(() => leyendoBV);
+  await leerBV(false);
+  await Tareas.esperarLibre(() => leyendoBV);
+  return ($("estado").textContent || $("fantasmaTxt").textContent || "").trim() || "Lectura terminada.";
+}, { alCancelar: () => { const b = $("btnDetener"); b && b.click(); } });

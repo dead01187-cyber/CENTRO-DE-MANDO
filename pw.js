@@ -150,7 +150,7 @@ $("copy").onclick = async () => {
 
 $("csv").onclick = () => {
   const rows = filtered();
-  const q = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
+  const q = (s) => `"${String(s ?? "").replace(/^([=+\-@\t\r])/, "'$1").replace(/"/g, '""')}"`; // Fase 1: sin fórmulas
   const csv = ["Street,City,State,Zip,Full Address", ...rows.map((a) =>
     [a.street, a.city, "CA", a.zip, line(a)].map(q).join(","))].join("\n");
   const name = (zones()[0] || "zona").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
@@ -161,9 +161,15 @@ $("csv").onclick = () => {
 };
 
 $("clear").onclick = async () => {
-  const r = await domicilios("borrar");
+  // Fase 1: pide confirmación y solo borra la lista de Propi (antes borraba también los de Acti y las HECM de Heri, sin preguntar)
+  const { addresses: antes = {} } = await chrome.storage.local.get("addresses");
+  const mios = Object.values(antes).filter((a) => lineaDe(a) === "").length;
+  if (!mios) { setStatus("La lista de Propi ya está vacía."); return; }
+  if (!(await preguntar(`¿Borrar los ${mios} domicilios de la lista de Propi?\n\nTambién se borran sus marcas (ya buscado, ya en Lofty). Los de Acti y las HECM de Heri no se tocan.`, "Sí, borrar", "Cancelar"))) { setStatus("No borré nada."); return; }
+  const r = await domicilios("borrarPropi");
   const { addresses = {} } = await chrome.storage.local.get("addresses");
-  setStatus(Object.keys(addresses).length ? "No se pudo borrar la lista. Recarga la extensión e intenta otra vez." : "Lista borrada." + (r.sinFondo ? " (El fondo de la extensión no contestó; la borré directo.)" : ""));
+  const quedan = Object.values(addresses).filter((a) => lineaDe(a) === "").length;
+  setStatus(quedan ? "No se pudo borrar la lista. Recarga la extensión e intenta otra vez." : "Lista de Propi borrada." + (r.sinFondo ? " (El fondo de la extensión no contestó; la borré directo.)" : ""));
   revisarFondo();
 };
 
@@ -177,8 +183,24 @@ async function revisarFondo() {
     av.style.cssText = "background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.5);color:#fca5a5;border-radius:12px;padding:10px 12px;font-size:12.5px";
     document.querySelector("main").prepend(av);
   }
-  av.textContent = "⚠ El fondo de la extensión no está corriendo, así que no se guarda lo que encuentra Propwire. Ve a chrome://extensions, dale ↻ a Agente Geo Farming y si aparece un botón rojo de \"Errores\", mándale captura a Claude.";
+  av.textContent = "El fondo de la extensión no está corriendo, así que no se guarda lo que encuentra Propwire. Ve a chrome://extensions, dale ↻ a Agente Geo Farming y si aparece un botón rojo de \"Errores\", mándale captura a Claude.";
 }
 load();
 revisarFondo();
 setInterval(revisarFondo, 30000);
+
+// ---------- Fase 2b: acciones grandes por el bus de tareas (registro.js). Sin entrada, usan lo que ya está escrito en la pantalla. ----------
+const FIN_PROPI = /^Listo:|recorrí|^Parado|No encontré la barra|no se resolvió|No pude hablar|Escribe primero|llegué al tope/i;
+const FALLA_PROPI = /No encontré|no se resolvió|No pude|Escribe primero/i;
+window.Tareas && Tareas.atender("buscar", async ({ zona, paginas, tope } = {}) => {
+  if (zona) { $("zone").value = zona; await chrome.storage.local.set({ zone: zona }); render(); }
+  if (paginas) $("pages").value = String(paginas);
+  if (tope != null) { $("tope").value = String(tope); await chrome.storage.local.set({ pwTope: topeValor() }); }
+  const desde = Date.now();
+  await $("run").onclick();
+  if (/^Escribe primero|^No pude hablar/.test($("status").textContent)) throw new Error($("status").textContent);
+  const ev = await Tareas.esperarEvento(FIN_PROPI, desde, 60 * 60e3);
+  if (!ev) throw new Error("Propi tardó más de una hora sin terminar");
+  if (FALLA_PROPI.test(ev.texto)) throw new Error(ev.texto);
+  return ev.texto;
+}, { alCancelar: () => $("stop").onclick() });

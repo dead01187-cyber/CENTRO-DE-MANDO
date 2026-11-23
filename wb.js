@@ -228,7 +228,14 @@ const corre = async (tab, func, args = []) => {
 };
 
 // ---------- Utilidades ----------
-const firma = (t) => String(t || "").toLowerCase().replace(/\$\s*[\d,.]+/g, (m) => m.replace(/[\d,.]/g, "") + "$#").replace(/\d+/g, "#").replace(/\s+/g, " ").trim(); // sin los números que cambian (créditos que quedan)
+// Fase 1: la firma CONSERVA los montos en dinero ($30.00 ≠ $0.12) y solo quita los demás números (créditos que quedan,
+// número de propiedades). Antes los montos se borraban y un cobro distinto se aprobaba solo.
+const firma = (t) => {
+  const montos = [];
+  const sinMontos = String(t || "").toLowerCase().replace(/\$\s*([\d,]+(?:\.\d+)?)/g, (m, a) => { montos.push(Number(a.replace(/,/g, "")).toFixed(2)); return "\u0000"; });
+  let i = 0;
+  return sinMontos.replace(/\d+/g, "#").replace(/\u0000/g, () => "$" + montos[i++]).replace(/\s+/g, " ").trim();
+};
 // La ventana "Please Confirm" de Propwire: ¿usa créditos? ¿cuántos quedan? ¿cobra dinero?
 const creditos = (t) => {
   t = String(t || "");
@@ -282,7 +289,9 @@ async function alLote(a, nombre, phones, url, emails = []) {
 
 // Lo que le toca a Wibi: aprobado por Chequi, de la zona, mandado a Wibi y sin buscar todavía
 async function porHacer() {
-  const { addresses = {}, zone = "", chActivo, loftyKey, [K("chDestino")]: chDestino } = await chrome.storage.local.get(["addresses", "zone", "chActivo", "loftyKey", K("chDestino")]);
+  const st = await chrome.storage.local.get(["addresses", "zone", "chActivo", "ch3Config", "loftyKey", K("chDestino")]);
+  const { addresses = {}, zone = "", [K("chDestino")]: chDestino } = st;
+  const { chActivo, loftyKey } = filtroDe(LINEA, st); // Fase 1: Wibi 3 usa el interruptor de Chequi 3
   const zs = zonasDe(zone);
   return Object.entries(addresses).map(([key, a]) => ({ ...a, key }))
     .filter((a) => sirve(a) && lineaDe(a) === LINEA && enZona(a, zs) && paraWibi(a, chDestino) && pasaFiltro(a, { chActivo, loftyKey }) && !a.bvSearched);
@@ -455,7 +464,7 @@ async function irA(tab, url) {
   for (let i = 0; i < 60; i++) { const x = await chrome.tabs.get(tab).catch(() => null); if (!x || x.status === "complete") break; await sleep(400); }
   await sleep(1500 + Math.random() * 1500);
 }
-const turno = () => turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los robots ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min…` : `Esperando turno de Propwire (otro robot la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar });
+const turno = () => turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los agentes ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min…` : `Esperando turno de Propwire (otro agente la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar });
 
 // Registro de las listas que Wibi crea en Propwire (lo usa Carpi para organizarlas y borrarlas)
 async function registrar(nombre, datos) {
@@ -635,6 +644,7 @@ async function trabajarLista(lista) {
       quedarse = true; return 0;
     }
     ver(`Skip trace de la lista “${nombre}” (${s.pedidos || li.n} propiedades)…`);
+    if (!(cr && cr.conCreditos && !cr.dinero)) await chrome.storage.local.remove("wbAprobado"); // Fase 1: un OK de cobro en dinero sirve UNA sola vez
     const c = await corre(tab, pwListaConfirmar, [wbAprobado.boton]).catch((e) => ({ error: e.message }));
     if (c && c.sinSaldo) { decir("Propwire dice que no hay saldo para el skip trace. Wibi se detiene.", "error"); await regresarTanda("sin saldo"); quedarse = true; return 0; }
     if (!c || c.error) { decir(`Lista “${nombre}”: ${(c && c.error) || "falló el skip trace"}. Revisa la lista en Propwire.`, "error"); await regresarTanda((c && c.error) || "falló"); quedarse = true; return 0; }
@@ -686,7 +696,18 @@ async function trabajarLista(lista) {
 // ---------- Ciclo ----------
 const fallos = new Map();
 let segundoClic = 0;
+// Fase 1: candado para que dos disparos (timer, cambio de storage, botón, Capi) no arranquen dos vueltas a la vez
+// (antes había 4 await entre la revisión de "corriendo" y el momento en que se prendía)
+let entrando = false;
 async function trabajar(aMano) {
+  if (corriendo || entrando) return;
+  entrando = true;
+  try {
+    const hecho = navigator.locks ? await navigator.locks.request("wibi-trabajar" + (LINEA || ""), { ifAvailable: true }, async (l) => (l ? (await trabajarUnaVez(aMano), true) : false)) : (await trabajarUnaVez(aMano), true);
+    if (!hecho && aMano) ver("Wibi ya está trabajando en otra pestaña.");
+  } finally { entrando = false; }
+}
+async function trabajarUnaVez(aMano) {
   if (corriendo) return;
   guardarCfg();
   const { wbPregunta } = await chrome.storage.local.get("wbPregunta");
@@ -697,7 +718,7 @@ async function trabajar(aMano) {
     const hora = new Date(pz).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     if (Date.now() - segundoClic > 15000) { // (los avisos de "confirmar" no salen dentro del panel: se confirma con un 2º clic)
       segundoClic = Date.now();
-      ver(`⏸ En pausa hasta las ${hora} porque Propwire bloqueó el acceso. Lo recomendable es esperar. Si de todos modos quieres seguir, dale otra vez a “Hacer skip trace” (en los próximos 15 s).`);
+      ver(`En pausa hasta las ${hora} porque Propwire bloqueó el acceso. Lo recomendable es esperar. Si de todos modos quieres seguir, dale otra vez a “Hacer skip trace” (en los próximos 15 s).`);
       return;
     }
     segundoClic = 0;
@@ -739,12 +760,12 @@ async function trabajar(aMano) {
       window.robot && robot.set("trabajando", `Skip trace en Propwire: ${a.street}…`);
       ver(`Buscando en Propwire: ${dir}…`);
       await trabajo(a.key, { direccion: dir, estado: "buscando", detalle: "" });
-      if (!(await turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los robots ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min para no ser bloqueados…` : `Esperando turno de Propwire (otro robot la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar }))) break;
+      if (!(await turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los agentes ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min para no ser bloqueados…` : `Esperando turno de Propwire (otro agente la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar }))) break;
       const tab = await pestanaPW(true);
       const volver = await alFrente(tab);
       let quedarse = false;
       try {
-      if (!(await turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los robots ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min para no ser bloqueados…` : `Esperando turno de Propwire (otro robot la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar }))) break;
+      if (!(await turnoPropwire({ aviso: (ms, lleno) => ver(lleno ? `Turno de Propwire: entre todos los agentes ya van 150 páginas esta hora; espero ${Math.ceil(ms / 60000)} min para no ser bloqueados…` : `Esperando turno de Propwire (otro agente la está usando)… ${Math.ceil(ms / 1000)} s`), parar: () => parar }))) break;
       let r = await corre(tab, pwAbrir, [a.street, a.city, a.zip || ""]).catch((e) => ({ error: e.message }));
       if (!r || r.error) {
         if ((r && r.bloqueo) || (await corre(tab, pwBloqueo).catch(() => false))) { await bloqueado(a.key, dir); quedarse = true; break; }
@@ -788,6 +809,7 @@ async function trabajar(aMano) {
             quedarse = true; /* que veas la página de Propwire */
             break;
           }
+          if (!(cr && cr.conCreditos && !cr.dinero)) await chrome.storage.local.remove("wbAprobado"); // Fase 1: un OK de cobro en dinero sirve UNA sola vez
           const c = await corre(tab, pwConfirmar, [wbAprobado.boton]).catch((e) => ({ error: e.message }));
           if (c && c.sinSaldo) { await trabajo(a.key, { estado: "error", detalle: "sin saldo en Propwire" }); decir("Propwire dice que no hay saldo para el skip trace. Recarga tu saldo de Propwire y dale “Hacer skip trace”.", "error"); break; }
           if ((!c || c.error) && (await corre(tab, pwBloqueo).catch(() => false))) { await bloqueado(a.key, dir); quedarse = true; break; }
@@ -906,7 +928,7 @@ async function diagnostico() {
   if (corriendo) return;
   const pz = await pausaHasta();
   const { wbPregunta, [K("wbAutoAntes")]: wbAutoAntes } = await chrome.storage.local.get(["wbPregunta", K("wbAutoAntes")]);
-  if (pz) ver(`⏸ En pausa hasta las ${new Date(pz).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} porque Propwire bloqueó el acceso.` + (wbAutoAntes ? " A esa hora sigue solo." : ""));
+  if (pz) ver(`En pausa hasta las ${new Date(pz).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} porque Propwire bloqueó el acceso.` + (wbAutoAntes ? " A esa hora sigue solo." : ""));
   else if (wbPregunta) ver("Esperando tu OK para el cobro de Propwire (arriba).");
   else if (!cfg.auto) ver((await porHacer()).length ? `Tengo ${(await porHacer()).length} domicilio(s) por hacer, pero “Trabajar solo” está apagado: dale “Hacer skip trace” o prende “Trabajar solo”.` : await sinTrabajo());
 }

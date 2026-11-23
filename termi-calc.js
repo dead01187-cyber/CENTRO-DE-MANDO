@@ -22,7 +22,7 @@
     return Object.fromEntries(SENALES.map((s) => [s.id, termiPesos[s.id] ?? s.peso]));
   }
   // Califica todos los ZIP con lo que haya juntado Radar y guarda el resumen (termiRes)
-  async function calificar(pesos) {
+  async function calificar(pesos, { guardar = true } = {}) { // Fase 4: Punti la usa sin guardar
     pesos = pesos || (await pesosGuardados());
     const { radarData = {}, radarZips = {} } = await chrome.storage.local.get(["radarData", "radarZips"]);
     const lista = (radarZips.lista || []).map((z) => ({ ...z, ...(radarData[z.zip] || {}), zip: z.zip }));
@@ -46,7 +46,7 @@
     const top = filas.find((f) => f.cobertura >= 0.5) || filas[0];
     const faltan = SENALES.filter((s) => !rangos[s.id].length).map((s) => s.nombre);
     const res = { t: Date.now(), n: filas.length, top: top ? { zip: top.zip, score: top.score, ciudad: (top.info || {}).ciudad || "" } : null, calientes: filas.filter((f) => f.score >= 75 && f.cobertura >= 0.5).length, faltan };
-    await chrome.storage.local.set({ termiRes: res });
+    if (guardar) await chrome.storage.local.set({ termiRes: res });
     return { filas, res };
   }
   window.TermiCalc = { SENALES, tasa, pct, pesosGuardados, calificar };

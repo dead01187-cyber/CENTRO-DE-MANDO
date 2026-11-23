@@ -281,7 +281,7 @@ $("bajarSkip").onclick = async () => {
   const ls = leads.filter(faltaSkip);
   if (!ls.length) { decir("Wibi: no hay domicilios sin teléfono para skip trace."); return; }
   const vistos = new Set(), unicos = ls.filter((l) => { const k = l.key || Core.addrKey(l.street, l.city); if (vistos.has(k)) return false; vistos.add(k); return true; });
-  const celda = (v) => { const s = String(v ?? ""); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const celda = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; /* Fase 1: sin fórmulas */ return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const texto = ["Address,City,State,Zip,First Name,Last Name", ...unicos.map((l) => [l.street, tc(l.city), l.state || "CA", l.zip || "", l.first || "", l.last || ""].map(celda).join(","))].join("\r\n");
   const ciudades = [...new Set(unicos.map((l) => tc(l.city)).filter(Boolean))].slice(0, 2).join(", ");
   const nombre = `Wibi/${new Date().toLocaleDateString("en-CA")} ${ciudades || "domicilios"} para skip trace.csv`.replace(/[:*?"<>|]+/g, "-");
@@ -298,7 +298,7 @@ $("bajarLimpio").onclick = async () => {
   if (!ls.length) { decir("Wibi: no hay leads limpios para bajar."); return; }
   const nT = Math.max(1, ...ls.map((l) => l.phones.length)), nE = Math.max(1, ...ls.map((l) => (l.emails || []).length));
   const cab = ["First Name", "Last Name", ...Array.from({ length: nT }, (_, i) => `Phone ${i + 1}`), ...Array.from({ length: nE }, (_, i) => `Email ${i + 1}`), "Address", "City", "State", "Zip", "Tags", "Source"];
-  const celda = (v) => { const s = String(v ?? ""); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const celda = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; /* Fase 1: sin fórmulas */ return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const filasCsv = ls.map((l) => [l.first, l.last, ...Array.from({ length: nT }, (_, i) => l.phones[i] || ""), ...Array.from({ length: nE }, (_, i) => (l.emails || [])[i] || ""), l.street, tc(l.city), l.state || "CA", l.zip || "", `${tc(l.city)}, propwire`, "Propwire"].map(celda).join(","));
   const texto = [cab.map(celda).join(","), ...filasCsv].join("\r\n");
   const ciudades = [...new Set(ls.map((l) => tc(l.city)).filter(Boolean))].slice(0, 2).join(", ");
@@ -315,7 +315,7 @@ async function pintar() {
   $("nLeidos").textContent = leads.length; $("nListos").textContent = n("nuevo"); $("nYa").textContent = n("ya");
   const { wibiRes = {} } = await chrome.storage.local.get("wibiRes");
   $("nHoy").textContent = wibiRes.fecha === hoy() ? wibiRes.aLoftiHoy || 0 : 0;
-  $("subir").disabled = corriendo || !n("nuevo"); $("subir").textContent = `➡️ Pasar ${n("nuevo")} a Lofti`;
+  $("subir").disabled = corriendo || !n("nuevo"); $("subir").textContent = `→ Pasar ${n("nuevo")} a Lofti`;
   const orden = { nuevo: 0, error: 1, lofti: 2, subido: 2, ya: 3, fuera: 4 };
   const ls = [...leads].sort((a, b) => orden[a.estado] - orden[b.estado]);
   $("lista").innerHTML = ls.length ? ls.slice(0, 500).map((l) => `<li><div class="q"><b>${esc(`${l.first} ${l.last}`.trim() || "(sin nombre)")}</b> <span class="tag ${ETQ[l.estado][1]}">${ETQ[l.estado][0]}</span>
@@ -326,3 +326,11 @@ function botones() { $("bajarSkip").disabled = corriendo || !leads.some(faltaSki
 $("stopBtn").onclick = () => { parar = true; ver("Parando…"); };
 chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.carpiCarpetas && !corriendo) pintarCarpetas(); });
 cargarCfg().then(() => { pintar(); pintarCarpetas(); });
+
+// ---------- Fase 2b: acciones grandes por el bus de tareas (registro.js). Sin entrada, usan lo que ya está escrito en la pantalla. ----------
+window.Tareas && Tareas.atender("leer", async ({ carpeta } = {}) => {
+  await Tareas.esperarLibre(() => corriendo);
+  if (carpeta != null) $("carpeta").value = String(carpeta);
+  await $("run").onclick();
+  return $("status").textContent.trim() || "Lectura terminada.";
+}, { alCancelar: () => { parar = true; } });

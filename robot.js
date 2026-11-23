@@ -1,15 +1,11 @@
 // =====================================================================
-// Robotsitos: uno por sección (diseños propios, pixel art).
+// Agentes: uno por sección, con su ícono de línea (Lucide) y su color.
 // Cambian de estado solos según lo que anota cada pestaña en la bitácora.
 // Estados: idle, trabajando, feliz, error, ayuda (captcha/login), pausa.
 // =====================================================================
-// Tema de las pestañas: el mismo que escojas en el Centro de Mando (n8n o neón)
+// Tema de las pestañas: siempre estilo n8n (el tema neón se quitó)
 (function () {
-  try {
-    const poner = (t) => document.documentElement.classList.toggle("n8n", (t || "n8n") === "n8n");
-    chrome.storage.local.get("mandoTema").then(({ mandoTema }) => poner(mandoTema));
-    chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.mandoTema) poner(ch.mandoTema.newValue); });
-  } catch (e) {}
+  try { document.documentElement.classList.add("n8n"); } catch (e) {}
 })();
 (function () {
   const ROBOTS = {
@@ -31,7 +27,7 @@
     lf: { nombre: "Lofti", rol: "Limpia y sube los leads a Lofty", color: "#0a84ff", claro: "#bfdbfe", oscuro: "#1e3a8a",
       mapa: ["......A.......", ".....AAA......", "......X.......", "..XXXXXXXXXX..", "..XLLLLLLLLX..", "..XLWDLLWDLX..",
              "..XLDDLLDDLX..", "..XLLLLLLLLX..", "..XLLDLLDLLX..", "..XLLLDDLLLX..", "..XXXXXXXXXX..", "...XXXXXXXX...", "...XX....XX..."] },
-    sv: { nombre: "Capi", rol: "Coordina a los robots y te habla", color: "#b45309", claro: "#fde68a", oscuro: "#78350f",
+    sv: { nombre: "Capi", rol: "Coordina a los agentes y te habla", color: "#b45309", claro: "#fde68a", oscuro: "#78350f",
       mapa: ["...RRRRRRRR...", "..RRRRRRRRRRA.", "..XXXXXXXXXX..", ".DXLLLLLLLLXD.", ".DXLDDLLDDLXD.", ".DXLDWLLDWLXD.",
              "..XLLLLLLLLX..", "..XLLDDDDLLXD.", "..XXXXXXXXXXD.", "....XXXXXX....", "..XXXXXXXXXX..", "..XX.XXXX.XX..", "....XX..XX...."] },
   };
@@ -83,20 +79,57 @@
   ROBOTS.bv3 = { ...ROBOTS.bv, nombre: "Veri 3", rol: "Busca en BeenVerified a los herederos (HECM)", color: "#ea580c", claro: "#fed7aa", oscuro: "#7c2d12" };
   ROBOTS.ow3 = { ...ROBOTS.ow, nombre: "Owny 3", rol: "Lee los reportes de las HECM", color: "#ca8a04", claro: "#fef08a", oscuro: "#713f12" };
   ROBOTS.wb3 = { ...ROBOTS.wb, nombre: "Wibi 3", rol: "Skip trace en Propwire de las HECM", color: "#a16207", claro: "#fde68a", oscuro: "#422006" };
+  // Fase 4: robots nuevos (mismo cuerpo, su propio color)
+  ROBOTS.va = { ...ROBOTS.ch, nombre: "Vali", rol: "", color: "#0891b2", claro: "#a5f3fc", oscuro: "#164e63" };
+  ROBOTS.cu = { ...ROBOTS.rd, nombre: "Cumpli", rol: "", color: "#7c3aed", claro: "#ddd6fe", oscuro: "#4c1d95" };
+  ROBOTS.qa = { ...ROBOTS.te, nombre: "Qai", rol: "", color: "#0f766e", claro: "#99f6e4", oscuro: "#134e4a" };
+  ROBOTS.pu = { ...ROBOTS.wb, nombre: "Punti", rol: "", color: "#ca8a04", claro: "#fef08a", oscuro: "#713f12" };
+  ROBOTS.an = { ...ROBOTS.ra, nombre: "Ana", rol: "", color: "#db2777", claro: "#fbcfe8", oscuro: "#831843" };
   // Clones de la línea de Acti: mismo robot, otro color
   ROBOTS.bv2 = { ...ROBOTS.bv, nombre: "Veri 2", rol: "Busca en BeenVerified los leads de Acti", color: "#c026d3", claro: "#f5d0fe", oscuro: "#701a75" };
   ROBOTS.ow2 = { ...ROBOTS.ow, nombre: "Owny 2", rol: "Lee los reportes de los leads de Acti", color: "#65a30d", claro: "#d9f99d", oscuro: "#365314" };
 
+  // Fase 2: nombre y rol salen del registro central (registro.js); aquí solo vive el dibujo
+  if (window.REGISTRO) for (const [k, r] of Object.entries(ROBOTS)) { const x = REGISTRO.ROBOTS[k]; if (x) { r.nombre = x.nombre; r.rol = x.rol; } }
+
+  // Íconos de línea (Lucide v0.469.0, licencia ISC: https://lucide.dev/license). Uno por función.
+  const FORMAS = {
+    "layout-dashboard": '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+    "sparkles": '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+    "map-pin": '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+    "list-checks": '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+    "search": '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    "user-round": '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+    "cloud-upload": '<path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/>',
+    "refresh-cw": '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+    "mail": '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+    "file-pen": '<path d="M12.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v9.5"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M13.378 15.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>',
+    "send": '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+    "scan-search": '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>',
+    "folder": '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    "landmark": '<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
+    "house": '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    "message-square": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    "message-square-reply": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="m10 7-3 3 3 3"/><path d="M17 13v-1a2 2 0 0 0-2-2H7"/>',
+    "phone": '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    "eraser": '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>',
+    "radar": '<path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35"/><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67"/><path d="M12 18h.01"/><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67"/><circle cx="12" cy="12" r="2"/><path d="m13.41 10.59 5.66-5.66"/>',
+    "thermometer": '<path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>',
+    "badge-check": '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/>',
+    "gauge": '<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
+    "shield-check": '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+    "activity": '<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>',
+    "chart-column": '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+    "users": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    "database": '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+  };
+  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database", "tb":"layout-dashboard"};
+
+  // Ícono de cada agente: línea fina del color de su sección (antes era pixel art; los mapas se quedan solo como color)
   function robotSVG(mod) {
-    const r = ROBOTS[mod]; if (!r) return "";
-    const col = { X: r.color, L: r.claro, R: r.oscuro, D: "#0f172a", W: "#ffffff", A: "#fde047" };
-    let s = "";
-    r.mapa.forEach((fila, y) => [...fila].forEach((c, x) => {
-      if (!col[c]) return;
-      const cls = c === "A" ? ' class="luz"' : (c === "W" || (c === "D" && y >= 4 && y <= 6)) ? ' class="ojo"' : "";
-      s += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${col[c]}"${cls}/>`;
-    }));
-    return `<svg viewBox="0 0 14 13" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+    const r = ROBOTS[mod], f = FORMAS[ICONO[mod]]; if (!f) return "";
+    const color = r ? `color-mix(in srgb, ${r.color} 70%, #fff)` : "rgba(255,255,255,.85)";
+    return `<svg class="ico-linea" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:${color}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${f}</svg>`;
   }
   window.ROBOTS = ROBOTS;
   window.robotSVG = robotSVG;
@@ -151,10 +184,19 @@
   if (document.body) poner(); else document.addEventListener("DOMContentLoaded", poner);
 
   let timer = null;
+  // Fase 5: el estado de cada robot se guarda en storage ("rbEstado_<robot>") para que el tablero lo lea sin tocar las páginas.
+  // Con freno: como mucho una escritura cada 2 s por robot (y siempre la última).
+  let pendienteEst = null, timerEst = null;
+  function guardarEstado(estado, texto) {
+    pendienteEst = { estado, texto: String(texto || bar.querySelector(".txt").textContent || "").slice(0, 200), t: Date.now() };
+    if (timerEst) return;
+    timerEst = setTimeout(() => { timerEst = null; try { chrome.storage.local.set({ ["rbEstado_" + MOD]: pendienteEst }); } catch (e) {} }, 2000);
+  }
   function set(estado, texto) {
     bar.className = "rb " + estado;
     bar.querySelector(".chip").textContent = CHIP[estado] || estado;
     if (texto) bar.querySelector(".txt").textContent = texto;
+    guardarEstado(estado, texto);
     clearTimeout(timer);
     // si deja de haber movimiento, vuelve a descansar
     if (estado === "trabajando") timer = setTimeout(() => set("idle", "Esperando…"), 30000);

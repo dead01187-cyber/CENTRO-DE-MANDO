@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lofty</title>
-<script src="log.js"></script><script src="robot.js"></script>
+<script src="log.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
 <script src="papaparse.min.js"></script>
 <style>
 :root{--bg:#0b0b0d;--panel:#151518;--panel2:#1c1c20;--line:#2a2a30;--txt:#f2f2f4;--mut:#8d8d96;--acc:#0a84ff;--ok:#30d158;--warn:#ff9f0a;--bad:#ff453a;--r:14px}
@@ -187,14 +187,12 @@ textarea.copy{position:absolute;left:-9999px}
     <div class="grid2">
       <label class="f">API key de Lofty (Settings → Integrations → API)<input type="password" id="lfKey" placeholder="Pega tu API key" autocomplete="off"></label>
       <label class="f">Asignar a<select id="agent"><option value="347370063537680">Daniel Rubio-Novack</option></select></label>
-      <label class="f">API key de Veriphone (Vali · valida teléfonos)<input type="password" id="vpKey" placeholder="Pega tu API key de Veriphone" autocomplete="off"></label>
-      <label class="f">Vali este mes<span id="vpUso" class="muted" style="padding-top:8px">—</span></label>
     </div>
     <div class="opts" style="margin-top:10px">
       <label class="tog"><input type="checkbox" id="oChk" checked><span class="sw"></span>Saltar si el teléfono ya está en Lofty</label>
-      <label class="tog" title="Antes de subir cada lead, Vali revisa sus teléfonos con Veriphone: quita los inválidos, pone primero los celulares y le pone el tag cel-validado o solo-llamada. Usa 1 crédito por número (1,000 gratis al mes)."><input type="checkbox" id="oVali" checked><span class="sw"></span>Vali: validar teléfonos antes de subir</label>
+      <!-- Fase 1: aquí aparecía "Vali (Veriphone)", pero no tenía código: no validaba nada. Se quitó para no dar una falsa seguridad. -->
       <label class="tog"><input type="checkbox" id="oAlert"><span class="sw"></span>Mandar aviso de lead nuevo al agente</label>
-      <label class="tog" title="Cada vez que Owny entrega leads nuevos y quedan listos, Lofti los crea en Lofty solo, sin pedir confirmación. Se apaga solo si Lofty rechaza la API key."><input type="checkbox" id="oAuto" checked><span class="sw"></span><b>Subir solo a Lofty conforme Owny los manda</b></label>
+      <label class="tog" title="Cada vez que Owny entrega leads nuevos y quedan listos, Lofti los crea en Lofty solo, sin pedir confirmación. Viene apagado: préndelo solo si lo quieres así. Se apaga solo si Lofty rechaza la API key. Un lead que falló no se reintenta solo."><input type="checkbox" id="oAuto"><span class="sw"></span><b>Subir solo a Lofty conforme Owny los manda</b></label>
     </div>
     <div class="row" style="margin-top:12px">
       <button class="btn" id="send">Enviar a Lofty</button>
@@ -224,7 +222,7 @@ textarea.copy{position:absolute;left:-9999px}
 </div>
 <textarea class="copy" id="ta"></textarea>
 
-<script src="lofty-core.js"></script>
+<script src="vali-core.js"></script><script src="lofty-core.js"></script>
 <script src="lofty.js"></script>
 </body>
 </html>

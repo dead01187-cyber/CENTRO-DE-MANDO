@@ -45,27 +45,27 @@
     <label class="f">Leads por misión<input type="number" id="meta" min="5" max="500" value="50"></label>
     <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="soloCompletos" checked> Solo zonas con suficientes datos</label>
   </div>
-  <div class="row"><button id="run" class="primary">🌡️ Recalificar</button></div>
+  <div class="row"><button id="run" class="primary">Recalificar</button></div>
   <div id="status" class="card">…</div>
   <div class="card" id="cajaProp">
-    <div style="font-weight:700;margin-bottom:4px">🏠 Sacar propiedades de las zonas marcadas</div>
-    <div class="hint" style="margin-bottom:6px">Marca los ZIP en la lista (☑️) y los tipos de seller. Abro Propwire con ritmo humano, leo las direcciones de la lista (no exporto ni gasto créditos) y te dejo <b>la lista de domicilios</b> aquí abajo para que tú los busques.</div>
+    <div style="font-weight:700;margin-bottom:4px">Sacar propiedades de las zonas marcadas</div>
+    <div class="hint" style="margin-bottom:6px">Marca los ZIP en la lista () y los tipos de seller. Abro Propwire con ritmo humano, leo las direcciones de la lista (no exporto ni gasto créditos) y te dejo <b>la lista de domicilios</b> aquí abajo para que tú los busques.</div>
     <div class="row" id="tipos" style="margin-bottom:6px"></div>
     <div class="grid">
       <label class="f">Páginas por búsqueda<input type="number" id="maxPag" min="1" max="10" value="2"></label>
       <label class="f" style="grid-column:2/-1">Marcadas<div class="row"><b id="nSel">0</b> ZIP <button class="mini" id="marcarCal" type="button">Marcar calientes</button><button class="mini" id="quitarSel" type="button">Quitar marcas</button></div></label>
     </div>
-    <div class="row" style="margin-top:8px"><button id="sacar" class="primary">🔎 Sacar domicilios</button><button id="pararProp" hidden>⏹ Parar</button></div>
+    <div class="row" style="margin-top:8px"><button id="sacar" class="primary">Sacar domicilios</button><button id="pararProp" hidden>Parar</button></div>
   </div>
   <div class="card" id="cajaDoms" hidden>
-    <div class="row" style="justify-content:space-between"><b>📋 Domicilios (<span id="nDoms">0</span>)</b><span class="row"><button class="mini" id="copiarTodos" type="button">Copiar todos</button><button class="mini" id="bajarDoms" type="button">⬇️ CSV</button><button class="mini" id="borrarDoms" type="button">Borrar lista</button></span></div>
+    <div class="row" style="justify-content:space-between"><b>Domicilios (<span id="nDoms">0</span>)</b><span class="row"><button class="mini" id="copiarTodos" type="button">Copiar todos</button><button class="mini" id="bajarDoms" type="button">↓ CSV</button><button class="mini" id="borrarDoms" type="button">Borrar lista</button></span></div>
     <input type="text" id="filtroDoms" placeholder="Filtrar por ZIP, ciudad o tipo…" style="margin:6px 0">
     <ul id="doms" style="max-height:40vh"></ul>
   </div>
   <ul id="tabla"></ul>
-  <details class="card"><summary>⚖️ Peso de cada señal</summary><div class="grid" id="pesos" style="margin-top:8px"></div></details>
+  <details class="card"><summary>Peso de cada señal</summary><div class="grid" id="pesos" style="margin-top:8px"></div></details>
 </main>
-<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
 <script src="termi-calc.js"></script><script src="termi.js"></script><script src="termi-prop.js"></script>
 </body>
 </html>

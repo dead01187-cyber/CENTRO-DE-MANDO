@@ -49,7 +49,7 @@
     <div class="hint" style="grid-column:1/-1"><b>Orange County.</b> Paso 1: en el registro del condado saco los avisos de ejecución (Notice of Default y de remate) y busco a cada dueño por nombre: es hipoteca inversa si tiene un trust deed a favor de HUD o de un lender de hipotecas inversas. Es de <b>Celink / Compu-Link</b> (misma empresa) si aparece en el registro, si la HECM pasó a HUD (Celink administra las de HUD) o, probable, si el lender es Finance of America o Mutual of Omaha. Paso 2: busco al dueño por nombre en BeenVerified y saco el domicilio de su casa en Orange County (queda <b>confirmado ✓</b> cuando la casa se transfirió el mismo día que se registró la hipoteca inversa). Paso 3: pasan al brazo HECM (Chequi 3 → Veri 3 / Wibi 3 → Owny 3) y Lofti las deja con tags <b>preforeclosure</b> y <b>celink</b> y una nota con los números de documento; <b>no se suben solas</b>: Capi te avisa y espera tu “súbelo”.</div>
   </div>
   <div class="row">
-    <button id="run" class="primary">🔎 Buscar hipotecas inversas en ejecución</button>
+    <button id="run" class="primary">Buscar hipotecas inversas en ejecución</button>
     <button id="stop" class="stop">Parar</button>
   </div>
   <div id="status" class="card">Listo.</div>
@@ -63,12 +63,12 @@
   </div>
   <ul id="lista"><li class="empty">Aquí salen las hipotecas inversas con aviso de ejecución que encuentre.</li></ul>
   <details class="card">
-    <summary>💡 Qué decirle a los herederos</summary>
+    <summary>Qué decirle a los herederos</summary>
     <div class="hint" style="margin-top:6px">Una HECM es <b>non-recourse</b>: si la casa vale menos que la deuda, los herederos <b>no deben la diferencia</b>. Para quedarse con la casa basta con pagar lo que sea menor: la deuda o el 95% del avalúo. Después del aviso de que el préstamo venció tienen unos 30 días para decir qué van a hacer y, por lo general, hasta 6 meses para vender o pagar (el servicer puede dar extensiones). Si venden por más de la deuda, lo que sobra es de ellos.</div>
   </details>
   <div class="row"><button id="olvidar" class="mini">Volver a buscar a todos en el registro</button></div>
 </main>
-<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
 <script src="pr-clasif.js"></script>
 <script src="hr.js"></script>
 </body>

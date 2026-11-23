@@ -29,7 +29,7 @@ let plantillas = [], selId = "", lista = [], corriendo = false, parar = false;
 // ---------- API de Lofty de la OTRA cuenta ----------
 async function api(path, opts = {}) {
   const { txKey } = await chrome.storage.local.get("txKey");
-  if (!txKey) throw Object.assign(new Error("Falta la API key de la cuenta de Lofty de Texi (arriba, en 🔑)."), { sinKey: true });
+  if (!txKey) throw Object.assign(new Error("Falta la API key de la cuenta de Lofty de Texi (arriba, en )."), { sinKey: true });
   let r;
   for (let intento = 0; ; intento++) { // 429 = Lofty pide ir más lento (no procesó nada): esperar y reintentar
     r = await fetch("https://api.lofty.com/v1.0" + path, {
@@ -124,7 +124,7 @@ function numerosOptOut(l) {
   phones.forEach((p, i) => { if (OPTOUT.test(consentDe(est[i])) || st[i] === 4 || st[i] === 5) fuera.add(digitos(p && typeof p === "object" ? p.phone || p.number || p.value : p)); });
   return fuera;
 }
-const leadOptOut = (l) => l.cannotText === true;
+const leadOptOut = (l) => l.cannotText === true || l.unsubscription === true; // Fase 1: también "unsubscription" (como Limpi)
 // phoneStatuses (mismo orden que phones): 1 = Bad Number, 2 = Valid Number, 3 = Talked, 4 = DNC Number, 5 = DNC Contact
 const estadosTel = (l) => [].concat(l.phoneStatuses || []).map(Number);
 const telDe = (p) => digitos(p && typeof p === "object" ? p.phone || p.number || p.value : p);
@@ -150,7 +150,8 @@ async function buscar() {
   guardarCfg();
   corriendo = true; parar = false; $("buscar").disabled = true; $("mandar").disabled = true; $("confirma").hidden = true;
   window.robot && robot.set("trabajando", "Buscando leads en Lofty…");
-  const { txEnviados = {}, rsNoEscribir = {}, rsRespondieron = {}, rsNoEntregados = {} } = await chrome.storage.local.get(["txEnviados", "rsNoEscribir", "rsRespondieron", "rsNoEntregados"]);
+  const { txEnviados = {}, rsNoEscribir = {}, rsRespondieron = {}, rsNoEntregados = {}, smsBajas = {} } = await chrome.storage.local.get(["txEnviados", "rsNoEscribir", "rsRespondieron", "rsNoEntregados", "smsBajas"]);
+  const bajaTel = (smsBajas.tels || {}), bajaLead = (smsBajas.leads || {});
   const encontrados = []; let revisados = 0, sinCA = 0, noSeller = 0, bajas = 0, noEntrega = 0, optOut = 0;
   try {
     for (let offset = 0; offset < 20000 && !parar; ) {
@@ -163,7 +164,7 @@ async function buscar() {
         if (etapa && norm(l.stage) !== norm(etapa)) continue;
         if (tag && !(l.tags || []).some((t) => norm(t.tagName || t.name || t) === norm(tag))) continue;
         if (!esSeller(l)) { noSeller++; continue; } // solo Seller
-        if (rsNoEscribir[String(l.leadId || l.id)]) { bajas++; continue; } // Resi: pidió que no le escribieran, número equivocado o enojado
+        if (rsNoEscribir[String(l.leadId || l.id)] || bajaLead[`tx:${l.leadId || l.id}`]) { bajas++; continue; } // Resi / baja permanente: pidió que no le escribieran, número equivocado o enojado
         if (leadOptOut(l)) { optOut++; continue; } // Lofty: no se le pueden mandar textos (opt-out)
         const fueraOpt = numerosOptOut(l);
         const tels = [...new Set([...(l.phones || []), l.phone, l.mobilePhone, l.homePhone, l.workPhone].filter(Boolean).map((p) => digitos(p && typeof p === "object" ? p.phone || p.number || p.value : p)).filter((x) => x.length === 10))];
@@ -171,6 +172,7 @@ async function buscar() {
         let ca = tels.filter(esCA);
         if (!ca.length) { sinCA++; continue; }
         if (fueraOpt.size) { ca = ca.filter((n) => !fueraOpt.has(n)); if (!ca.length) { optOut++; continue; } } // números marcados Do Not Text / Unsubscribed
+        if (ca.some((n) => bajaTel[n])) { ca = ca.filter((n) => !bajaTel[n]); if (!ca.length) { bajas++; continue; } } // bajas permanentes por número
         // Resi: números que ya fallaron 2+ veces (Undelivered) no se vuelven a usar
         const ne = rsNoEntregados[id];
         if (ne) { ca = ne.todos ? [] : ca.filter((n) => !(ne.nums || []).includes(n)); if (!ca.length) { noEntrega++; continue; } }
@@ -201,7 +203,7 @@ let vista = "faltan";
 const grupo = (x) => (x.estado === "enviado" || (x.antes && x.estado !== "mandando") ? "mandados" : x.estado === "error" || x.estado === "saltado" ? "problema" : "faltan");
 function pintarVistas() {
   const n = { faltan: 0, mandados: 0, problema: 0 }; for (const x of lista) n[grupo(x)]++;
-  $("vFaltan").textContent = `⏳ Faltan (${n.faltan.toLocaleString()})`; $("vMandados").textContent = `✅ Ya mandados (${n.mandados.toLocaleString()})`; $("vProblema").textContent = `⚠️ Opt-out / error (${n.problema.toLocaleString()})`;
+  $("vFaltan").textContent = `Faltan (${n.faltan.toLocaleString()})`; $("vMandados").textContent = `Ya mandados (${n.mandados.toLocaleString()})`; $("vProblema").textContent = `Opt-out / error (${n.problema.toLocaleString()})`;
   for (const [id, v] of [["vFaltan", "faltan"], ["vMandados", "mandados"], ["vProblema", "problema"]]) $(id).classList.toggle("on", vista === v);
   $("marcarTodos").hidden = $("desmarcar").hidden = vista !== "faltan";
 }
@@ -216,8 +218,8 @@ function pintarLista() {
     return `<li><input type="checkbox" data-i="${i}" ${x.marcado && grupo(x) === "faltan" ? "checked" : ""} ${grupo(x) !== "faltan" || x.estado ? "disabled" : ""}>
       <div class="addr"><b>${esc(`${x.nombre === "there" ? "" : x.nombre} ${x.apellido}`.trim() || "(sin nombre)")}</b> ${est}
       <small>${x.creado ? `En Lofty desde ${dia(x.creado)} · ` : ""}${destinos(x).map(bonito).join(" · ")}${x.fuera ? ` · ${x.fuera} de fuera de CA (no se manda)` : ""}${x.calle ? ` · ${esc(x.calle)}` : ""}</small>
-      ${x.antes ? `<small>⚠️ Ya le mandé un SMS el ${fecha(x.antes)}</small>` : ""}
-      ${x.respondio ? `<small>💬 Ya contestó un SMS el ${fecha(x.respondio)}: síguelo en Resi (no lo marqué)</small>` : ""}
+      ${x.antes ? `<small>Ya le mandé un SMS el ${fecha(x.antes)}</small>` : ""}
+      ${x.respondio ? `<small>Ya contestó un SMS el ${fecha(x.respondio)}: síguelo en Resi (no lo marqué)</small>` : ""}
       ${x.estado === "error" ? `<small style="color:#b91c1c">${esc(x.detalle)}</small>` : x.estado === "saltado" ? `<small style="color:#854d0e">${esc(x.detalle)}</small>` : x.estado === "enviado" && x.detalle ? `<small style="color:#166534">${esc(x.detalle)}</small>` : ""}
       <div class="sms">${esc(mensaje(x))}</div></div></li>`;
   }).join("") + (idx.length > MAX ? `<li class="empty">…y ${(idx.length - MAX).toLocaleString()} más (enseño los primeros ${MAX}).</li>` : "");
@@ -262,10 +264,22 @@ async function mandar() {
         const { rsNoEscribir: noEsc = {} } = await chrome.storage.local.get("rsNoEscribir");
         const dl = await api(`/leads/${encodeURIComponent(x.id)}`); const lf = dl.lead || dl.data || dl;
         const fueraOpt = numerosOptOut(lf);
-        if (noEsc[x.id] || leadOptOut(lf)) { x.estado = "saltado"; x.detalle = "opt-out: Lofty dice que ya no recibe textos"; saltados++; pintarLista(); continue; }
+        if (noEsc[x.id] || leadOptOut(lf)) {
+          await SMS.marcarBaja({ leadId: x.id, cuenta: "tx", tels: x.ca, motivo: "opt-out en Lofty", fuente: "Texi" });
+          x.estado = "saltado"; x.detalle = "opt-out: Lofty dice que ya no recibe textos"; saltados++; pintarLista(); continue;
+        }
+        if (fueraOpt.size) await SMS.marcarBaja({ tels: [...fueraOpt], motivo: "Do Not Text / DNC en Lofty", fuente: "Texi" });
         if (fueraOpt.size) { x.ca = x.ca.filter((n) => !fueraOpt.has(n)); if (!x.ca.length) { x.estado = "saltado"; x.detalle = "opt-out: sus números están marcados Do Not Text / DNC"; saltados++; pintarLista(); continue; } }
         notaTel = await validarNumeros(x, lf); if (notaTel) { if (/^cambié/.test(notaTel)) validados++; ver(`${x.nombre} ${x.apellido}: ${notaTel}`); }
-      } catch (e) { /* si no se pudo revisar, se intenta mandar como antes */ }
+      } catch (e) {
+        // Fase 1 · falla cerrada: si no se pudo confirmar en Lofty que no se dio de baja, NO se manda
+        x.estado = "error"; x.detalle = "no pude revisar en Lofty si se dio de baja; no le mandé nada (" + e.message + ")"; mal++;
+        if (!primerError) primerError = `${x.nombre} ${x.apellido} → no pude revisar opt-out: ${e.message}`;
+        if (e.status === 401 || e.status === 403) parar = true;
+        await chrome.storage.local.set({ txLista: lista }); pintarLista();
+        if (mal >= 3 && !ok) { decir(`No pude revisar el opt-out de los primeros 3 leads; me detengo. Lofty dijo: ${primerError}`, "error"); break; }
+        continue;
+      }
       x.estado = "mandando"; pintarLista();
       window.robot && robot.set("trabajando", `Mandando SMS a ${x.nombre} ${x.apellido}…`);
       const contenido = mensaje(x);
@@ -273,9 +287,23 @@ async function mandar() {
       for (const num of destinos(x)) {
         if (parar) break;
         if (!esCA(num)) continue; // doble seguro
+        // Fase 1: política común de SMS (bajas permanentes, horario 8–21 h de California; falla cerrada)
+        const pol = await SMS.puedeMandar({ tel: num, leadId: x.id, cuenta: "tx", fuente: "Texi" });
+        if (!pol.ok) {
+          await SMS.anotar({ fuente: "Texi", leadId: x.id, tel: num, estado: "bloqueado", motivo: pol.motivo });
+          if (pol.baja) { optNums.push(`${bonito(num)}: ${pol.motivo}`); continue; }
+          errores.push(`${bonito(num)}: ${pol.motivo}`); if (!primerError) primerError = pol.motivo;
+          if (pol.horario || pol.tope || /política/.test(pol.motivo)) { parar = true; decir(`Me detengo: ${pol.motivo}.`, "error"); break; }
+          continue;
+        }
         ver(`Mandando SMS a ${x.nombre} ${x.apellido} · ${bonito(num)}… (${ok + mal + 1} de ${m.length})`);
-        try { await api("/message/sms/send", { method: "POST", body: { leadId: Number(x.id), content: contenido, phoneNumber: num, phoneCode: "1" } }); sms++; enviados++; }
-        catch (e) { if (errorEsOptOut(e.message)) { optNums.push(`${bonito(num)}: ${e.message}`); continue; } errores.push(`${bonito(num)}: ${e.message}`); if (!primerError) primerError = `${x.nombre} ${x.apellido} ${bonito(num)} → ${e.message}`; if (e.status === 401 || e.status === 403) parar = true; }
+        try { await api("/message/sms/send", { method: "POST", body: { leadId: Number(x.id), content: contenido, phoneNumber: num, phoneCode: "1" } }); sms++; enviados++;
+          await SMS.anotar({ fuente: "Texi", leadId: x.id, tel: num, estado: "enviado", plantilla: plantilla().nombre, texto: contenido }); }
+        catch (e) {
+          await SMS.devolverLugar();
+          await SMS.anotar({ fuente: "Texi", leadId: x.id, tel: num, estado: "error", motivo: e.message });
+          if (errorEsOptOut(e.message)) { await SMS.marcarBaja({ tel: num, motivo: "Lofty rechazó por opt-out", fuente: "Texi" }); optNums.push(`${bonito(num)}: ${e.message}`); continue; }
+          errores.push(`${bonito(num)}: ${e.message}`); if (!primerError) primerError = `${x.nombre} ${x.apellido} ${bonito(num)} → ${e.message}`; if (e.status === 401 || e.status === 403) parar = true; }
         if (!parar) await sleep(6000 + Math.random() * 6000);
       }
       if (enviados) {

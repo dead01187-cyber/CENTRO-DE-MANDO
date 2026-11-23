@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="pu">
+<head>
+<meta charset="utf-8">
+<title>Punti · puntaje de leads</title>
+<link rel="stylesheet" href="fase4.css">
+<style>:root { --c: #ca8a04; }</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card hint">Califica de 0 a 100 a quién atender primero con lo que ya sabe la extensión: zona caliente (Termi), hipoteca inversa y herederos (Heri), teléfonos que sirven (Vali), correo y la respuesta al SMS (Resi). Muestra el porqué de cada puntaje. <b>Solo sugiere</b>: no cambia nada en Lofty.</div>
+  <div class="row"><button id="run" class="primary">Calificar</button><select id="fuente"><option value="todo">Lotes + respuestas de SMS</option><option value="lotes">Solo lotes por subir</option><option value="resi">Solo respuestas de SMS</option></select></div>
+  <div id="status">Listo.</div>
+  <div class="nums" id="nums"></div>
+  <h3>De mayor a menor</h3><ul id="lista"></ul>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
+<script src="vista.js"></script><script src="vali-core.js"></script><script src="termi-calc.js"></script><script src="punti-core.js"></script><script src="pu.js"></script>
+</body>
+</html>

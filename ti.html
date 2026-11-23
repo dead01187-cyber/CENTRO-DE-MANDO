@@ -47,11 +47,11 @@
     <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="activo" checked> <span><b>Tomar captura</b> de cada borrador que deje Redi (la ventana de redactar completa: texto, capturas y firma)</span></label>
     <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="auto" checked> <span><b>Mandarla sola a Teams</b> en cuanto esté lista</span></label>
     <label class="f">Chat de Teams<input type="text" id="chat" placeholder="Replacement Leads"></label>
-    <label class="f">Teams<input type="text" id="url" placeholder="https://teams.live.com/v2/"></label>
+    <label class="f">Teams<input type="text" id="url" placeholder="https://teams.live.com/v2/ (o teams.cloud.microsoft si es del trabajo)"></label>
     <div class="hint" style="grid-column:1/-1">Uso tu Teams ya abierto en Chrome: abro el chat, pego la captura y le doy Enviar. Cada captura se manda <b>una sola vez</b>; si algo queda dudoso no la repito y te aviso. El correo a zBuyer sigue siendo solo borrador.</div>
   </div>
   <div class="row">
-    <button id="run" class="primary">📤 Mandar pendientes a Teams</button>
+    <button id="run" class="primary">Mandar pendientes a Teams</button>
     <button id="stop" class="stop">Parar</button>
     <button id="abrir">Abrir Teams</button>
   </div>
@@ -64,7 +64,7 @@
   <ul id="list"><li class="empty">Cuando Redi deje un borrador listo, aquí aparece su captura.</li></ul>
 </main>
 <div id="vista" hidden><div class="top"><b id="vistaTit"></b><button id="vistaCerrar">Cerrar</button></div><div class="img"><img id="vistaImg" alt="Captura"></div></div>
-<script src="log.js"></script><script src="comun.js"></script><script src="robot.js"></script>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
 <script src="fotos.js"></script>
 <script src="ti.js"></script>
 </body>

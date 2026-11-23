@@ -29,7 +29,7 @@ let cfg = { ...DEF }, corriendo = false, parar = false;
 async function api(path, opts = {}) {
   const k = cfg.cuenta === "tx" ? "txKey" : "loftyKey";
   const key = (await chrome.storage.local.get(k))[k];
-  if (!key) throw Object.assign(new Error(cfg.cuenta === "tx" ? "Falta la API key de la cuenta de Texi (pestaña Texi, 🔑)." : "Falta la API key de Lofty (pestaña Lofty)."), { sinKey: true });
+  if (!key) throw Object.assign(new Error(cfg.cuenta === "tx" ? "Falta la API key de la cuenta de Texi (pestaña Texi, )." : "Falta la API key de Lofty (pestaña Lofty)."), { sinKey: true });
   let r;
   for (let intento = 0; ; intento++) {
     r = await fetch("https://api.lofty.com" + path, {
@@ -79,8 +79,9 @@ const excepcion = (l) => { const n = `${l.firstName || ""} ${l.lastName || ""}`;
 
 // STOP claro → se mueve. "stop" suelto en otra frase (ej. "stop by the house") → revisar a mano.
 const limpio = (t) => String(t || "").toLowerCase().replace(/[’`]/g, "'").replace(/[^a-z\s']/g, " ").replace(/\s+/g, " ").trim();
-const STOP_SOLO = /^(please )?(stop|stopall|stop all|unsubscribe|quit|cancel|end|remove|remove me|stop texting( me)?|stop it|stop please|stop now)( please| thanks| thank you)?$/;
-const STOP_FRASE = /\b(unsubscribe|stop ?all|stop (texting|messaging|contacting|sending|calling)|remove me|take me off|opt ?out|do ?n'?t (text|contact|message) me|no more (texts|messages))\b/;
+const STOP_SOLO = /^(please )?(stop|stopall|stop all|unsubscribe|quit|cancel|end|revoke|remove|remove me|stop texting( me)?|stop it|stop please|stop now|alto|para|pare|basta|baja|cancelar)( please| thanks| thank you| por favor| gracias)?$/;
+// Fase 1: también español (los acentos ya vienen quitados por limpio(): "déjame" → "d jame")
+const STOP_FRASE = /\b(unsubscribe|stop ?all|revoke|stop (texting|messaging|contacting|sending|calling)|remove me|take me off|opt ?out|do ?n'?t (text|contact|message) me|no more (texts|messages)|no me (escribas|escriban|mandes|manden|contactes|contacten)|d ?e?jame de (escribir|mandar)|darme de baja|dame de baja|b ?rrame|no quiero (mensajes|textos))\b/;
 function esStop(texto) {
   const s = limpio(texto); if (!s) return null;
   if (STOP_SOLO.test(s) || STOP_FRASE.test(s)) return "si";
@@ -236,6 +237,11 @@ async function mover(lista, rep) {
       const tmp = { decididos: new Set(), mover: [], revisar: [], ignoradosNoSeller: 0 };
       evaluar(l, tmp, c.texto);
       if (!tmp.mover.length) { if (tmp.revisar.length) rep.revisar.push(tmp.revisar[0]); continue; }
+      // Fase 1: un STOP o una baja marcada en Lofty se guarda como baja PERMANENTE (por número y por lead) para Texi, Resi y Marki
+      if (tmp.mover[0].motivo === "stop") {
+        const tels = [].concat(l.phones || []).map((p) => (p && typeof p === "object" ? p.phone || p.number || p.value : p));
+        await SMS.marcarBaja({ tels, leadId: c.id, cuenta: cfg.cuenta === "tx" ? "tx" : "lofty", motivo: "STOP / unsubscribe", fuente: "Limpi" });
+      }
       await api(`/v1.0/leads/${encodeURIComponent(c.id)}`, { method: "PUT", body: { stage: cfg.destino } });
       rep.movidos.push({ ...c, motivo: tmp.mover[0].motivo });
     } catch (e) { rep.fallidos.push({ ...c, por: e.message }); }
@@ -315,6 +321,13 @@ function botones() {
 
 // ---------- Botones ----------
 $("run").onclick = () => correr();
+// ---------- Fase 2: acciones que se pueden pedir por el bus de tareas (registro.js) ----------
+// "limpiar" mueve leads de etapa: el bus solo la entrega después de que el jefe la aprobó
+window.Tareas && Tareas.atender("limpiar", async () => {
+  await Tareas.esperarLibre(() => corriendo);
+  await correr();
+  return $("status").textContent.trim() || "Limpieza terminada.";
+});
 $("completa").onclick = () => { if (confirm("La revisión completa recorre TODOS los leads " + (cfg.etapa ? "de " + cfg.etapa : "del CRM (todas las etapas, ~20,000)") + " y tarda bastante. ¿Seguir?")) correr({ completa: true }); };
 $("stopBtn").onclick = () => { parar = true; ver("Parando…"); };
 $("moverPend").onclick = async () => {

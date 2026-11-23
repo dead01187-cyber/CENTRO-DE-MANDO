@@ -20,6 +20,8 @@
   // Cada domicilio lleva a.lofty: "no" (Chequi lo revisó y no está) · "si" (ya es lead) · vacío (sin revisar).
   // Pasa a Veri si ya se revisó y no está; o, si el filtro está apagado o no hay API key, todo lo que no esté marcado "si".
   // "actualizar" = viene de Acti (ya es lead de Lofty y se busca para actualizarlo): pasa directo.
+  // Fase 1: el interruptor del filtro según la línea. La línea HECM usa el de Chequi 3 (ch3Config.activo), no el de Chequi 1.
+  const filtroDe = (linea, st) => (linea === "hr" ? { chActivo: (st.ch3Config || {}).activo === false ? false : true, loftyKey: st.loftyKey } : { chActivo: st.chActivo, loftyKey: st.loftyKey });
   const pasaFiltro = (a, cfg) => a.lofty !== "filtrada" && (a.lofty === "no" || a.lofty === "actualizar" || !!a.bvSearched || ((cfg.chActivo === false || !cfg.loftyKey) && a.lofty !== "si"));
   const sinTipo = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ")
     .replace(/\b(street|st|avenue|ave|road|rd|drive|dr|lane|ln|court|ct|circle|cir|boulevard|blvd|way|place|pl|terrace|ter|parkway|pkwy|highway|hwy|trail|trl|north|south|east|west|n|s|e|w)\b/g, " ")
@@ -145,7 +147,8 @@
       hrHecm: Object.keys(hrCasos).length, hrRev: hrPasos.revisados || 0, hrBrazo: Object.values(hrCasos).filter((x) => x.estado === "brazo").length, // Heri
       // Línea HECM: Chequi 3 → Veri 3 → Owny 3 (o Wibi 3)
       ...(await (async () => {
-        const { chDestino_hr, lote_hr = [], bvPendientes_hr = [], lote_wb_hr = [], ch3Res = {} } = await chrome.storage.local.get(["chDestino_hr", "lote_hr", "bvPendientes_hr", "lote_wb_hr", "ch3Res"]);
+        const { chDestino_hr, lote_hr = [], bvPendientes_hr = [], lote_wb_hr = [], ch3Res = {}, ch3Config = {} } = await chrome.storage.local.get(["chDestino_hr", "lote_hr", "bvPendientes_hr", "lote_wb_hr", "ch3Res", "ch3Config"]);
+        const cfg = filtroDe("hr", { ch3Config, loftyKey });
         const r3 = Object.values(ch3Res); // registro de Chequi 3 (los que ya estaban en Lofty se podan de addresses)
         const h = Object.values(addresses).filter((a) => a.origen === "hecm" && sirve(a));
         return { rev3: h.filter((a) => !a.lofty && !a.bvSearched).length, libres3: h.filter((a) => a.lofty === "no").length, enLofty3: Math.max(h.filter((a) => a.lofty === "si").length, r3.filter((x) => x.valor === "si").length), filt3: h.filter((a) => a.lofty === "filtrada").length,
@@ -180,6 +183,7 @@
         method: opts.method || "GET",
         headers: { Authorization: "token " + loftyKey, "X-Error-Status": "true", ...(opts.body ? { "Content-Type": "application/json" } : {}) },
         ...(opts.body ? { body: JSON.stringify(opts.body) } : {}),
+        ...(typeof AbortSignal !== "undefined" && AbortSignal.timeout ? { signal: AbortSignal.timeout(opts.timeout || 30000) } : {}), // Fase 1: sin respuesta en 30 s = error (antes podía colgarse para siempre)
       }));
       if ((r.status !== 429 && r.status !== 503) || intento >= 4) break;
       const ra = parseInt(r.headers.get("Retry-After") || "", 10);
@@ -233,19 +237,46 @@
     chrome.runtime.sendMessage(msg).catch(() => null),
     new Promise((r) => setTimeout(() => r(null), ms)),
   ]);
+  // Fase 1: candado para TODA escritura de "addresses" (background y páginas comparten el mismo candado de la extensión).
+  // Así el respaldo "sin background" ya no se pisa con la fila del background.
+  const conCandadoDom = (fn) => (typeof navigator !== "undefined" && navigator.locks ? navigator.locks.request("domicilios-escribir", fn) : fn());
+  // Los cambios a "addresses": un solo lugar para el background y para el respaldo (antes el respaldo no tenía hecm/hecmInfo/hecmQuitar
+  // y aun así decía "ok": Heri perdía casos en silencio).
+  async function cambiarDomicilios(msg) {
+    return conCandadoDom(async () => {
+      if (msg.accion === "borrar") return chrome.storage.local.set({ addresses: {}, pwCupo: null });
+      const { addresses = {} } = await chrome.storage.local.get("addresses");
+      if (msg.accion === "actualizar") {
+        for (const a of msg.items || []) addresses[keyOf(a)] = paraActualizar(a, addresses[keyOf(a)]);
+      } else if (msg.accion === "lofty") {
+        for (const p of msg.pares || []) if (addresses[p.key]) { if (p.valor) addresses[p.key].lofty = p.valor; else delete addresses[p.key].lofty; if (p.via) addresses[p.key].via = p.via; }
+      } else if (msg.accion === "hecm") { // domicilios que Heri encontró con HECM (pasan por Chequi 3 → Veri 3 / Wibi 3 → Owny 3 → Lofti)
+        for (const a of msg.items || []) {
+          const k = keyOf(a), prev = addresses[k] || {};
+          if (prev.bvSearched && prev.hecm) continue; // ya se buscó
+          addresses[k] = { ...prev, street: a.street, city: a.city, zip: a.zip || prev.zip || "", state: "CA", county: prev.county || a.county || "",
+            skipTraced: false, found: prev.found || Date.now(), origen: "hecm", hecm: a.hecm };
+        }
+      } else if (msg.accion === "hecmInfo") { // Heri corrigió los datos de una HECM que ya está en el brazo
+        for (const a of msg.items || []) { const k = keyOf(a); if (addresses[k] && addresses[k].origen === "hecm") addresses[k].hecm = { ...(addresses[k].hecm || {}), ...a.hecm }; }
+      } else if (msg.accion === "hecmQuitar") { // solo Celink / Compu-Link: se quitan las HECM de otro lender que aún no se buscan
+        for (const [k, a] of Object.entries(addresses)) if (a.origen === "hecm" && !a.bvSearched && !/compu[\s-]*link|celink/i.test((a.hecm && a.hecm.lender) || "")) delete addresses[k];
+      } else if (msg.accion === "borrarPropi") { // Fase 1: solo la línea de Propi (leads nuevos); Acti y HECM no se tocan
+        for (const [k, a] of Object.entries(addresses)) if (lineaDe(a) === "") delete addresses[k];
+        await chrome.storage.local.set({ addresses, pwCupo: null });
+        return;
+      } else if (msg.accion === "marcar") {
+        if (!addresses[msg.key]) return;
+        addresses[msg.key].bvSearched = !!msg.bvSearched;
+      } else throw new Error("Acción de domicilios desconocida: " + msg.accion);
+      return chrome.storage.local.set({ addresses });
+    });
+  }
   // Si el background no contesta (no está corriendo), se hace aquí mismo para que el botón no falle.
   async function domicilios(accion, datos = {}) {
-    let r = null;
-    r = await alFondo({ type: "domicilios", accion, ...datos }, 3000);
+    const r = await alFondo({ type: "domicilios", accion, ...datos }, 3000);
     if (r && r.ok) return r;
-    if (accion === "borrar") await chrome.storage.local.set({ addresses: {}, pwCupo: null });
-    if (accion === "marcar" || accion === "lofty" || accion === "actualizar") {
-      const { addresses = {} } = await chrome.storage.local.get("addresses");
-      if (accion === "actualizar") for (const a of datos.items || []) addresses[keyOf(a)] = paraActualizar(a, addresses[keyOf(a)]);
-      if (accion === "marcar" && addresses[datos.key]) addresses[datos.key].bvSearched = !!datos.bvSearched;
-      if (accion === "lofty") for (const p of datos.pares || []) if (addresses[p.key]) { if (p.valor) addresses[p.key].lofty = p.valor; else delete addresses[p.key].lofty; if (p.via) addresses[p.key].via = p.via; }
-      await chrome.storage.local.set({ addresses });
-    }
+    await cambiarDomicilios({ accion, ...datos }); // si falla, lanza el error (antes se decía "ok" sin hacer nada)
     return { ok: true, sinFondo: true };
   }
   // Los leads de zBuyer ("zbLeads") también los escribe solo el background, en fila: Zeta, Redi y Timi escriben a la vez.
@@ -289,5 +320,5 @@
     const r = await alFondo({ type: "ping" }); return !!(r && r.pong);
   }
 
-  Object.assign(g, { preguntar, turnoPropwire, lineaDe, RE_HECM, tagsHecm, corto, norm, keyOf, lineaDir, zonasDe, enZona, sirve, conteos, loftyApi, ventanaTrabajo, enSuVentana, BRAZO_DE, NOMBRE_BRAZO, domicilios, fondoVivo, pasaFiltro, enLoftyPorDomicilio, paraActualizar, paraWibi, deZbuyer, reclamable, zbPoner, zbVaciar, abrirPestana });
+  Object.assign(g, { preguntar, turnoPropwire, lineaDe, RE_HECM, tagsHecm, corto, norm, keyOf, lineaDir, zonasDe, enZona, sirve, conteos, loftyApi, ventanaTrabajo, enSuVentana, BRAZO_DE, NOMBRE_BRAZO, domicilios, fondoVivo, pasaFiltro, enLoftyPorDomicilio, paraActualizar, paraWibi, filtroDe, deZbuyer, cambiarDomicilios, conCandadoDom, reclamable, zbPoner, zbVaciar, abrirPestana });
 })(globalThis);

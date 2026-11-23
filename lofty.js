@@ -47,7 +47,10 @@
         'Address': parts[0] || '', 'City': city, 'State': m ? m[1].toUpperCase() : '', 'Zip': m && m[2] ? m[2] : '',
         'Owner 1 First Name': nombre[0] || '', 'Owner 1 Last Name': nombre.slice(1).join(' ')
       };
-      for (let i = 0; i < maxP; i++) row[`Phone ${i + 1}`] = (f.phones[i] && f.phones[i].num) || '';
+      for (let i = 0; i < maxP; i++) {
+        row[`Phone ${i + 1}`] = (f.phones[i] && f.phones[i].num) || '';
+        row[`Phone ${i + 1} DNC`] = f.phones[i] && f.phones[i].dnc ? 'DNC' : ''; // Fase 1: antes la marca DNC de Wibi se perdía aquí
+      }
       for (let i = 0; i < maxE; i++) row[`Email ${i + 1}`] = (f.emails || [])[i] || ''; // Wibi (Propwire) también trae emails
       return row;
     });
@@ -177,7 +180,7 @@
     steps(has);
     if (!has) { chrome.storage.local.set({ loftyListos: 0 }); return; }
     S.records = Core.processRows(S.rows, S.map, {
-      excludeEntities: $('oEnt').checked, requirePhone: $('oPhone').checked, dropDnc: $('oDnc').checked,
+      excludeEntities: $('oEnt').checked, requirePhone: $('oPhone').checked, dropDnc: $('oDnc').checked, validarTel: window.VALI ? VALI.telefono : null, // Fase 4: Vali
       onlyCA: $('oCA').checked, cities: (() => { const c = $('cities').value.split(',').map(x => x.trim()).filter(Boolean); return c.length ? [...c, ...Object.values(hecmMap).map(h => h.ciudad)] : c; })(), /* las HECM de Heri traen su propia zona */ useHistory: $('oHist').checked,
       history: S.history, lofty: S.lofty
     });
@@ -196,10 +199,10 @@
     const R = S.records, ok = R.filter(r => r.status === 'ok');
     const reasons = {};
     R.filter(r => r.status !== 'ok').forEach(r => { const k = r.reason.startsWith('Ya exportado') ? 'Ya exportado antes' : r.reason; reasons[k] = (reasons[k] || 0) + 1; });
-    const phones = ok.reduce((a, r) => a + r.phones.length, 0), dnc = R.reduce((a, r) => a + r.dncDropped, 0);
+    const phones = ok.reduce((a, r) => a + r.phones.length, 0), dnc = R.reduce((a, r) => a + r.dncDropped, 0), falsos = R.reduce((a, r) => a + (r.falsosDropped || 0), 0);
     $('stats').innerHTML =
       stat(R.length, 'Filas leídas') + stat(ok.length, 'Listos para Lofty', 'ok') + stat(phones, 'Teléfonos') +
-      (dnc ? stat(dnc, 'Números DNC quitados') : '') +
+      (dnc ? stat(dnc, 'Números DNC quitados') : '') + (falsos ? stat(falsos, 'Números falsos quitados (Vali)') : '') +
       Object.entries(reasons).sort((a, b) => b[1] - a[1]).map(([k, n]) => stat(n, k)).join('');
     const tabs = [['ok', `Listos (${ok.length})`], ['ex', `Excluidos (${R.length - ok.length})`]];
     $('tabs').innerHTML = `<div class="seg">${tabs.map(([k, l]) => `<button data-t="${k}" class="${S.tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
@@ -445,7 +448,8 @@
     clearTimeout(autoTimer);
     autoTimer = setTimeout(async () => {          // espera 2 s para juntar a los que llegan seguidos
       if (!$('oAuto').checked || sending) return;
-      const pend = S.records.filter(r => r.status === 'ok' && !r.sent && !S.history[r.key] && !hecmDe(r)); // los HECM esperan tu OK
+      // los HECM esperan tu OK · Fase 1: lo que ya falló (error o sin respuesta) NO se reintenta solo (antes se reenviaba sin fin)
+      const pend = S.records.filter(r => r.status === 'ok' && !r.sent && !S.history[r.key] && !hecmDe(r) && !fallidos[r.key]);
       if (!pend.length) return;
       try { await loadMembers(); }
       catch (e) { apagarAuto('Apagué la subida automática: ' + e.message + ' Pégala en "API key de Lofty".'); return; }
@@ -458,7 +462,10 @@
     smsg(motivo, 'bad');
   }
   $('oAuto').onchange = () => { chrome.storage.local.set({ loftyAuto: $('oAuto').checked }); programarAuto(); };
-  chrome.storage.local.get('loftyAuto').then(({ loftyAuto }) => { $('oAuto').checked = loftyAuto !== false; programarAuto(); });
+  // Fase 1: la subida automática viene APAGADA salvo que tú la hayas prendido
+  let fallidos = {}; // { claveDelDomicilio: { n, t, motivo } } — los que fallaron no se reintentan en automático
+  const marcarFallido = (r, motivo) => { fallidos[r.key] = { n: ((fallidos[r.key] || {}).n || 0) + 1, t: Date.now(), motivo: String(motivo || '').slice(0, 120) }; chrome.storage.local.set({ loftyFallidos: fallidos }); };
+  chrome.storage.local.get(['loftyAuto', 'loftyFallidos']).then(({ loftyAuto, loftyFallidos = {} }) => { fallidos = loftyFallidos; $('oAuto').checked = loftyAuto === true; programarAuto(); });
 
   async function runSend(list) {
     $('confirm').classList.add('hidden');
@@ -478,7 +485,7 @@
           let res;
           try { res = await lofty('/leads', { method: 'POST', body: JSON.stringify(leadBody(r)) }); }
           catch (e) { if (!e.lento) throw e; await new Promise(z => setTimeout(z, 5000)); res = await lofty('/leads', { method: 'POST', body: JSON.stringify(leadBody(r)) }); }
-          r.sent = true; ok++; S.history[r.key] = d;
+          r.sent = true; ok++; S.history[r.key] = d; if (fallidos[r.key]) { delete fallidos[r.key]; chrome.storage.local.set({ loftyFallidos: fallidos }); }
           logLine(r, 's-ok', res.leadId ? 'Creado · ' + res.leadId : 'Creado');
           const hh = hecmDe(r);
           if (hh && res.leadId) { // nota con los datos del registro para los HECM de Heri
@@ -488,8 +495,8 @@
         }
       } catch (e) {
         if (e.fatal) { fatal = fatal || e.message; return; }
-        if (e.red) { unsure++; r.sent = true; logLine(r, 's-err', 'Sin respuesta · revisa en Lofty'); }
-        else { err++; logLine(r, 's-err', 'Error: ' + String(e.message || 'desconocido').slice(0, 80)); }
+        if (e.red) { unsure++; r.sent = true; marcarFallido(r, 'sin respuesta (pudo haberse creado)'); logLine(r, 's-err', 'Sin respuesta · revisa en Lofty'); }
+        else { err++; marcarFallido(r, e.message); logLine(r, 's-err', 'Error: ' + String(e.message || 'desconocido').slice(0, 80)); }
       }
       hechos++; $('sendInfo').textContent = `${hechos} / ${list.length}`;
       bar.style.width = (hechos / list.length * 100) + '%';
@@ -538,4 +545,16 @@
   $('oOw').onchange = () => { store.set('pw2l_useOwners', $('oOw').checked); rebuildRows(); };
   chrome.storage.onChanged.addListener((ch, area) => { if (area === 'local' && (ch.lote || ch.lote_wb || ch.lote_hr || ch.lote_wb_hr)) loadOwners(); if (area === 'local' && ch.addresses) cargarHecm(); });
   renderFiles(); setSrc(S.src); loadOwners();
+
+  // ---------- Fase 2b: "subir" por el bus de tareas ----------
+  // Crea en Lofty los leads listos. El bus SOLO la entrega después de que el jefe la aprobó (tarjeta Aprobar / Rechazar),
+  // así que aquí no se vuelve a preguntar. soloUno = solo 1 de prueba.
+  window.Tareas && Tareas.atender('subir', async ({ soloUno } = {}) => {
+    await Tareas.esperarLibre(() => sending);
+    const pend = S.records.filter(r => r.status === 'ok' && !r.sent);
+    if (!pend.length) return 'No había leads listos para subir.';
+    await loadMembers();
+    await runSend(soloUno ? pend.slice(0, 1) : pend);
+    return $('smsg').textContent.trim() || 'Envío terminado.';
+  }, { alCancelar: () => { stopReq = true; } });
 })();

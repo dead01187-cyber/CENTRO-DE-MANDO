@@ -33,7 +33,7 @@ function guardarCfg() {
 [...CHK, "dias"].forEach((id) => ($(id).onchange = guardarCfg));
 
 // ---------- CSV ----------
-const celda = (v) => { const s = String(v ?? ""); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const celda = (v) => { let s = String(v ?? ""); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; /* Fase 1: sin fórmulas */ return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 const aCSV = (cabeza, filas) => [cabeza.map(celda).join(","), ...filas.map((f) => cabeza.map((h) => celda(f[h])).join(","))].join("\r\n");
 const leerArchivo = (f) => new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(String(r.result || "")); r.onerror = () => mal(r.error); r.readAsText(f); });
 

@@ -6,13 +6,14 @@
 <link rel="icon" href="icons/icon32.png">
 <link rel="stylesheet" href="mando.css">
 <link rel="stylesheet" href="mando-n8n.css">
+<link rel="stylesheet" href="mando-vidrio.css">
 </head>
 <body>
   <canvas id="estrellas"></canvas>
   <div class="rejilla"></div>
 
   <header class="hud">
-    <div class="logo"><span class="pulso"></span>CENTRO DE MANDO<small>Agente Geo Farming</small></div>
+    <div class="logo"><span class="pulso"></span>Centro de Mando<small>Agente Geo Farming</small></div>
     <div class="metricas">
       <div class="met" data-c="pw"><b id="m-dom">0</b><span>domicilios</span></div>
       <div class="met" data-c="bv"><b id="m-bus">0</b><span>por buscar</span></div>
@@ -20,8 +21,11 @@
       <div class="met" data-c="lf"><b id="m-lis">0</b><span>listos p/ Lofty</span></div>
     </div>
     <div class="der">
-      <button id="b-tema" class="chipbtn" title="Cambiar entre el estilo n8n y el neón">🎨 Estilo n8n</button>
-      <button id="b-sonido" class="chipbtn" title="Efectos de sonido">🔇 Efectos</button>
+      <button class="chipbtn" id="b-tablero" title="Tablero: agentes, supervisores, tareas, errores, costos y seguridad">Tablero</button>
+      <button class="chipbtn" id="b-datos" title="Respaldar, importar llaves o restaurar tus datos" aria-haspopup="true" aria-expanded="false">Datos</button>
+      <button class="chipbtn" id="b-fondo" title="Apariencia: intensidad del vidrio y fondo de pantalla" aria-haspopup="true" aria-expanded="false">Apariencia</button>
+      <button id="b-sonido" class="chipbtn" title="Efectos de sonido relajantes (sin música)">Sonido: no</button>
+      <input type="range" id="volSonido" class="vol-sonido" min="0" max="100" step="1" value="60" title="Volumen de los efectos" aria-label="Volumen de los efectos" hidden>
       <span id="reloj">--:--</span>
     </div>
   </header>
@@ -38,12 +42,12 @@
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Capi <span class="rol">Supervisor</span></div><div class="fila-chip"><span class="chip">Listo</span></div></div>
         </div>
-        <div class="etq-col" data-brazo="actualizar" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:1">Actualizar leads 🪟</div>
-        <div class="etq-col" data-brazo="zbuyer" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:2">zBuyer 🪟</div>
-        <div class="etq-col" data-brazo="nuevos" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:4">Leads nuevos 🪟</div>
-        <div class="etq-col" data-brazo="nuevos" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:3">Propwire 🪟</div>
-        <div class="etq-col" data-brazo="hecm" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:5">HECM 🪟</div>
-        <div class="etq-col" data-brazo="zonas" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:6">Zonas calientes 🪟</div>
+        <div class="etq-col" data-brazo="actualizar" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:1">Actualizar leads</div>
+        <div class="etq-col" data-brazo="zbuyer" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:2">zBuyer</div>
+        <div class="etq-col" data-brazo="nuevos" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:4">Leads nuevos</div>
+        <div class="etq-col" data-brazo="nuevos" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:3">Propwire</div>
+        <div class="etq-col" data-brazo="hecm" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:5">HECM</div>
+        <div class="etq-col" data-brazo="zonas" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:6">Zonas calientes</div>
         <div class="estacion" data-m="ra" id="e-ra" style="grid-row:3;grid-column:6">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Radar <span class="rol">Señales por ZIP</span></div><div class="cuenta"><b>0</b> ZIP con datos</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
@@ -73,7 +77,7 @@
           <div class="info"><div class="nombre">Redi <span class="rol">Redacta</span></div><div class="cuenta"><b>0</b> borradores</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
         <div class="estacion nube" id="e-gm" style="grid-row:5;grid-column:2">
-          <div class="aro"><div class="robot">✉️</div></div>
+          <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Gmail <span class="rol">borradores</span></div><div class="cuenta"><b id="borradores">0</b> para revisar y enviar</div></div>
         </div>
         <div class="estacion" data-m="ti" id="e-ti" style="grid-row:6;grid-column:2">
@@ -81,7 +85,7 @@
           <div class="info"><div class="nombre">Timi <span class="rol">Captura a Teams</span></div><div class="cuenta"><b>0</b> mandadas</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
         <div class="estacion nube" id="e-tm" style="grid-row:7;grid-column:2">
-          <div class="aro"><div class="robot">💬</div></div>
+          <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Teams <span class="rol">Replacement Leads</span></div><div class="cuenta"><b id="enTeams">0</b> capturas</div></div>
         </div>
         <div class="estacion" data-m="wb" id="e-wb" style="grid-row:4;grid-column:3">
@@ -141,7 +145,7 @@
           <div class="info"><div class="nombre">Marki <span class="rol">Marca y manda SMS</span></div><div class="cuenta"><b>0</b> leads hoy</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
         <div class="estacion nube" id="e-crm" style="grid-row:10;grid-column:3">
-          <div class="aro"><div class="robot">☁️</div></div>
+          <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Lofty CRM <span class="rol">destino</span></div><div class="cuenta"><b id="enviados">0</b> subidos · <b id="actualizadosHoy">0</b> actualizados</div></div>
         </div>
         <div class="estacion" data-m="li" id="e-li" style="grid-row:10;grid-column:4;justify-self:start">
@@ -156,12 +160,33 @@
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Resi <span class="rol">Respuestas SMS</span></div><div class="cuenta"><b>0</b> por atender</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
+        <!-- Fase 4: calidad, cumplimiento y operación (solo leen) -->
+        <div class="estacion" data-m="va" id="e-va" style="grid-row:13;grid-column:1">
+          <div class="aro"><div class="robot"></div></div>
+          <div class="info"><div class="nombre">Vali <span class="rol">Valida datos</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
+        </div>
+        <div class="estacion" data-m="pu" id="e-pu" style="grid-row:13;grid-column:2">
+          <div class="aro"><div class="robot"></div></div>
+          <div class="info"><div class="nombre">Punti <span class="rol">Puntaje de leads</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
+        </div>
+        <div class="estacion" data-m="cu" id="e-cu" style="grid-row:13;grid-column:3">
+          <div class="aro"><div class="robot"></div></div>
+          <div class="info"><div class="nombre">Cumpli <span class="rol">Cumplimiento</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
+        </div>
+        <div class="estacion" data-m="qa" id="e-qa" style="grid-row:13;grid-column:4">
+          <div class="aro"><div class="robot"></div></div>
+          <div class="info"><div class="nombre">Qai <span class="rol">QA del sistema</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
+        </div>
+        <div class="estacion" data-m="an" id="e-an" style="grid-row:13;grid-column:5">
+          <div class="aro"><div class="robot"></div></div>
+          <div class="info"><div class="nombre">Ana <span class="rol">Analítica</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
+        </div>
       </div>
     </section>
 
     <aside class="lateral">
       <div class="tarjeta mision">
-        <div class="t">🎯 Misión</div>
+        <div class="t">Misión</div>
         <div id="misionVacia">
           <div class="campos">
             <input id="mZona" placeholder="Zona (ej. Irvine, 92618)">
@@ -179,24 +204,24 @@
       </div>
 
       <div class="tarjeta hablar">
-        <div class="t">💬 Háblale a Capi</div>
+        <div class="t">Háblale a Capi</div>
         <form id="fCapi"><input id="tCapi" placeholder="Ej. ¿cómo vamos?" autocomplete="off"><button>➤</button></form>
       </div>
 
       <div class="tarjeta bitacora">
-        <div class="t">📡 Bitácora en vivo</div>
+        <div class="t">Bitácora en vivo</div>
         <div id="log"></div>
       </div>
     </aside>
   </main>
 
-  <!-- Cajón con las pestañas reales (los robots trabajan aquí adentro) -->
+  <!-- Cajón con las pestañas reales (los agentes trabajan aquí adentro) -->
   <div id="cajon" class="cajon">
     <div class="cajon-top">
       <div class="selector">
-        <button id="cajonMenuBtn" type="button" aria-haspopup="true" aria-expanded="false"><span id="cajonTitulo">Propi</span><span class="flechita">▾</span></button>
+        <button id="cajonMenuBtn" type="button" aria-haspopup="true" aria-expanded="false"><span id="cajonIcono" class="ni"></span><span id="cajonTitulo">Propi</span><span class="flechita">▾</span></button>
         <nav id="cajonNav" hidden>
-          <div class="grupo"><div class="g-tit">Supervisor</div><button data-m="sv">Capi</button></div>
+          <div class="grupo"><div class="g-tit">Supervisor</div><button data-m="sv">Capi</button><button data-m="tb">Tablero</button></div>
           <div class="grupo"><div class="g-tit">Propwire</div><button data-m="cp">Carpi</button><button data-m="wb">Wibi</button></div>
           <div class="grupo"><div class="g-tit">Leads nuevos</div><button data-m="pw">Propi</button><button data-m="ch">Chequi</button><button data-m="bv">Veri</button><button data-m="ow">Owny</button><button data-m="lf">Lofti</button></div>
           <div class="grupo"><div class="g-tit">Zonas calientes</div><button data-m="ra">Radar</button><button data-m="te">Termi</button></div>
@@ -204,6 +229,7 @@
           <div class="grupo"><div class="g-tit">Actualizar leads</div><button data-m="ac">Acti</button><button data-m="bv2">Veri 2</button><button data-m="ow2">Owny 2</button></div>
           <div class="grupo"><div class="g-tit">zBuyer</div><button data-m="zb">Zeta</button><button data-m="rd">Redi</button><button data-m="ti">Timi</button></div>
           <div class="grupo"><div class="g-tit">Lofty CRM</div><button data-m="tx">Texi</button><button data-m="rs">Resi</button><button data-m="li">Limpi</button><button data-m="al">Marki</button></div>
+          <div class="grupo"><div class="g-tit">Calidad y operación</div><button data-m="va">Vali</button><button data-m="pu">Punti</button><button data-m="cu">Cumpli</button><button data-m="qa">Qai</button><button data-m="an">Ana</button></div>
         </nav>
       </div>
       <button id="cajonCerrar" title="Cerrar">✕</button>
@@ -234,6 +260,12 @@
       <iframe id="f-bv" src="bv.html" allow="clipboard-read; clipboard-write"></iframe>
       <iframe id="f-ow" src="owners.html" allow="clipboard-read; clipboard-write"></iframe>
       <iframe id="f-lf" src="lofty.html" allow="clipboard-read; clipboard-write"></iframe>
+      <iframe id="f-va" src="va.html"></iframe>
+      <iframe id="f-pu" src="pu.html"></iframe>
+      <iframe id="f-cu" src="cu.html"></iframe>
+      <iframe id="f-qa" src="qa.html"></iframe>
+      <iframe id="f-an" src="an.html"></iframe>
+      <iframe id="f-tb" src="tablero.html"></iframe>
       <iframe id="f-sv" src="sv.html" allow="clipboard-read; clipboard-write; microphone"></iframe>
     </div>
   </div>
@@ -242,8 +274,32 @@
     <div><b>Ya hay otro Centro de Mando abierto.</b><p>Para que Capi no trabaje doble, usa la otra pestaña.</p></div>
   </div>
 
-  <script src="comun.js"></script><script src="robot.js"></script>
-  <script src="mando.js"></script>
+  <!-- Datos: respaldar, importar llaves y restaurar (respaldo.js) -->
+  <div id="datosPanel" class="fondo-panel datos-panel" hidden role="dialog" aria-label="Datos">
+    <div class="fondo-tit"><b>Datos</b><small>respaldos e importación</small></div>
+    <button id="datosBajar" class="fondo-agregar">Descargar respaldo</button>
+    <small class="fondo-hint">Baja un archivo .json con todo: leads, ajustes, bajas de SMS y tus llaves. Guárdalo en un lugar seguro y no lo compartas.</small>
+    <button id="datosLlaves" class="datos-btn">Importar llaves de un respaldo</button>
+    <small class="fondo-hint">Toma solo las API keys (Lofty, Texi, Claude, ElevenLabs, Marki, Census). No cambia tus leads ni ajustes.</small>
+    <button id="datosRestaurar" class="datos-btn peligro">Restaurar todo desde un respaldo</button>
+    <small class="fondo-hint">Reemplaza todos los datos por los del respaldo. Antes baja automáticamente un respaldo de lo que tienes ahora, y te pide escribir RESTAURAR.</small>
+    <div id="datosAviso" class="datos-aviso" aria-live="polite"></div>
+  </div>
+  <!-- Fondo de pantalla propio (fondos.js) -->
+  <div id="fondoPanel" class="fondo-panel" hidden role="dialog" aria-label="Apariencia">
+    <div class="fondo-tit"><b>Apariencia</b></div>
+    <label class="fondo-velo">Vidrio <input type="range" id="vidrioNivel" min="0" max="100" step="1" aria-label="Intensidad del vidrio"><output id="vidrioValor"></output></label>
+    <small class="fondo-hint">0 = sólido (como macOS oscuro, lo más fluido). 100 = vidrio fuerte, más transparente y desenfocado.</small>
+    <div class="fondo-tit fondo-sub"><b>Fondo de pantalla</b><small id="fondoCuenta"></small></div>
+    <div id="fondoLista" class="fondo-lista"></div>
+    <button id="fondoAgregar" class="fondo-agregar">＋ Agregar imagen de tu computadora</button>
+    <input type="file" id="fondoArchivo" accept="image/*" multiple hidden>
+    <small class="fondo-hint">También puedes arrastrar una imagen aquí. JPG, PNG o WebP; las muy grandes se achican solas.</small>
+    <label class="fondo-velo">Oscurecer <input type="range" id="fondoVelo" min="0" max="70" step="1"></label>
+    <div id="fondoAviso" class="fondo-aviso" aria-live="polite"></div>
+  </div>
+  <script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
+  <script src="sonidos.js"></script><script src="mando.js"></script><script src="fondos.js"></script><script src="respaldo.js"></script>
 <script src="apagar.js"></script>
 </body>
 </html>

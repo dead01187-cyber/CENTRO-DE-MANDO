@@ -5,8 +5,8 @@
 // =====================================================================
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "rs", "li", "al", "ra", "te", "sv"];
-const NOMBRE = { ra: "Radar", te: "Termi", al: "Marki", pr: "Prope", li: "Limpi", rs: "Resi", cp: "Carpi", ch3: "Chequi 3", bv3: "Veri 3", ow3: "Owny 3", wb3: "Wibi 3", hr: "Heri", tx: "Texi", wb: "Wibi", zb: "Zeta", rd: "Redi", ti: "Timi", bv2: "Veri 2", ow2: "Owny 2", ac: "Acti", pw: "Propi", ch: "Chequi", bv: "Veri", ow: "Owny", lf: "Lofti", sv: "Capi" };
+const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "rs", "li", "al", "ra", "te", "va", "pu", "cu", "qa", "an", "tb", "sv"];
+const NOMBRE = { ...Object.fromEntries(REGISTRO.ids(false).map((m) => [m, REGISTRO.nombre(m)])), tb: "Tablero" }; // Fase 2: del registro central · Fase 5: tablero
 const COLOR = { ra: "#ef4444", te: "#f97316", al: "#60a5fa", pr: "#eab308", li: "#fb7185", rs: "#2dd4bf", cp: "#22d3ee", ch3: "#fbbf24", bv3: "#fb923c", ow3: "#facc15", wb3: "#d97706", hr: "#f59e0b", tx: "#34d399", wb: "#facc15", zb: "#22d3ee", rd: "#a78bfa", gm: "#f9a8d4", ti: "#60a5fa", tm: "#818cf8", bv2: "#e879f9", ow2: "#a3e635", ac: "#fb923c", pw: "#2dd4bf", ch: "#f472b6", bv: "#818cf8", ow: "#4ade80", lf: "#38bdf8", sv: "#fbbf24", crm: "#a5b4fc" };
 const CHIP = { idle: "Listo", trabajando: "Trabajando", feliz: "¡Terminé!", error: "Error", ayuda: "Necesito ayuda", pausa: "Pausa", pensando: "Pensando" };
 
@@ -25,9 +25,9 @@ function bloquear() {
   $("bloqueo").hidden = false;
 }
 
-// ---------- Robots pintados ----------
+// ---------- Íconos de los agentes ----------
 for (const m of [...MODS, "crm", "gm", "tm"]) { const e = document.getElementById("e-" + m); if (e && COLOR[m]) e.style.setProperty("--rc", COLOR[m]); } // color de cada nodo (efectos)
-for (const m of MODS) {
+for (const m of [...MODS, "gm", "tm", "crm"]) {
   const r = document.querySelector(`#e-${m} .robot`);
   if (r && window.robotSVG) r.innerHTML = robotSVG(m);
 }
@@ -39,11 +39,13 @@ const svWin = () => { try { return frame("sv").contentWindow; } catch (e) { retu
 let enCajon = null;
 function mostrar(m) {
   if (!MODS.includes(m)) return;
+  if (enCajon !== m || !document.body.classList.contains("con-cajon")) window.Sonidos && Sonidos.tocar("abrir"); // sonido suave al abrir un agente
   enCajon = m;
   document.body.classList.add("con-cajon");
   for (const x of MODS) frame(x) && frame(x).classList.toggle("on", x === m);
   document.querySelectorAll("#cajonNav button").forEach((b) => b.classList.toggle("on", b.dataset.m === m));
   $("cajonTitulo").textContent = NOMBRE[m];
+  $("cajonIcono").innerHTML = window.robotSVG ? robotSVG(m) : "";
   chrome.storage.local.set({ tabActiva: m });
   setTimeout(medir, 380);
 }
@@ -55,7 +57,11 @@ function cerrarCajon() {
 }
 window.mostrar = mostrar; // Capi lo usa (parent.mostrar)
 document.querySelectorAll(".estacion[data-m]").forEach((e) => (e.onclick = () => mostrar(e.dataset.m)));
-document.querySelectorAll("#cajonNav button").forEach((b) => (b.onclick = () => mostrar(b.dataset.m)));
+document.querySelectorAll("#cajonNav button").forEach((b) => {
+  // ícono de línea de cada agente junto a su nombre en el menú
+  if (window.robotSVG) { const i = document.createElement("span"); i.className = "ni"; i.innerHTML = robotSVG(b.dataset.m); b.prepend(i); }
+  b.onclick = () => mostrar(b.dataset.m);
+});
 $("cajonCerrar").onclick = cerrarCajon;
 // Menú desplegable de robots
 const menuBtn = $("cajonMenuBtn"), menuNav = $("cajonNav");
@@ -66,24 +72,19 @@ document.addEventListener("click", (e) => { if (!menuNav.hidden && !e.target.clo
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !menuNav.hidden) { e.stopImmediatePropagation(); abrirMenu(false); } }, true);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && enCajon) cerrarCajon(); });
 
-// ---------- Sonidos (opcionales) ----------
-let sonido = false, ac = null;
-function bip(f = 660, dur = 0.07, vol = 0.04, tipo = "sine") {
-  if (!sonido) return;
-  try {
-    ac = ac || new AudioContext();
-    const o = ac.createOscillator(), g = ac.createGain();
-    o.type = tipo; o.frequency.value = f;
-    g.gain.setValueAtTime(vol, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
-    o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + dur);
-  } catch (e) {}
-}
-// ---------- Tema: neón o estilo n8n ----------
-const N8N = () => document.body.classList.contains("n8n");
-function ponerTema(t) {
-  document.body.classList.toggle("n8n", t === "n8n");
+// ---------- Sonidos (opcionales): efectos relajantes de sonidos.js, sin música ----------
+let sonido = false;
+const sonar = (nombre) => window.Sonidos && Sonidos.tocar(nombre);
+chrome.storage.onChanged.addListener((ch, area) => {
+  if (area !== "local" || !ch.smsRegistro) return;
+  const antes = (ch.smsRegistro.oldValue || []).length, ahora = ch.smsRegistro.newValue || [];
+  if (ahora.slice(antes > ahora.length ? -1 : antes).some((e) => e && e.estado === "enviado")) sonar("sms");
+});
+// ---------- Tema: solo estilo n8n (el tema neón se quitó por decisión del jefe) ----------
+const N8N = () => true;
+function ponerTema() {
+  document.body.classList.add("n8n");
   aplicarCam();
-  $("b-tema").textContent = t === "n8n" ? "🌌 Estilo neón" : "🎨 Estilo n8n";
   setTimeout(() => { try { medir(); } catch (e) {} }, 60);
 }
 // ---------- Cámara (estilo n8n): zoom con botones o Ctrl/⌘ + rueda; arrastrar con clic izquierdo para mover ----------
@@ -106,7 +107,7 @@ function zoomEn(f, cx, cy) {
 }
 function encuadrar() { // que quepa todo el flujo en la pantalla
   const E = $("escena"), a = arbolEl(); if (!a) return;
-  const w = a.offsetWidth, h = a.scrollHeight, W = E.clientWidth - 30, H = E.clientHeight - 30;
+  const w = Math.max(a.offsetWidth, a.scrollWidth), h = a.scrollHeight, W = E.clientWidth - 30, H = E.clientHeight - 30; // scrollWidth: las tarjetas se salen de la caja
   cam.s = Math.max(.35, Math.min(1, W / w, H / h));
   cam.x = (E.clientWidth - w * cam.s) / 2; cam.y = Math.max(10, (E.clientHeight - h * cam.s) / 2);
   aplicarCam();
@@ -146,11 +147,14 @@ function encuadrar() { // que quepa todo el flujo en la pantalla
   chrome.storage.local.get("mandoCam").then(({ mandoCam }) => { if (mandoCam && mandoCam.s) { cam = mandoCam; aplicarCam(); } else setTimeout(encuadrar, 300); });
 })();
 
-$("b-tema").onclick = () => { const t = N8N() ? "neon" : "n8n"; chrome.storage.local.set({ mandoTema: t }); ponerTema(t); };
-chrome.storage.local.get("mandoTema").then(({ mandoTema = "n8n" }) => ponerTema(mandoTema));
+$("b-tablero").onclick = () => mostrar("tb"); // Fase 5
+chrome.storage.local.set({ mandoTema: "n8n" }); // si estaba guardado "neon", se reemplaza
+ponerTema();
 
-function pintarSonido() { $("b-sonido").textContent = sonido ? "🔊 Efectos" : "🔇 Efectos"; }
-$("b-sonido").onclick = () => { sonido = !sonido; chrome.storage.local.set({ mandoSonido: sonido }); pintarSonido(); bip(880, .1); };
+function pintarSonido() { $("b-sonido").textContent = sonido ? "Sonido: sí" : "Sonido: no"; if (window.Sonidos) Sonidos.activo = sonido; $("volSonido").hidden = !sonido; }
+$("b-sonido").onclick = () => { sonido = !sonido; chrome.storage.local.set({ mandoSonido: sonido }); pintarSonido(); if (sonido) sonar("abrir"); }; // muestra cómo suena
+$("volSonido").oninput = (e) => { const v = Number(e.target.value) / 100; if (window.Sonidos) Sonidos.volumen = v; chrome.storage.local.set({ mandoVolumen: v }); };
+$("volSonido").onchange = () => sonar("sms"); // para oír el volumen nuevo
 
 // =====================================================================
 // Fondo de estrellas
@@ -189,6 +193,8 @@ function dibujarEstrellas(t) {
 // =====================================================================
 const cL = $("lazos"), xL = cL.getContext("2d");
 let centros = {}, cajas = {}, lazos = [], particulas = [];
+let sucio = true, estrellasLimpias = false; // ¿hay que redibujar las líneas?
+const ACENTO = "#0a84ff"; // azul del sistema de Apple para lo que está activo (antes coral de n8n)
 const TUBERIA = [["ac", "bv2"], ["bv2", "ow2"], ["ow2", "lf"], ["pw", "ch"], ["ch", "bv"], ["cp", "wb"], ["wb", "lf"], ["bv", "ow"], ["ow", "lf"], ["lf", "crm"], ["zb", "rd"], ["rd", "gm"], ["gm", "ti"], ["ti", "tm"], ["crm", "tx"], ["tx", "rs"], ["crm", "li"], ["crm", "al"], ["ra", "te"], ["pr", "hr"], ["hr", "ch3"], ["ch3", "bv3"], ["ch3", "wb3"], ["bv3", "ow3"], ["ow3", "lf"], ["wb3", "lf"]];
 const MANDO = [["sv", "ac"], ["sv", "zb"], ["sv", "cp"], ["sv", "pw"], ["sv", "pr"], ["sv", "ra"]];
 
@@ -197,8 +203,11 @@ function medir() {
   const alto = Math.max(E.clientHeight, E.scrollHeight);
   // si el lienzo baja con scroll (estilo n8n), el canvas cubre todo lo alto y las posiciones se miden desde arriba del contenido
   const esc = { left: r0.left, top: r0.top - E.scrollTop, width: r0.width, height: alto };
-  cL.style.height = alto + "px";
-  cL.width = esc.width * d; cL.height = alto * d; xL.setTransform(d, 0, 0, d, 0, 0);
+  // solo se vuelve a crear el lienzo si cambió de tamaño (crearlo en cada cuadro al mover la cámara trababa todo)
+  const W = Math.round(esc.width * d), H = Math.round(alto * d);
+  if (cL.width !== W || cL.height !== H) { cL.style.height = alto + "px"; cL.width = W; cL.height = H; }
+  xL.setTransform(d, 0, 0, d, 0, 0);
+  sucio = true;
   for (const m of [...MODS, "crm", "gm", "tm"]) {
     const a = document.querySelector(`#e-${m} .aro`); if (!a) continue;
     const r = a.getBoundingClientRect();
@@ -292,7 +301,7 @@ function dibujarLazosN8n(t) {
   for (const l of lazos) {
     if (!l.n8n) continue;
     const activo = estado[l.a] === "trabajando" || estado[l.a] === "pensando";
-    xL.strokeStyle = activo ? "#ff6d5a" : l.tipo === "mando" ? "#5a5a5a" : "#7a7a7a";
+    xL.strokeStyle = activo ? ACENTO : l.tipo === "mando" ? "rgba(255,255,255,.45)" : "rgba(255,255,255,.62)"; // blancas translúcidas sobre el fondo de colores
     xL.lineWidth = 2; xL.globalAlpha = 1;
     xL.setLineDash(activo ? [7, 5] : l.tipo === "mando" ? [3, 5] : []); xL.lineDashOffset = activo ? -t / 30 : 0;
     xL.beginPath(); xL.moveTo(l.pts[0].x, l.pts[0].y); for (const q of l.pts.slice(1)) xL.lineTo(q.x, q.y); xL.stroke();
@@ -300,7 +309,7 @@ function dibujarLazosN8n(t) {
     // punto de salida (como el "handle" de n8n) y flecha de entrada
     xL.fillStyle = "#9a9a9a"; xL.beginPath(); xL.arc(l.p0.x, l.p0.y, 3.5, 0, 6.28); xL.fill();
     const q = punto(l, 0.97), ang = Math.atan2(l.p3.y - q.y, l.p3.x - q.x);
-    xL.fillStyle = activo ? "#ff6d5a" : "#7a7a7a";
+    xL.fillStyle = activo ? ACENTO : "#7a7a7a";
     xL.beginPath(); xL.moveTo(l.p3.x, l.p3.y);
     xL.lineTo(l.p3.x - 8 * Math.cos(ang - .45), l.p3.y - 8 * Math.sin(ang - .45));
     xL.lineTo(l.p3.x - 8 * Math.cos(ang + .45), l.p3.y - 8 * Math.sin(ang + .45)); xL.closePath(); xL.fill();
@@ -310,7 +319,7 @@ function dibujarLazosN8n(t) {
   for (const p of particulas) {
     p.t += p.v; if (p.t < 0) continue;
     const q = punto(p.l, p.t);
-    xL.globalAlpha = 1; xL.fillStyle = "#ff6d5a"; xL.beginPath(); xL.arc(q.x, q.y, 3.2, 0, 6.28); xL.fill();
+    xL.globalAlpha = 1; xL.fillStyle = ACENTO; xL.beginPath(); xL.arc(q.x, q.y, 3.2, 0, 6.28); xL.fill();
     if (p.t >= 1 - p.v) llegada(p.l.b);
   }
 }
@@ -345,12 +354,19 @@ function dibujarLazos(t) {
 function llegada(m) {
   const a = document.querySelector(`#e-${m} .aro`); if (!a) return;
   a.animate([{ filter: "brightness(1.9)" }, { filter: "brightness(1)" }], { duration: 380 });
-  bip(520 + Math.random() * 300, .05, .02);
 }
 
 // Los pulsos SOLO salen cuando algo de verdad pasa de un robot a otro (un domicilio, un lead, un borrador, un SMS…):
 // los dispara contar() cuando sube un número real. Ya no hay pulsos de adorno mientras un robot "trabaja".
-function cuadro(t) { dibujarEstrellas(t); dibujarLazos(t); requestAnimationFrame(cuadro); }
+// Fluidez (v1.80.0): solo se dibuja cuando algo se mueve (un dato viajando o un agente trabajando)
+// o cuando cambió algo (medir, estados). En reposo el lienzo no se toca y el vidrio no se recalcula.
+const hayMovimiento = () => particulas.length > 0 || lazos.some((l) => estado[l.a] === "trabajando" || estado[l.a] === "pensando");
+function cuadro(t) {
+  if (N8N()) { if (!estrellasLimpias) { xE.clearRect(0, 0, innerWidth, innerHeight); estrellasLimpias = true; } }
+  else dibujarEstrellas(t);
+  if (sucio || hayMovimiento()) { sucio = false; dibujarLazos(t); }
+  requestAnimationFrame(cuadro);
+}
 
 // =====================================================================
 // Estados de los robots (leídos del robotsito de cada pestaña)
@@ -371,14 +387,15 @@ function leerEstados() {
     const e = $("e-" + m);
     if (estado[m] !== st) {
       if (estado[m] !== undefined) {
-        if (st === "error" || st === "ayuda") bip(220, .25, .05, "square");
-        if (st === "feliz") { bip(784, .09); setTimeout(() => bip(1046, .12), 90); }
       }
-      estado[m] = st;
+      estado[m] = st; sucio = true;
       for (const c of Object.keys(CHIP)) e.classList.toggle(c, c === st);
       e.querySelector(".chip").textContent = CHIP[st];
     }
-    const box = e.querySelector(".msg"); if (box && box.textContent !== msg) box.textContent = msg;
+    // en reposo, "Listo para trabajar." no aporta nada: la tarjeta solo muestra lo importante
+    const enReposo = (estado[m] === "idle" || !estado[m]) && /^(Listo para trabajar\.?|Esperando…?|Listo\.?)$/i.test(String(msg || "").trim());
+    const txtMsg = enReposo ? "" : msg;
+    const box = e.querySelector(".msg"); if (box && box.textContent !== txtMsg) box.textContent = txtMsg;
   }
   // Lo último que dijo Capi en su chat → burbuja
   const d = docDe("sv"), ms = d ? d.querySelectorAll("#chat .m.sv") : [];
@@ -434,6 +451,14 @@ async function contar() {
   $("e-te").querySelector(".cuenta").innerHTML = `<b>${n.teCalientes || 0}</b> calientes` + (n.teTop ? ` · top <b>${n.teTop}</b>` : "");
   $("e-li").querySelector(".cuenta").innerHTML = `<b>${n.liMovidos || 0}</b> movidos hoy` + (n.liRevisar ? ` · <b>${n.liRevisar}</b> revisar` : "");
   $("e-rs").querySelector(".cuenta").innerHTML = `<b>${n.rsAbiertos || 0}</b> por atender · <b>${n.rsInteresados || 0}</b> interesados`;
+  // Fase 4: robots de calidad y operación (lo que dejó cada uno en su última revisión)
+  const { vaRes = {}, puRes = {}, cuRes = {}, qaRes = {}, anRes = {} } = await chrome.storage.local.get(["vaRes", "puRes", "cuRes", "qaRes", "anRes"]);
+  const cta = (id, txt) => { const e = $("e-" + id); if (e) e.querySelector(".cuenta").textContent = txt; };
+  cta("va", vaRes.t ? `${vaRes.malos || 0} no sirven · ${vaRes.dudosos || 0} revisar` : "sin revisar");
+  cta("pu", puRes.t ? `${puRes.altos || 0} prioridad alta de ${puRes.total || 0}` : "sin calificar");
+  cta("cu", cuRes.t ? `${cuRes.altas || 0} graves · ${cuRes.medias || 0} medios` : "sin auditar");
+  cta("qa", qaRes.t ? `${qaRes.fallas || 0} fallas · ${qaRes.avisos || 0} avisos` : "sin revisar");
+  cta("an", anRes.t ? `${anRes.sms || 0} SMS · ${anRes.respuesta || 0}% contestó` : "sin calcular");
   $("e-bv").classList.toggle("apagada", n.destino === "wb"); $("e-ow").classList.toggle("apagada", n.destino === "wb");
 
   if (prev) { // datos que se movieron → partículas
@@ -485,7 +510,7 @@ function pintarLog() {
     d.style.setProperty("--c", COLOR[e.mod] || "#94a3b8");
     const h = new Date(e.t).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     d.innerHTML = `<span class="h">${h}</span> <span class="q">${NOMBRE[e.mod] || e.mod}</span> `;
-    d.append(document.createTextNode((e.nivel === "error" ? "⚠ " : "") + e.texto));
+    d.append(document.createTextNode(e.texto));
     $("log").append(d);
   }
 }
@@ -512,7 +537,7 @@ async function pintarMision() {
   $("mTxt").textContent = corrido ? `Trabajo corrido · ${mision.zona}` : `${mision.meta} leads de ${mision.zona}`;
   $("mBarra").style.width = Math.min(100, (loftyListos / mision.meta) * 100) + "%";
   $("mNum").textContent = corrido ? `${loftyListos} entregados a Lofti` : `${loftyListos} / ${mision.meta} listos`;
-  $("mFase").textContent = mision.estado === "pausada" ? "⏸ En pausa" : mision.estado === "esperando_ok" ? "✅ Esperando tu OK" : (FASE[mision.fase] || "Trabajando");
+  $("mFase").textContent = mision.estado === "pausada" ? "En pausa" : mision.estado === "esperando_ok" ? "Esperando tu OK" : (FASE[mision.fase] || "Trabajando");
   $("mPausa").textContent = mision.estado === "pausada" ? "▶ Seguir" : "Pausar";
   $("mPausa").hidden = mision.estado === "esperando_ok";
   $("mSubir").hidden = mision.estado !== "esperando_ok";
@@ -527,7 +552,6 @@ $("mIniciar").onclick = async () => {
   const zona = $("mZona").value.trim(), meta = corrido ? CORRIDO : parseInt($("mMeta").value, 10);
   if (!zona || !meta) { $("mZona").focus(); return; }
   chrome.storage.local.set({ mandoCorrido: corrido });
-  bip(440, .08); setTimeout(() => bip(660, .08), 80); setTimeout(() => bip(880, .14), 160);
   const r = await capi("iniciar_mision", { zona, meta });
   if (r) { const w = svWin(); w && w.burbuja && w.burbuja("aviso", "Desde el Centro de Mando: " + r); }
   pintarMision();
@@ -554,7 +578,6 @@ $("fCapi").onsubmit = (e) => {
   if (!w || typeof w.turno !== "function") { alert("Capi todavía está cargando."); return; }
   $("tCapi").value = "";
   w.burbuja("yo", t); w.turno(t);
-  bip(700, .06);
 };
 
 // ---------- Reloj ----------
@@ -564,7 +587,7 @@ setInterval(() => ($("reloj").textContent = new Date().toLocaleTimeString("es-MX
 chrome.storage.onChanged.addListener((ch, area) => {
   if (area !== "local") return;
   if (ch.zone || ch.chActivo || ch.loftyKey || ch.chDestino || ch.chDestino_hr) prev = null; // cambiar un ajuste no es mandar nada: sin pulsos
-  if (ch.prCasos || ch.prResumen || ch.hrVistos || ch.hrCasos || ch.hrPasos || ch.cpResumen || ch.rsResumen || ch.liResumen || ch.alResumen || ch.carpiRes || ch.wibiRes || ch.radarRes || ch.termiRes || ch.ch3Res || ch.chDestino_hr || ch.lote_hr || ch.lote_wb_hr || ch.bvPendientes_hr || ch.txHoy || ch.zbLeads || ch.lote_wb || ch.chDestino || ch.addresses || ch.acTrabajos || ch.lote_ac || ch.bvPendientes_ac || ch.zone || ch.chActivo || ch.loftyKey || ch.bvState || ch.lote || ch.bvPendientes || ch.loftyListos || ch.svEventos) contarPronto();
+  if (ch.prCasos || ch.prResumen || ch.hrVistos || ch.hrCasos || ch.hrPasos || ch.cpResumen || ch.rsResumen || ch.liResumen || ch.alResumen || ch.carpiRes || ch.wibiRes || ch.radarRes || ch.termiRes || ch.ch3Res || ch.chDestino_hr || ch.lote_hr || ch.lote_wb_hr || ch.bvPendientes_hr || ch.txHoy || ch.zbLeads || ch.lote_wb || ch.chDestino || ch.addresses || ch.acTrabajos || ch.lote_ac || ch.bvPendientes_ac || ch.zone || ch.chActivo || ch.loftyKey || ch.bvState || ch.lote || ch.bvPendientes || ch.loftyListos || ch.svEventos || ch.vaRes || ch.puRes || ch.cuRes || ch.qaRes || ch.anRes) contarPronto();
   if (ch.mision || ch.loftySubidos || ch.loftyListos) pintarMision();
 });
 addEventListener("resize", () => { tamEstrellas(); medir(); });
@@ -572,7 +595,7 @@ $("escena").addEventListener("scroll", () => medir(), { passive: true });
 new ResizeObserver(() => medir()).observe($("escena"));
 tamEstrellas(); medir(); contar();
 setInterval(leerEstados, 500);
-chrome.storage.local.get("mandoSonido").then((d) => { sonido = !!d.mandoSonido; pintarSonido(); });
+chrome.storage.local.get(["mandoSonido", "mandoVolumen"]).then((d) => { sonido = !!d.mandoSonido; const v = d.mandoVolumen == null ? 0.6 : d.mandoVolumen; if (window.Sonidos) Sonidos.volumen = v; $("volSonido").value = String(Math.round(v * 100)); pintarSonido(); });
 chrome.storage.local.set({ tabActiva: "mando" });
 requestAnimationFrame(cuadro);
 

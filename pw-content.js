@@ -260,7 +260,7 @@ async function turnoPW() {
     let espera = Math.max(0, pwUltimo + 8000 + extra - ahora);
     if (hora.length >= 150) espera = Math.max(espera, hora[0] + 3600e3 - ahora);
     if (espera <= 0) { hora.push(ahora); await chrome.storage.local.set({ pwUltimo: ahora, pwCargas: hora.slice(-150) }); return; }
-    status(hora.length >= 150 ? `Turno de Propwire: ya van 150 páginas esta hora entre todos; espero ${Math.ceil(espera / 60000)} min…` : `Esperando turno de Propwire (otro robot la está usando)… ${Math.ceil(espera / 1000)} s`);
+    status(hora.length >= 150 ? `Turno de Propwire: ya van 150 páginas esta hora entre todos; espero ${Math.ceil(espera / 60000)} min…` : `Esperando turno de Propwire (otro agente la está usando)… ${Math.ceil(espera / 1000)} s`);
     await sleep(Math.min(espera, 2000));
   }
 }

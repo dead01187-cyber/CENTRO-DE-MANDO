@@ -254,3 +254,22 @@ html.n8n[data-mod=sv] #chat .m.sv { background: #2e2e2e !important; border: 1px 
 html.n8n[data-mod=sv] #chat .m.yo { background: var(--n8n) !important; color: #fff !important; }
 html.n8n[data-mod=sv] #chat .m.aviso { background: #3b3522 !important; color: #e8d9a8 !important; border: 1px dashed #5a5132; }
 html.n8n[data-mod=sv] form { background: #262626; border-top: 1px solid #333; }
+
+/* Íconos de línea de los agentes (v1.72.0) */
+html[data-mod] .rb .ico svg.ico-linea { width: 22px !important; height: 22px !important; filter: none !important; image-rendering: auto; }
+
+/* Botón principal de cada agente: blanco con letra oscura, igual que el Centro de Mando (v1.77.0) */
+html.n8n[data-mod] button.primary, html.n8n[data-mod] button.primario, html.n8n[data-mod] .btn:not(.ghost), html.n8n[data-mod] form button, html.n8n[data-mod] #enviar {
+  background: rgba(255,255,255,.92) !important; color: #111 !important; border: 0 !important; }
+html.n8n[data-mod] button.primary:hover:not(:disabled), html.n8n[data-mod] button.primario:hover:not(:disabled), html.n8n[data-mod] .btn:not(.ghost):hover:not(:disabled),
+html.n8n[data-mod] form button:hover:not(:disabled) { background: #fff !important; }
+html.n8n[data-mod] button.primary:disabled, html.n8n[data-mod] button.primario:disabled { background: rgba(255,255,255,.35) !important; color: #333 !important; }
+
+/* Estilo Apple en las pestañas de los agentes (v1.80.0): letra del sistema y azul de Apple en vez de coral */
+html.n8n[data-mod] { --n8n: #0a84ff; }
+html.n8n[data-mod], html.n8n[data-mod] body, html.n8n[data-mod] button, html.n8n[data-mod] input, html.n8n[data-mod] select, html.n8n[data-mod] textarea {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif !important; -webkit-font-smoothing: antialiased; }
+html.n8n[data-mod] button { border-radius: 8px !important; transition: transform .12s ease, background-color .15s ease; }
+html.n8n[data-mod] button:active:not(:disabled) { transform: scale(.97); }
+html.n8n[data-mod] input, html.n8n[data-mod] select, html.n8n[data-mod] textarea { border-radius: 8px !important; }
+html.n8n[data-mod] input:focus, html.n8n[data-mod] select:focus, html.n8n[data-mod] textarea:focus { border-color: #0a84ff !important; box-shadow: 0 0 0 3px rgba(10,132,255,.2) !important; outline: none; }

@@ -26,75 +26,128 @@ function guardarCfg() {
 ["activo", "auto", "chat", "url"].forEach((id) => ($(id).onchange = () => { guardarCfg(); pintar(); if (cfg.auto) mandar(false); }));
 
 // ---------- Corre DENTRO de Teams (mundo de la página) ----------
+// v1.78.0: más tolerante a los cambios de Teams. Busca el chat por varios lados
+// (lista de chats, aria-label, título), varias formas de la caja de mensaje y del
+// botón Enviar, y si el "pegar" no entra, adjunta la imagen por el botón de archivo.
 async function enTeams(chat, dataUrl, nombreArchivo) {
   const esp = (ms) => new Promise((r) => setTimeout(r, ms));
-  const limpio = (t) => String(t || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const limpio = (t) => String(t || "").replace(/[\s⁠​]+/g, " ").trim().toLowerCase();
+  const objetivo = limpio(chat);
+  const donde = location.host;
+  if (/login\.(microsoftonline|live)\.com/.test(donde)) return { ok: false, motivo: "Teams pide iniciar sesión" };
+  // Esperar a que Teams termine de cargar (hasta 40 s)
+  for (let i = 0; i < 80 && !document.querySelector('[role="tree"], [data-tid="chat-list"], [role="treeitem"]'); i++) await esp(500);
   if (/login\.(microsoftonline|live)\.com/.test(location.host)) return { ok: false, motivo: "Teams pide iniciar sesión" };
-  // 1) Abrir el chat
-  let item = null;
-  const nombre = (e) => ((e.querySelector('[id^="title-chat-list-item_"]') || {}).textContent || "").trim();
-  for (let i = 0; i < 60 && !item; i++) {
-    item = [...document.querySelectorAll('[role="treeitem"][data-item-type="chat"]')].find((e) => limpio(nombre(e)) === limpio(chat));
-    if (!item) await esp(500);
+
+  // 1) Encontrar y abrir el chat de grupo
+  const nombreDe = (e) => limpio(
+    (e.querySelector('[id^="title-chat-list-item_"]') || {}).textContent ||
+    (e.querySelector('[data-tid="chat-list-item-title"], [data-tid*="title"]') || {}).textContent ||
+    e.getAttribute("aria-label") || (e.innerText || "").split("\n")[0]);
+  const candidatos = () => [...document.querySelectorAll('[role="treeitem"], [data-tid="chat-list-item"], [role="listitem"]')];
+  const buscar = () => {
+    const cs = candidatos();
+    return cs.find((e) => nombreDe(e) === objetivo) || cs.find((e) => nombreDe(e).startsWith(objetivo)) || cs.find((e) => limpio(e.getAttribute("aria-label")).includes(objetivo));
+  };
+  const tituloSel = '[data-tid="chat-title"], [data-tid="chat-header-title"], [data-tid="thread-header-title"], h2[id*="chat-header"]';
+  const titulo = () => limpio((document.querySelector(tituloSel) || {}).textContent);
+  const enElChat = () => titulo() === objetivo || titulo().startsWith(objetivo);
+  if (!enElChat()) {
+    let item = null;
+    for (let i = 0; i < 40 && !item; i++) { item = buscar(); if (!item) await esp(500); }
+    if (!item) {
+      const vistos = candidatos().map(nombreDe).filter(Boolean).slice(0, 8).join(" | ");
+      return { ok: false, motivo: `no encontré el chat de grupo “${chat}” en Teams (${donde}). Veo: ${vistos || "ningún chat (¿cargó la lista?)"}` };
+    }
+    (item.querySelector("a, [role=button]") || item).click();
+    for (let i = 0; i < 40 && !enElChat(); i++) await esp(300);
+    if (!enElChat()) return { ok: false, motivo: `no pude abrir el chat “${chat}” (el título dice “${titulo() || "nada"}”)` };
   }
-  if (!item) return { ok: false, motivo: `no encontré el chat “${chat}” en Teams` };
-  const titulo = () => limpio((document.querySelector('[data-tid="chat-title"]') || {}).textContent);
-  if (titulo() !== limpio(chat)) { item.click(); for (let i = 0; i < 30 && titulo() !== limpio(chat); i++) await esp(300); }
-  if (titulo() !== limpio(chat)) return { ok: false, motivo: `no pude abrir el chat “${chat}”` };
   await esp(1500);
+
   // 2) Caja de mensaje vacía
+  const cajaSel = '[data-tid="ckeditor"], [data-tid="message-compose-box"] [contenteditable="true"], div[contenteditable="true"][role="textbox"]';
   let ed = null;
-  for (let i = 0; i < 30 && !ed; i++) { ed = document.querySelector('[data-tid="ckeditor"]'); if (!ed) await esp(300); }
+  for (let i = 0; i < 40 && !ed; i++) { ed = document.querySelector(cajaSel); if (!ed) await esp(300); }
   await esp(800);
-  ed = document.querySelector('[data-tid="ckeditor"]') || ed;
+  ed = document.querySelector(cajaSel) || ed;
   if (!ed) return { ok: false, motivo: "no encontré la caja para escribir en Teams" };
   if (ed.querySelector("img") || ed.innerText.replace(/[\s⁠]/g, "")) {
     if (ed.ckeditorInstance) { ed.ckeditorInstance.setData(""); await esp(600); }
     else return { ok: false, motivo: "la caja de mensaje de Teams tiene algo escrito; no la toqué" };
   }
-  const misMensajes = () => [...document.querySelectorAll('[data-tid="chat-pane-message"]')].filter((m) => /ChatMyMessage/.test(String(m.className)));
+  const misMensajes = () => [...document.querySelectorAll('[data-tid="chat-pane-message"], [data-tid="chat-pane-item"]')].filter((m) => /ChatMyMessage|my-message|fui-ChatMyMessage/i.test(String(m.className) + " " + (m.innerHTML.slice(0, 300))));
   const antes = misMensajes().length, ultimoAntes = (misMensajes().pop() || {}).id || "";
-  // 3) Pegar la imagen (hasta 3 intentos: Teams a veces ignora el primero si la caja apenas se está armando)
+
+  // 3) Poner la imagen: primero pegando (como Cmd+V); si no entra, con el botón de adjuntar
   const blob = await (await fetch(dataUrl)).blob();
+  const archivo = () => new File([blob], nombreArchivo, { type: "image/png" });
+  const adjunto = () => ed.querySelector("img") || document.querySelector('[data-tid*="attachment"] img, [data-tid*="file-preview"], [data-tid*="attachment-card"]');
   const pegar = () => {
-    const dt = new DataTransfer(); dt.items.add(new File([blob], nombreArchivo, { type: "image/png" }));
+    const dt = new DataTransfer(); dt.items.add(archivo());
     ed.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
   };
-  let lista = false;
-  for (let intento = 0; intento < 3 && !lista; intento++) {
-    ed = document.querySelector('[data-tid="ckeditor"]') || ed; // Teams puede rearmar la caja al cambiar de chat
-    ed.focus(); await esp(500);
-    if (!ed.querySelector("img")) pegar();
-    for (let i = 0; i < 40 && !lista; i++) { // hasta 12 s: la imagen ya está en la caja (aunque siga cargando)
-      await esp(300); const im = ed.querySelector("img");
-      lista = !!(im && im.getAttribute("src") && (im.complete ? im.naturalWidth > 0 : i > 6));
+  const soltar = () => {
+    const dt = new DataTransfer(); dt.items.add(archivo());
+    for (const t of ["dragenter", "dragover", "drop"]) ed.dispatchEvent(new DragEvent(t, { dataTransfer: dt, bubbles: true, cancelable: true }));
+  };
+  const porArchivo = () => {
+    const inp = [...document.querySelectorAll('input[type="file"]')].pop();
+    if (!inp) return false;
+    const dt = new DataTransfer(); dt.items.add(archivo());
+    inp.files = dt.files; inp.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  };
+  const listo = async (seg) => {
+    for (let i = 0; i < seg * 3; i++) {
+      await esp(330); const a = adjunto();
+      if (a && (a.tagName !== "IMG" || (a.getAttribute("src") && (a.complete ? a.naturalWidth > 0 : i > 6)))) return true;
     }
+    return false;
+  };
+  let lista = false, como = "";
+  const formas = [["pegar", pegar], ["pegar", pegar], ["soltar", soltar], ["archivo", porArchivo]];
+  for (const [n, f] of formas) {
+    if (lista) break;
+    ed = document.querySelector(cajaSel) || ed; ed.focus(); await esp(500);
+    if (adjunto()) { lista = true; como = n; break; }
+    if (f() === false) continue;
+    lista = await listo(n === "archivo" ? 20 : 8); como = n;
   }
-  if (!lista) { if (ed.ckeditorInstance) ed.ckeditorInstance.setData(""); return { ok: false, motivo: "Teams no aceptó la imagen" }; }
-  await esp(1200);
+  if (!lista) { if (ed.ckeditorInstance) ed.ckeditorInstance.setData(""); return { ok: false, motivo: "Teams no aceptó la imagen (probé pegar, arrastrar y adjuntar)" }; }
+  await esp(1500);
+
   // 4) Enviar
-  const enviar = document.querySelector('button[data-tid$="MessageCommands-send"]');
+  const enviar = document.querySelector('button[data-tid$="MessageCommands-send"], button[data-tid*="send"], button[name="send"], button[aria-label^="Send" i], button[aria-label^="Enviar" i]');
   if (!enviar || enviar.disabled || enviar.getAttribute("aria-disabled") === "true") return { ok: false, motivo: "el botón Enviar de Teams no está disponible" };
   enviar.click();
-  // 5) Confirmar que salió: un mensaje mío nuevo con imagen y la caja vacía
+  // 5) Confirmar que salió: un mensaje mío nuevo con imagen y la caja sin la imagen
   for (let i = 0; i < 60; i++) {
     await esp(500);
     const mios = misMensajes(), u = mios[mios.length - 1];
-    if (u && (mios.length > antes || u.id !== ultimoAntes) && u.querySelector("img") && !ed.querySelector("img")) return { ok: true };
+    if (u && (mios.length > antes || u.id !== ultimoAntes) && u.querySelector("img") && !ed.querySelector("img")) return { ok: true, como };
   }
   return { ok: false, dudoso: true, motivo: "le di Enviar pero no vi el mensaje en el chat" };
 }
 
-// Pestaña de Teams del robot
+// Pestaña de Teams del agente. Teams web vive en tres direcciones:
+// teams.live.com (personal), teams.microsoft.com y teams.cloud.microsoft (trabajo; la nueva).
+const ES_TEAMS = /^https:\/\/(teams\.live\.com|teams\.microsoft\.com|teams\.cloud\.microsoft)\//;
 async function pestanaTeams() {
   const { tiTab } = await chrome.storage.local.get("tiTab");
   if (tiTab) {
     const t = await chrome.tabs.get(tiTab).catch(() => null);
-    if (t && /^https:\/\/teams\.(live|microsoft)\.com\//.test(t.url || "") && await enSuVentana(t.id)) return t.id;
+    if (t && ES_TEAMS.test(t.url || "") && await enSuVentana(t.id)) return t.id;
   }
+  // ¿Ya tienes Teams abierto en otra pestaña? Se usa esa (así no importa qué dirección use tu cuenta)
+  const abiertas = (await chrome.tabs.query({})).filter((t) => ES_TEAMS.test(t.url || "") && !/login\./.test(t.url || ""));
+  const preferida = abiertas.find((t) => (t.url || "").startsWith(new URL(cfg.url).origin)) || abiertas[0];
+  if (preferida) { await chrome.storage.local.set({ tiTab: preferida.id }); return preferida.id; }
   const t = await abrirPestana(cfg.url);
   await chrome.storage.local.set({ tiTab: t.id });
-  await sleep(4000);
+  // esperar a que cargue (y a que redirija si Microsoft la manda a otra dirección)
+  for (let i = 0; i < 30; i++) { const x = await chrome.tabs.get(t.id).catch(() => null); if (x && x.status === "complete" && ES_TEAMS.test(x.url || "")) break; await sleep(1000); }
+  await sleep(3000);
   return t.id;
 }
 
@@ -142,7 +195,7 @@ async function mandar(aMano, soloId) {
       if (res.ok) {
         hechos++;
         await zbPoner({ [l.leadIdZb]: { teams: "enviado", teamsT: Date.now(), teamsError: "" } });
-        svLog && svLog(`📤 Mandé a Teams (“${cfg.chat}”) la captura del reclamo de ${l.nombre}.`);
+        svLog && svLog(`Mandé a Teams (“${cfg.chat}”) la captura del reclamo de ${l.nombre}.`);
       } else {
         await zbPoner({ [l.leadIdZb]: { teams: res.dudoso ? "revisar" : "error", teamsError: res.motivo } });
         decir(`No pude mandar a Teams la captura de ${l.nombre}: ${res.motivo}.${res.dudoso ? " Revisa el chat antes de reenviarla." : ""}`, "error");
