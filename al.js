@@ -511,7 +511,8 @@ async function processLead(lead) {
     if (fresco && !bloqueoLead) {
       const fuera = numerosOptOutAl(fresco);
       if (fuera.size) await SMS.marcarBaja({ tels: [...fuera], motivo: "Do Not Text / DNC en Lofty", fuente: "Marki" });
-      const { rsNoEscribir = {} } = cuenta === "tx" ? await chrome.storage.local.get("rsNoEscribir") : {};
+      const { rsNoEscribir: n1 = {}, rcNoEscribir: n2 = {} } = cuenta === "tx" ? await chrome.storage.local.get(["rsNoEscribir", "rcNoEscribir"]) : {};
+      const rsNoEscribir = { ...n1, ...n2 }; // Resi y Resi 2
       const leadSlot = await nextRot();
       const primaryDone = cfg.skipPrimary ? await sameMessageSentToday(lead.leadId) : false;
       if (rsNoEscribir && rsNoEscribir[String(lead.leadId)]) log(`  Resi lo tiene como “${rsNoEscribir[String(lead.leadId)].motivo}”; no se le manda SMS`);

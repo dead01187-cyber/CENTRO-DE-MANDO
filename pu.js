@@ -10,7 +10,7 @@ async function calificar() {
   if (corriendo) return; corriendo = true; $("run").disabled = true;
   window.robot && robot.set("trabajando", "Calificando leads…");
   try {
-    const st = await chrome.storage.local.get(["lote", "lote_wb", "lote_hr", "lote_wb_hr", "addresses", "rsCasos"]);
+    const st = await chrome.storage.local.get(["lote", "lote_wb", "lote_hr", "lote_wb_hr", "addresses", "rsCasos", "rcCasos"]);
     const hecmPorDir = {}; // domicilio → datos HECM de Heri
     for (const a of Object.values(st.addresses || {})) if (a.origen === "hecm" && a.hecm) hecmPorDir[clave(a.street) + "|" + clave(a.city)] = a.hecm;
     const fuente = $("fuente").value, leads = [];
@@ -18,7 +18,7 @@ async function calificar() {
       const [calle, ciudad] = String(l.address || "").split(",").map((x) => x.trim());
       leads.push({ ...l, origen: `por subir (${nombre})`, hecm: hecmPorDir[clave(calle) + "|" + clave(ciudad)] || null });
     }
-    if (fuente !== "lotes") for (const c of Object.values(st.rsCasos || {})) if (!["descartado", "limpiado"].includes(c.estado))
+    if (fuente !== "lotes") for (const c of [...Object.values(st.rsCasos || {}), ...Object.values(st.rcCasos || {})]) if (!["descartado", "limpiado"].includes(c.estado))
       leads.push({ owner: `${c.nombre || ""} ${c.apellido || ""}`.trim(), address: [c.calle, c.ciudad].filter(Boolean).join(", "), phones: (c.tels || []).map((n) => ({ num: n })), categoria: c.categoria, origen: "contestó SMS (Resi)" });
     const r = PUNTI.ordenar(leads, { zonas: await zonas(), vali: VALI });
     const n = (nv) => r.filter((x) => x.nivel === nv).length;

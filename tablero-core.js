@@ -66,7 +66,7 @@
 
     // ---- Leads y SMS ----
     const sms = (st.smsRegistro || []).filter((e) => diaCA(e.t) === diaCA(ahora));
-    const casos = Object.values(st.rsCasos || {});
+    const casos = [...Object.values(st.rsCasos || {}), ...Object.values(st.rcCasos || {})]; // Resi (Texi) + Resi 2 (Compri)
     const leads = {
       domicilios: Object.keys(st.addresses || {}).length, listosParaSubir: st.loftyListos || 0, subidosTotal: st.loftySubidos || 0,
       enLotes: ["lote", "lote_wb", "lote_hr", "lote_wb_hr", "lote_ac"].reduce((a, k) => a + (st[k] || []).length, 0),

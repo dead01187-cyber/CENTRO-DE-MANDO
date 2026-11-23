@@ -366,3 +366,28 @@ test("Compri: solo manda a leads Buyer, con la misma llave de Texi; y no repite 
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });
+
+test("Resi 2: los casos de leads Buyer (Compri) se pasan solos de Resi a Resi 2; los Seller se quedan en Resi", async () => {
+  const ahora = Date.now();
+  const caso = (id, nombre) => ({ leadId: id, nombre, apellido: "Prueba", estado: "abierto", categoria: "interesado", t: ahora - 3600e3, ultimoT: ahora - 3600e3, tels: [] });
+  const amb = await abrir({
+    leads: [lead(301, "9495550301", { leadTypes: [2] }), lead(302, "9495550302"), lead(303, "9495550303", { leadTypes: [2, 1] })],
+    storage: { txKey: "llave-falsa", rsConfig: { auto: false }, rcConfig: { auto: false },
+      rsCasos: { "301": caso("301", "Comprador"), "302": caso("302", "Vendedor"), "303": caso("303", "Ambos") },
+      cbEnviados: { "303": { t: ahora - 7200e3 } }, txEnviados: { "303": { t: ahora - 9000e3 } } }, // a 303 le escribió más reciente Compri
+    horaCA: "2026-01-15T10:00" });
+  try {
+    const rc = await amb.pagina("rc.html"); await rc.waitForTimeout(1500);
+    const rs = await amb.pagina("rs.html"); await rs.waitForTimeout(1500);
+    await rs.click("#run");
+    await rs.waitForFunction(() => !document.getElementById("run").disabled, null, { timeout: 30000 });
+    await rs.waitForTimeout(800);
+    const st = await amb.leer(["rsCasos", "rcCasos", "smsDueno"]);
+    assert.deepEqual(Object.keys(st.rsCasos || {}).sort(), ["302"]);
+    assert.deepEqual(Object.keys(st.rcCasos || {}).sort(), ["301", "303"]);
+    assert.equal(st.smsDueno["301"], "cb"); assert.equal(st.smsDueno["302"], "tx");
+    assert.match(await rc.textContent("body"), /Comprador/);
+    assert.doesNotMatch(await rs.textContent("#lista, body"), /Comprador Prueba/);
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});

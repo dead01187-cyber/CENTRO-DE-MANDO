@@ -6,7 +6,7 @@ const filas = (obj, fmt = (v) => v) => Object.entries(obj || {}).sort((a, b) => 
 async function calcular() {
   if (corriendo) return; corriendo = true; $("run").disabled = true;
   try {
-    const st = await chrome.storage.local.get(["smsRegistro", "rsCasos", "txEnviados", "tareas", "svEventos", "llmUso", "loftySubidos", "loftyListos", "addresses", "smsBajas"]);
+    const st = await chrome.storage.local.get(["smsRegistro", "rsCasos", "rcCasos", "txEnviados", "tareas", "svEventos", "llmUso", "loftySubidos", "loftyListos", "addresses", "smsBajas"]);
     const m = ANA.metricas(st, { dias: Number($("dias").value) || 14 });
     llenar("nums", numero(m.sms.enviados, "SMS enviados"), numero(m.sms.bloqueados, "SMS bloqueados"), numero(m.respuestas.tasaRespuesta + "%", "contestaron"), numero(m.respuestas.interesados, "interesados"), numero(m.leads.subidosALofty, "subidos a Lofty"), numero(m.tareas.total, "tareas del bus"));
     const max = Math.max(1, ...Object.values(m.sms.porDia));

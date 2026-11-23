@@ -22,7 +22,7 @@
     const smsPorRobot = {}; for (const e of env) smsPorRobot[e.fuente || "?"] = (smsPorRobot[e.fuente || "?"] || 0) + 1;
     const motivosBloqueo = {}; for (const e of bloq) { const m = String(e.motivo || "?").replace(/\(.*\)/, "").trim().slice(0, 60); motivosBloqueo[m] = (motivosBloqueo[m] || 0) + 1; }
     // Respuestas (Resi): leads a los que se les mandó vs. los que contestaron
-    const casos = Object.values(st.rsCasos || {});
+    const casos = [...Object.values(st.rsCasos || {}), ...Object.values(st.rcCasos || {})]; // Resi (Texi) + Resi 2 (Compri)
     const mandados = Object.keys(st.txEnviados || {}).length;
     const contestaron = casos.filter((c) => (c.conv || []).some((m) => m.dir === "in")).length;
     const porCategoria = {}; for (const c of casos) porCategoria[c.categoria || "otro"] = (porCategoria[c.categoria || "otro"] || 0) + 1;

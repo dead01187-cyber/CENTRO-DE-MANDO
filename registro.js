@@ -66,6 +66,8 @@
     cb: R("Compri", "Manda SMS a los leads Buyer que escojas (misma cuenta de Lofty que Texi)", "GROW", "cb.html", ["lee_crm", "escribe_crm", "envia_sms"]),
     rs: R("Resi", "Lee las respuestas a los SMS y da seguimiento", "GROW", "rs.html", ["lee_crm", "escribe_crm", "envia_sms"],
       [{ id: "revisar", desc: "Revisar las respuestas a los SMS (no manda nada; deja notas en Lofty si están prendidas)", aprobacion: false, boton: "run" }]),
+    rc: R("Resi 2", "Lee las respuestas a los SMS de Compri (leads Buyer) y da seguimiento", "GROW", "rc.html", ["lee_crm", "escribe_crm", "envia_sms"],
+      [{ id: "revisar", desc: "Revisar las respuestas a los SMS de Compri (no manda nada; deja notas en Lofty si están prendidas)", aprobacion: false, boton: "run" }]),
     al: R("Marki", "Agente Lofty: marca a los leads, manda SMS y mueve el pipeline", "GROW", "al.html", ["lee_crm", "escribe_crm", "envia_sms"]),
     ti: R("Timi", "Manda a Teams la captura del reclamo", "GROW", "ti.html", ["publica"]),
     // ---- Fase 4: robots nuevos (todos SOLO LEEN; ninguno escribe en Lofty ni manda nada) ----

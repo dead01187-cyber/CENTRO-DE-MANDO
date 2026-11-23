@@ -59,12 +59,12 @@
       <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="notas"> <span>Dejar una nota en Lofty con lo que contestó cada lead</span></label>
       <label class="f">Seguimiento si no vuelve a escribir en (días)<input type="number" id="diasSeg" min="1" max="30" value="3"></label>
       <label class="f">Etapa para bajas (STOP / no interesa)<input type="text" id="etapaBaja" placeholder="Ej. No Active Plans"></label>
-      <div class="hint" style="grid-column:1/-1">Uso la <b>misma cuenta de Lofty que Texi</b>. Leo los SMS que te contestan, los clasifico y te dejo un borrador. <b>Nunca mando nada sin tu OK.</b> A las bajas, números equivocados y enojados no les escribo, y Texi ya no les vuelve a mandar.</div>
+      <div class="hint" style="grid-column:1/-1">Atiendo solo las respuestas de los leads de <b>Texi (Seller)</b>; las de Compri las atiende Resi 2. Misma cuenta de Lofty. Leo los SMS que te contestan, los clasifico y te dejo un borrador. <b>Nunca mando nada sin tu OK.</b> A las bajas, números equivocados y enojados no les escribo, y Texi ya no les vuelve a mandar.</div>
     </div>
   </details>
   <details class="card" id="nuevo">
     <summary>Mandar un SMS personalizado a un lead</summary>
-    <div class="row" style="margin-top:8px"><input type="text" id="qLead" placeholder="Nombre, teléfono o correo del lead (cuenta de Texi)" style="flex:1"><button id="buscarLead" class="mini">Buscar</button></div>
+    <div class="row" style="margin-top:8px"><input type="text" id="qLead" placeholder="Nombre, teléfono o correo del lead (cuenta de Texi y Compri)" style="flex:1"><button id="buscarLead" class="mini">Buscar</button></div>
     <ul id="resLeads" style="margin-top:6px"></ul>
     <div id="compo" hidden style="margin-top:8px">
       <div id="compoLead" class="hint"></div>

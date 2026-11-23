@@ -164,8 +164,10 @@ async function buscar() {
   guardarCfg();
   corriendo = true; parar = false; $("buscar").disabled = true; $("mandar").disabled = true; $("confirma").hidden = true;
   window.robot && robot.set("trabajando", "Buscando leads en Lofty…");
-  const st0 = await chrome.storage.local.get([K("Enviados"), "rsNoEscribir", "rsRespondieron", "rsNoEntregados", "smsBajas"]);
-  const { rsNoEscribir = {}, rsRespondieron = {}, rsNoEntregados = {}, smsBajas = {} } = st0, txEnviados = st0[K("Enviados")] || {};
+  const st0 = await chrome.storage.local.get([K("Enviados"), "rsNoEscribir", "rcNoEscribir", "rsRespondieron", "rcRespondieron", "rsNoEntregados", "smsBajas"]);
+  const { rsNoEntregados = {}, smsBajas = {} } = st0, txEnviados = st0[K("Enviados")] || {};
+  // Resi (Texi) y Resi 2 (Compri) anotan cada uno sus bajas y quién contestó: se respetan las de los dos
+  const rsNoEscribir = { ...(st0.rsNoEscribir || {}), ...(st0.rcNoEscribir || {}) }, rsRespondieron = { ...(st0.rsRespondieron || {}), ...(st0.rcRespondieron || {}) };
   const bajaTel = (smsBajas.tels || {}), bajaLead = (smsBajas.leads || {});
   const encontrados = []; let revisados = 0, sinCA = 0, noSeller = 0, bajas = 0, noEntrega = 0, optOut = 0;
   try {
@@ -294,7 +296,7 @@ async function mandar() {
       let notaTel = "";
       // Justo antes de mandar: revisar en Lofty que no se haya dado de baja (STOP) desde que se armó la lista
       try {
-        const { rsNoEscribir: noEsc = {} } = await chrome.storage.local.get("rsNoEscribir");
+        const { rsNoEscribir: n1 = {}, rcNoEscribir: n2 = {} } = await chrome.storage.local.get(["rsNoEscribir", "rcNoEscribir"]); const noEsc = { ...n1, ...n2 };
         const dl = await api(`/leads/${encodeURIComponent(x.id)}`); const lf = dl.lead || dl.data || dl;
         const fueraOpt = numerosOptOut(lf);
         if (noEsc[x.id] || leadOptOut(lf)) {

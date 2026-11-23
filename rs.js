@@ -12,6 +12,22 @@
 // · Seguimiento: si le contestaste y no volvió a escribir en N días, te lo pone en
 //   “Seguimiento” con un borrador; los de “más adelante” vuelven en ~90 días.
 // =====================================================================
+// ---------- Resi o Resi 2 (v1.82.0) ----------
+// Resi (rs.html) atiende las respuestas a los SMS de Texi (Seller); Resi 2 (rc.html) las de Compri (Buyer).
+// Es el mismo código: en Resi 2 cada dato "rs…" se guarda como "rc…" y "txEnviados" se lee de "cbEnviados".
+// Cada lead tiene un solo dueño (ver duenoDe): el agente que le escribió más reciente; si ninguno, su tipo en Lofty.
+const YO = document.documentElement.dataset.mod === "rc" ? "rc" : "rs";
+const MI_AGENTE = YO === "rc" ? "cb" : "tx", NOMBRE = YO === "rc" ? "Resi 2" : "Resi", AGENTE_SMS = YO === "rc" ? "Compri" : "Texi";
+const RENOMBRA = (k) => (YO !== "rc" ? k : /^rs[A-Z]/.test(k) ? "rc" + k.slice(2) : k === "txEnviados" ? "cbEnviados" : k);
+const VUELVE = (k) => (YO !== "rc" ? k : /^rc[A-Z]/.test(k) ? "rs" + k.slice(2) : /^rs[A-Z]/.test(k) ? "otro:" + k : k === "cbEnviados" ? "txEnviados" : k === "txEnviados" ? "otro:txEnviados" : k);
+const almacen = {
+  async get(keys) {
+    const r = await chrome.storage.local.get([].concat(keys).map(RENOMBRA));
+    return Object.fromEntries(Object.entries(r).map(([k, v]) => [VUELVE(k), v]));
+  },
+  set: (obj) => chrome.storage.local.set(Object.fromEntries(Object.entries(obj).map(([k, v]) => [RENOMBRA(k), v]))),
+};
+const cambiosMios = (ch) => Object.fromEntries(Object.entries(ch).map(([k, v]) => [VUELVE(k), v]));
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -47,7 +63,7 @@ let cfg = { ...DEF }, casos = {}, corriendo = false, filtro = "abiertos", timer 
 
 // ---------- API de Lofty (cuenta de Texi) ----------
 async function api(path, opts = {}) {
-  const { txKey } = await chrome.storage.local.get("txKey");
+  const { txKey } = await almacen.get("txKey");
   if (!txKey) throw Object.assign(new Error("Falta la API key de la cuenta de Texi (ponla en la pestaña de Texi, en )."), { sinKey: true });
   let r;
   for (let intento = 0; ; intento++) {
@@ -76,16 +92,16 @@ const entra = (x) => /^\s*in/i.test(String(x.direction || x.textDirection || "")
 
 // ---------- Configuración ----------
 async function cargar() {
-  const { rsConfig = {}, rsCasos = {} } = await chrome.storage.local.get(["rsConfig", "rsCasos"]);
+  const { rsConfig = {}, rsCasos = {} } = await almacen.get(["rsConfig", "rsCasos"]);
   cfg = { ...DEF, ...rsConfig }; casos = rsCasos;
   // v1.59: ver el número abría Lofty y cambiaba de lead sin que lo pidieras → ahora viene apagado (solo con el botón de cada lead)
-  if (!rsConfig.verNumeroV2) { cfg.verNumero = false; cfg.verNumeroV2 = true; chrome.storage.local.set({ rsConfig: cfg }); }
+  if (!rsConfig.verNumeroV2) { cfg.verNumero = false; cfg.verNumeroV2 = true; almacen.set({ rsConfig: cfg }); }
   // Los "No" que antes quedaban sin borrador: ahora llevan la pregunta del próximo año (solo si no les has contestado)
   let mig = false;
   for (const c of Object.values(casos)) if (["no", "mas_tarde"].includes(c.categoria) && ["atender", "abierto"].includes(c.estado) && !c.enviado && !c.nextYear) {
     c.borrador = enEspanol(c.ultimo || "") ? NEXT_YEAR.es : NEXT_YEAR.en; c.estado = "abierto"; c.nextYear = true; mig = true;
   }
-  if (mig) chrome.storage.local.set({ rsCasos: casos });
+  if (mig) almacen.set({ rsCasos: casos });
   $("auto").checked = !!cfg.auto; $("cadaMin").value = cfg.cadaMin; $("ia").checked = !!cfg.ia; $("notas").checked = !!cfg.notas;
   $("diasSeg").value = cfg.diasSeg; $("etapaBaja").value = cfg.etapaBaja || ""; $("verNumero").checked = cfg.verNumero === true;
 }
@@ -93,10 +109,10 @@ function guardarCfg() {
   cfg = { ...cfg, auto: $("auto").checked, ia: $("ia").checked, notas: $("notas").checked,
     cadaMin: Math.max(5, Math.min(240, parseInt($("cadaMin").value, 10) || 10)), diasSeg: Math.max(1, Math.min(30, parseInt($("diasSeg").value, 10) || 3)),
     etapaBaja: $("etapaBaja").value.trim(), verNumero: $("verNumero").checked, verNumeroV2: true };
-  chrome.storage.local.set({ rsConfig: cfg }); programar();
+  almacen.set({ rsConfig: cfg }); programar();
 }
 ["auto", "cadaMin", "ia", "notas", "diasSeg", "etapaBaja", "verNumero"].forEach((id) => ($(id).onchange = guardarCfg));
-const guardarCasos = () => chrome.storage.local.set({ rsCasos: casos });
+const guardarCasos = () => almacen.set({ rsCasos: casos });
 
 // ---------- Clasificar ----------
 const RE = {
@@ -134,7 +150,7 @@ function borradorBase(cat, c, texto) {
   }[cat] || "");
 }
 async function conIA(c, conv) {
-  const { svKey, svModelo } = await chrome.storage.local.get(["svKey", "svModelo"]);
+  const { svKey, svModelo } = await almacen.get(["svKey", "svModelo"]);
   if (!cfg.ia || !svKey) return null;
   const historia = conv.slice(-12).map((m) => `${m.dir === "in" ? "LEAD" : "NOSOTROS"} (${new Date(m.t).toISOString().slice(0, 16)}): ${m.texto}`).join("\n");
   const sistema = `Eres Resi, asistente de Christopher (Rubio Real Estate / The Irvine Realtors, California). Christopher le manda SMS a dueños de casas (leads Seller) para ver si venderían.
@@ -161,7 +177,7 @@ Contesta SOLO con JSON: {"categoria":"...","resumen":"una línea en español","s
 
 // ---------- Leer Lofty ----------
 async function leadsConEntrantes(desde) {
-  const { rsVistos = [] } = await chrome.storage.local.get("rsVistos");
+  const { rsVistos = [] } = await almacen.get("rsVistos");
   const vistos = new Set(rsVistos), ids = new Set();
   const fin = Date.now();
   let cursor = "", paginas = 0;
@@ -262,11 +278,38 @@ async function completarNumeros(ids, alFrente) {
 }
 
 // ---------- Revisar ----------
+// ¿De quién es este lead: de Texi ("tx", lo atiende Resi) o de Compri ("cb", lo atiende Resi 2)?
+// 1) el que le escribió más reciente; 2) si ninguno, su tipo en Lofty (Buyer sin Seller → Compri); se guarda en smsDueno.
+async function duenoDe(id) {
+  const { txEnviados = {}, cbEnviados = {}, smsDueno = {} } = await chrome.storage.local.get(["txEnviados", "cbEnviados", "smsDueno"]);
+  const t1 = (txEnviados[id] || {}).t || 0, t2 = (cbEnviados[id] || {}).t || 0;
+  if (t1 || t2) return t2 > t1 ? "cb" : "tx";
+  if (smsDueno[id]) return smsDueno[id];
+  let d = "tx";
+  try {
+    const r = await api(`/v1.0/leads/${encodeURIComponent(id)}`), l = r.lead || r.data || r;
+    const tipos = [].concat(l.leadTypes || [], l.leadType != null ? l.leadType : []).map(Number);
+    d = tipos.includes(2) && !tipos.includes(1) ? "cb" : "tx";
+  } catch (e) { if (e.status === 401 || e.status === 403) throw e; return "tx"; }
+  const { smsDueno: act = {} } = await chrome.storage.local.get("smsDueno"); act[id] = d;
+  const ks = Object.keys(act); if (ks.length > 8000) ks.slice(0, ks.length - 8000).forEach((k) => delete act[k]);
+  await chrome.storage.local.set({ smsDueno: act });
+  return d;
+}
+// Un caso que ya no es mío (el lead es del otro agente) se pasa a la lista del otro Resi
+async function traspasar(id) {
+  const otra = YO === "rc" ? "rsCasos" : "rcCasos";
+  const { [otra]: suyos = {} } = await chrome.storage.local.get(otra);
+  if (!suyos[id]) suyos[id] = casos[id];
+  await chrome.storage.local.set({ [otra]: suyos });
+  delete casos[id]; await guardarCasos();
+}
+
 async function revisar(aMano) {
   if (corriendo) return;
   corriendo = true; $("run").disabled = true;
   window.robot && robot.set("trabajando", "Leyendo las respuestas a los SMS…");
-  const { rsUltimo, txEnviados = {} } = await chrome.storage.local.get(["rsUltimo", "txEnviados"]);
+  const { rsUltimo, txEnviados = {} } = await almacen.get(["rsUltimo", "txEnviados"]);
   const ahora = Date.now(), desde = rsUltimo ? rsUltimo - 15 * 60e3 : ahora - 14 * D;
   let ids = [], via = "agente", nuevos = 0, avisar = [];
   try {
@@ -279,7 +322,9 @@ async function revisar(aMano) {
     }
     // Casos abiertos: también se releen (para ver si ya les contestaste o volvieron a escribir)
     for (const [k, c] of Object.entries(casos)) if (!["descartado"].includes(c.estado) && ahora - (c.t || 0) < 30 * D && !ids.includes(k)) ids.push(k);
-    const { rsVistos = [] } = await chrome.storage.local.get("rsVistos");
+    // Solo los leads de mi agente (Texi → Resi, Compri → Resi 2); los casos del otro se le pasan
+    { const mios = []; for (const id of ids) { const d = await duenoDe(id); if (d === MI_AGENTE) mios.push(id); else if (casos[id]) await traspasar(id); } ids = mios; }
+    const { rsVistos = [] } = await almacen.get("rsVistos");
     const vistos = new Set(rsVistos);
     let i = 0;
     for (const id of ids) {
@@ -308,7 +353,7 @@ async function revisar(aMano) {
         // Fase 1: baja PERMANENTE. Aunque después escriba otra cosa, ya no se le vuelve a mandar SMS.
         if (["baja", "equivocado", "enojado"].includes(cat)) {
           c.bajaPermanente = c.bajaPermanente || cat;
-          try { await SMS.marcarBaja({ leadId: id, cuenta: "tx", tels: c.telResp ? [c.telResp] : (c.tels || []), motivo: cat, fuente: "Resi" }); }
+          try { await SMS.marcarBaja({ leadId: id, cuenta: "tx", tels: c.telResp ? [c.telResp] : (c.tels || []), motivo: cat, fuente: NOMBRE }); }
           catch (e) { decir(`No pude guardar la baja de ${c.nombre || id}: ${e.message}`, "error"); }
         }
         if (["no", "mas_tarde"].includes(cat)) c.nextYear = true;
@@ -332,7 +377,7 @@ async function revisar(aMano) {
       }
       casos[id] = c;
     }
-    await chrome.storage.local.set({ rsUltimo: ahora, rsVistos: [...vistos].slice(-5000) });
+    await almacen.set({ rsUltimo: ahora, rsVistos: [...vistos].slice(-5000) });
     // De qué número contestó: primero los nuevos, luego los que ya estaban sin ese dato
     const faltan = Object.values(casos).filter((c) => c.estado !== "descartado" && (c.conv || []).some((m) => m.dir === "in") &&
       c.telRespId !== ((c.conv || []).filter((m) => m.dir === "in").map((m) => m.id).pop())).sort((a, b) => (b.ultimoT || 0) - (a.ultimoT || 0)).map((c) => c.leadId);
@@ -345,7 +390,7 @@ async function revisar(aMano) {
     if (txt) decir(txt);
     if (avisar.length) {
       const nombres = avisar.slice(0, 3).map((c) => `${c.nombre} ${c.apellido}`.trim() || "un lead").join(", ");
-      await chrome.storage.local.set({ rsAviso: { t: ahora, n: avisar.length, texto: `Jefe, ${nombres}${avisar.length > 3 ? ` y ${avisar.length - 3} más` : ""} contestaron el SMS y ${avisar.length > 1 ? "están" : "está"} interesado${avisar.length > 1 ? "s" : ""} o con pregunta. Tengo el borrador listo en Resi; ¿lo revisas?` } });
+      await almacen.set({ rsAviso: { t: ahora, n: avisar.length, texto: `Jefe, ${nombres}${avisar.length > 3 ? ` y ${avisar.length - 3} más` : ""} contestaron el SMS y ${avisar.length > 1 ? "están" : "está"} interesado${avisar.length > 1 ? "s" : ""} o con pregunta. Tengo el borrador listo en Resi; ¿lo revisas?` } });
     }
     window.robot && robot.set(ab.length ? "ayuda" : "feliz", ab.length ? `${ab.length} respuesta(s) por atender` : "Todo al día");
   } catch (e) {
@@ -359,7 +404,7 @@ async function revisar(aMano) {
 const normNombre = (s) => String(s || "").toUpperCase().replace(/[^A-Z ]/g, " ").replace(/\s+/g, " ").trim();
 async function quitarLimpiados() {
   if (corriendo) return;
-  const { liLimpiados = {}, liUltimo, liConfig = {} } = await chrome.storage.local.get(["liLimpiados", "liUltimo", "liConfig"]);
+  const { liLimpiados = {}, liUltimo, liConfig = {} } = await almacen.get(["liLimpiados", "liUltimo", "liConfig"]);
   const reg = { ...liLimpiados };
   const ctaLi = liConfig.cuenta === "tx" ? "tx" : "lofty"; // limpiezas de antes de esta versión
   for (const c of (liUltimo && liUltimo.movidos) || []) { const k = `${ctaLi}:${c.id}`; if (!reg[k]) reg[k] = { t: liUltimo.t, motivo: c.motivo, nombre: c.nombre || "", cuenta: ctaLi }; }
@@ -381,12 +426,12 @@ async function pasarBajasATexi() {
   // Fase 1: las bajas que ya existían antes de esta versión también quedan permanentes
   for (const [k, c] of Object.entries(casos)) if (["baja", "equivocado", "enojado"].includes(c.categoria) && !c.bajaPermanente) {
     c.bajaPermanente = c.categoria;
-    try { await SMS.marcarBaja({ leadId: k, cuenta: "tx", tels: c.telResp ? [c.telResp] : (c.tels || []), motivo: c.categoria, fuente: "Resi" }); } catch (e) {}
+    try { await SMS.marcarBaja({ leadId: k, cuenta: "tx", tels: c.telResp ? [c.telResp] : (c.tels || []), motivo: c.categoria, fuente: NOMBRE }); } catch (e) {}
   }
   const no = {};
   for (const [k, c] of Object.entries(casos)) if (["baja", "equivocado", "enojado"].includes(c.categoria) || c.bajaPermanente) no[k] = { t: c.ultimoT || c.t, motivo: c.bajaPermanente || c.categoria };
   const respondieron = Object.fromEntries(Object.entries(casos).map(([k, c]) => [k, { t: c.ultimoT || c.t, categoria: c.categoria }]));
-  await chrome.storage.local.set({ rsNoEscribir: no, rsRespondieron: respondieron });
+  await almacen.set({ rsNoEscribir: no, rsRespondieron: respondieron });
 }
 // Aviso a los X horas si alguien interesado sigue sin respuesta
 async function vigilar() {
@@ -396,7 +441,7 @@ async function vigilar() {
   }
   if (tarde.length) {
     decir(`${tarde.map((c) => `${c.nombre} ${c.apellido}`.trim()).join(", ")} te contestó hace más de ${cfg.horasAviso} h y sigue sin respuesta.`, "error");
-    await chrome.storage.local.set({ rsAviso: { t: ahora, n: tarde.length, texto: `Jefe, ${tarde.length} lead(s) interesados llevan más de ${cfg.horasAviso} horas esperando respuesta por SMS. Están en Resi.` } });
+    await almacen.set({ rsAviso: { t: ahora, n: tarde.length, texto: `Jefe, ${tarde.length} lead(s) interesados llevan más de ${cfg.horasAviso} horas esperando respuesta por SMS. Están en Resi.` } });
   }
   if (cambio) guardarCasos();
 }
@@ -411,27 +456,27 @@ async function mandar(id) {
   if (SIN_RESPUESTA.has(c.categoria) && !(await preguntar(`${c.nombre} está marcado como “${CAT[c.categoria].txt}”. ¿Seguro que le quieres escribir?`, "Sí, escribirle", "No"))) return;
   { const b = await SMS.bajaDe({ tel: num, leadId: id, cuenta: "tx" }); if (b || c.bajaPermanente) { ver(`No se puede: ${c.nombre || "este lead"} tiene baja permanente (${(b && b.motivo) || c.bajaPermanente}). No le mandé nada.`); return; } }
   if (!(await preguntar(`Mandar este SMS a ${`${c.nombre} ${c.apellido}`.trim()} · ${bonito(num)}:\n\n“${texto}”\n\nUn SMS mandado ya no se puede borrar.`, "Mandar", "Cancelar"))) { ver("No mandé nada."); return; }
-  const pol = await SMS.puedeMandar({ tel: num, leadId: id, cuenta: "tx", fuente: "Resi" });
-  if (!pol.ok) { await SMS.anotar({ fuente: "Resi", leadId: id, tel: num, estado: "bloqueado", motivo: pol.motivo }); decir(`No mandé el SMS: ${pol.motivo}.`, "error"); return; }
+  const pol = await SMS.puedeMandar({ tel: num, leadId: id, cuenta: "tx", fuente: NOMBRE });
+  if (!pol.ok) { await SMS.anotar({ fuente: NOMBRE, leadId: id, tel: num, estado: "bloqueado", motivo: pol.motivo }); decir(`No mandé el SMS: ${pol.motivo}.`, "error"); return; }
   try {
     try { await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(id), content: texto, phoneNumber: num, phoneCode: "1" } }); }
-    catch (e) { await SMS.devolverLugar(); await SMS.anotar({ fuente: "Resi", leadId: id, tel: num, estado: "error", motivo: e.message }); throw e; }
-    await SMS.anotar({ fuente: "Resi", leadId: id, tel: num, estado: "enviado", texto });
+    catch (e) { await SMS.devolverLugar(); await SMS.anotar({ fuente: NOMBRE, leadId: id, tel: num, estado: "error", motivo: e.message }); throw e; }
+    await SMS.anotar({ fuente: NOMBRE, leadId: id, tel: num, estado: "enviado", texto });
     Object.assign(c, { estado: "respondido", respondidoT: Date.now(), enviado: texto, borrador: "", seguido: c.categoria === "seguimiento" ? c.seguido : 0 });
     if (c.categoria === "seguimiento") c.categoria = "otro";
-    const { rsHoy = {} } = await chrome.storage.local.get("rsHoy");
-    await chrome.storage.local.set({ rsHoy: { dia: hoy(), n: (rsHoy.dia === hoy() ? rsHoy.n || 0 : 0) + 1 } });
+    const { rsHoy = {} } = await almacen.get("rsHoy");
+    await almacen.set({ rsHoy: { dia: hoy(), n: (rsHoy.dia === hoy() ? rsHoy.n || 0 : 0) + 1 } });
     await guardarCasos(); pintar();
     decir(`Le contesté a ${`${c.nombre} ${c.apellido}`.trim()} (${bonito(num)}). Si no vuelve a escribir en ${cfg.diasSeg} días, te lo pongo en Seguimiento.`);
   } catch (e) { decir(`No se pudo mandar: ${e.message}`, "error"); }
 }
 async function moverBaja(id) {
   const c = casos[id]; if (!c || !cfg.etapaBaja) { ver("Escribe arriba la etapa para las bajas."); return; }
-  if (!(await preguntar(`Mover a ${`${c.nombre} ${c.apellido}`.trim()} a la etapa “${cfg.etapaBaja}” en Lofty (cuenta de Texi)?`, "Mover", "Cancelar"))) return;
+  if (!(await preguntar(`Mover a ${`${c.nombre} ${c.apellido}`.trim()} a la etapa “${cfg.etapaBaja}” en Lofty (cuenta de Texi y Compri)?`, "Mover", "Cancelar"))) return;
   try {
     await api(`/v1.0/leads/${encodeURIComponent(id)}`, { method: "PUT", body: { stage: cfg.etapaBaja } });
     Object.assign(c, { estado: "descartado", etapa: cfg.etapaBaja, movido: Date.now() }); await guardarCasos(); pintar();
-    decir(`Moví a ${`${c.nombre} ${c.apellido}`.trim()} a “${cfg.etapaBaja}”. Texi ya no le vuelve a escribir.`);
+    decir(`Moví a ${`${c.nombre} ${c.apellido}`.trim()} a “${cfg.etapaBaja}”. Ni Texi ni Compri le vuelven a escribir.`);
   } catch (e) { decir(`Lofty no dejó mover la etapa: ${e.message}. Muévelo a mano desde Lofty.`, "error"); }
 }
 async function cerrar(id) { const c = casos[id]; if (!c) return; c.estado = "descartado"; await guardarCasos(); pintar(); ver(`Listo: ${c.nombre || "el lead"} ya no aparece en “por atender”.`); }
@@ -445,7 +490,7 @@ function resumen() {
   $("nInteresados").textContent = v.filter((c) => c.estado !== "descartado" && c.categoria === "interesado").length;
   $("nSeg").textContent = v.filter((c) => c.estado === "abierto" && c.categoria === "seguimiento").length;
   $("nBajas").textContent = v.filter((c) => c.estado !== "limpiado" && ["baja", "equivocado", "enojado"].includes(c.categoria)).length;
-  chrome.storage.local.set({ rsResumen: { abiertos: ab.filter((c) => c.estado === "abierto").length, interesados: Number($("nInteresados").textContent), bajas: Number($("nBajas").textContent), t: Date.now() } });
+  almacen.set({ rsResumen: { abiertos: ab.filter((c) => c.estado === "abierto").length, interesados: Number($("nInteresados").textContent), bajas: Number($("nBajas").textContent), t: Date.now() } });
 }
 function pintar() {
   resumen();
@@ -470,7 +515,7 @@ function pintar() {
       ${abierto && !SIN_RESPUESTA.has(c.categoria) ? `<textarea>${esc(c.borrador || "")}</textarea>
         <div class="row">${tels.length > 1 ? `<select>${tels.map((t) => `<option value="${t}">${bonito(t)}</option>`).join("")}</select>` : ""}
         <button class="mini primary" data-a="mandar">Mandar (te pregunto antes)</button><button class="mini" data-a="cerrar">Ya lo atendí</button></div>` : ""}
-      ${abierto && SIN_RESPUESTA.has(c.categoria) ? `<div class="row"><span class="hint">No le escribo. Texi ya no le vuelve a mandar.</span>${cfg.etapaBaja ? `<button class="mini" data-a="baja">Mover a “${esc(cfg.etapaBaja)}”</button>` : ""}<button class="mini" data-a="cerrar">Listo</button></div>` : ""}
+      ${abierto && SIN_RESPUESTA.has(c.categoria) ? `<div class="row"><span class="hint">No le escribo. Ni Texi ni Compri le vuelven a mandar.</span>${cfg.etapaBaja ? `<button class="mini" data-a="baja">Mover a “${esc(cfg.etapaBaja)}”</button>` : ""}<button class="mini" data-a="cerrar">Listo</button></div>` : ""}
       ${!abierto ? `<div class="row">${c.enviado ? `<small>Le contestaste: “${esc(c.enviado.slice(0, 120))}”</small>` : ""}<button class="mini" data-a="reabrir">Volver a abrir</button></div>` : ""}
       ${!abierto || SIN_RESPUESTA.has(c.categoria) ? `<div class="barra">${c.categoria === "baja" ? `<small class="aviso">Pidió STOP: escribirle otra vez puede ir contra las reglas de SMS. Hazlo solo si él te lo pidió.</small>` : ""}
         <textarea class="sms" placeholder="Escríbele un SMS personalizado… (puedes usar {nombre}, {direccion}, {ciudad})">${esc(c.borrador || "")}</textarea>
@@ -500,7 +545,7 @@ async function buscarLeads() {
       const tels = telsDe(l);
       return `<li data-i="${i}" style="cursor:pointer"><div class="addr"><b>${esc(`${l.firstName || ""} ${l.lastName || ""}`.trim() || "(sin nombre)")}</b>
         <small>${esc(l.stage || "")}${tels.length ? " · " + tels.map(bonito).join(" · ") : " · sin número de CA"}</small></div></li>`;
-    }).join("") : `<li class="empty">No encontré leads con “${esc(q)}” en la cuenta de Texi.</li>`;
+    }).join("") : `<li class="empty">No encontré leads con “${esc(q)}” en la cuenta de Texi y Compri.</li>`;
     $("resLeads").querySelectorAll("li[data-i]").forEach((li) => (li.onclick = () => elegir(ls[+li.dataset.i])));
     ver(ls.length ? `Encontré ${ls.length} lead(s). Toca uno para escribirle.` : "Sin resultados.");
   } catch (e) { decir(e.sinKey ? e.message : `No pude buscar en Lofty: ${e.message}`, "error"); }
@@ -533,21 +578,21 @@ async function mandarPersonalizado() {
   if (!texto) { ver("Escribe el mensaje."); return; }
   if (!num || !esCA(num)) { ver("Este lead no tiene número de California."); return; }
   // Fase 1: a una baja ya no se le puede escribir (antes bastaba un clic extra)
-  const { rsNoEscribir = {} } = await chrome.storage.local.get("rsNoEscribir");
+  const { rsNoEscribir = {} } = await almacen.get("rsNoEscribir");
   const b = await SMS.bajaDe({ tel: num, leadId: elegido.id, cuenta: "tx" });
   if (b || rsNoEscribir[elegido.id]) { ver(`No se puede: ${elegido.nombre || "este lead"} tiene baja (${(b && b.motivo) || rsNoEscribir[elegido.id].motivo}). No le mandé nada.`); return; }
   if (!(await preguntar(`Mandar este SMS a ${`${elegido.nombre} ${elegido.apellido}`.trim()} · ${bonito(num)}:\n\n“${texto}”\n\nUn SMS mandado ya no se puede borrar.`, "Mandar", "Cancelar"))) { ver("No mandé nada."); return; }
-  const pol = await SMS.puedeMandar({ tel: num, leadId: elegido.id, cuenta: "tx", fuente: "Resi" });
-  if (!pol.ok) { await SMS.anotar({ fuente: "Resi", leadId: elegido.id, tel: num, estado: "bloqueado", motivo: pol.motivo }); decir(`No mandé el SMS: ${pol.motivo}.`, "error"); return; }
+  const pol = await SMS.puedeMandar({ tel: num, leadId: elegido.id, cuenta: "tx", fuente: NOMBRE });
+  if (!pol.ok) { await SMS.anotar({ fuente: NOMBRE, leadId: elegido.id, tel: num, estado: "bloqueado", motivo: pol.motivo }); decir(`No mandé el SMS: ${pol.motivo}.`, "error"); return; }
   $("compoMandar").disabled = true;
   try {
     try { await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(elegido.id), content: texto, phoneNumber: num, phoneCode: "1" } }); }
-    catch (e) { await SMS.devolverLugar(); await SMS.anotar({ fuente: "Resi", leadId: elegido.id, tel: num, estado: "error", motivo: e.message }); throw e; }
-    await SMS.anotar({ fuente: "Resi", leadId: elegido.id, tel: num, estado: "enviado", texto });
+    catch (e) { await SMS.devolverLugar(); await SMS.anotar({ fuente: NOMBRE, leadId: elegido.id, tel: num, estado: "error", motivo: e.message }); throw e; }
+    await SMS.anotar({ fuente: NOMBRE, leadId: elegido.id, tel: num, estado: "enviado", texto });
     const ahora = Date.now();
-    const { rsHoy = {}, txEnviados = {} } = await chrome.storage.local.get(["rsHoy", "txEnviados"]);
+    const { rsHoy = {}, txEnviados = {} } = await almacen.get(["rsHoy", "txEnviados"]);
     txEnviados[elegido.id] = { ...(txEnviados[elegido.id] || {}), t: ahora, plantilla: "personalizado (Resi)", n: 1 }; // así Resi revisa si contesta
-    await chrome.storage.local.set({ rsHoy: { dia: hoy(), n: (rsHoy.dia === hoy() ? rsHoy.n || 0 : 0) + 1 }, txEnviados });
+    await almacen.set({ rsHoy: { dia: hoy(), n: (rsHoy.dia === hoy() ? rsHoy.n || 0 : 0) + 1 }, txEnviados });
     if (casos[elegido.id]) { Object.assign(casos[elegido.id], { estado: "respondido", respondidoT: ahora, enviado: texto, borrador: "" }); await guardarCasos(); pintar(); }
     decir(`Mandé un SMS personalizado a ${`${elegido.nombre} ${elegido.apellido}`.trim()} (${bonito(num)}). Si contesta, aparece aquí.`);
     $("compoTxt").value = ""; vista();
@@ -573,10 +618,10 @@ window.Tareas && Tareas.atender("revisar", async () => {
   await revisar(true);
   return $("status").textContent.trim() || "Revisión terminada.";
 });
-chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.rsCasos && !corriendo) { casos = ch.rsCasos.newValue || {}; pintar(); } });
+chrome.storage.onChanged.addListener((ch0, area) => { const ch = cambiosMios(ch0); if (area === "local" && ch.rsCasos && !corriendo) { casos = ch.rsCasos.newValue || {}; pintar(); } });
 (async () => {
   await cargar(); pintar(); programar(); quitarLimpiados();
-  const { txKey, rsUltimo } = await chrome.storage.local.get(["txKey", "rsUltimo"]);
-  if (!txKey) ver("Uso la misma cuenta de Lofty que Texi: pon su API key en la pestaña de Texi ().");
+  const { txKey, rsUltimo } = await almacen.get(["txKey", "rsUltimo"]);
+  if (!txKey) ver("Uso la misma cuenta de Lofty que Texi y Compri: pon su API key en la pestaña de Texi o de Compri.");
   else if (cfg.auto && (!rsUltimo || Date.now() - rsUltimo > cfg.cadaMin * 60e3)) setTimeout(() => revisar(false), 4000);
 })();

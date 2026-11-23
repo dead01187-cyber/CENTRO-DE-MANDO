@@ -105,8 +105,8 @@
 
   // Los números que muestran el panel y el Centro de Mando
   async function conteos() {
-    const { addresses = {}, zone = "", bvState = {}, lote = [], bvPendientes = [], loftyListos = 0, svEventos = [], chActivo, loftyKey, chDestino, lote_wb = [], txHoy = {}, cbHoy = {}, hrCasos = {}, hrPasos = {}, cpResumen = {}, rsResumen = {}, liResumen = {}, alResumen = {}, carpiRes = {}, wibiRes = {}, radarRes = {}, termiRes = {} } =
-      await chrome.storage.local.get(["addresses", "zone", "bvState", "lote", "bvPendientes", "loftyListos", "svEventos", "chActivo", "loftyKey", "chDestino", "lote_wb", "txHoy", "cbHoy", "hrCasos", "hrPasos", "cpResumen", "rsResumen", "liResumen", "alResumen", "carpiRes", "wibiRes", "radarRes", "termiRes"]);
+    const { addresses = {}, zone = "", bvState = {}, lote = [], bvPendientes = [], loftyListos = 0, svEventos = [], chActivo, loftyKey, chDestino, lote_wb = [], txHoy = {}, cbHoy = {}, hrCasos = {}, hrPasos = {}, cpResumen = {}, rsResumen = {}, rcResumen = {}, liResumen = {}, alResumen = {}, carpiRes = {}, wibiRes = {}, radarRes = {}, termiRes = {} } =
+      await chrome.storage.local.get(["addresses", "zone", "bvState", "lote", "bvPendientes", "loftyListos", "svEventos", "chActivo", "loftyKey", "chDestino", "lote_wb", "txHoy", "cbHoy", "hrCasos", "hrPasos", "cpResumen", "rsResumen", "rcResumen", "liResumen", "alResumen", "carpiRes", "wibiRes", "radarRes", "termiRes"]);
     const cfg = { chActivo, loftyKey };
     const zs = zonasDe(zone), done = bvState.done || {};
     const todos = Object.entries(addresses).filter(([, a]) => sirve(a));
@@ -143,6 +143,7 @@
       ...(alResumen.fecha === new Date().toLocaleDateString("en-CA") ? { alHechos: alResumen.done || 0, alSms: alResumen.sms || 0, alLlamadas: alResumen.calls || 0 } : {}), // Marki (Agente Lofty)
       liMovidos: liResumen.fecha === new Date().toLocaleDateString("en-CA") ? liResumen.movidosHoy || 0 : 0, liRevisar: liResumen.revisar || 0, // Limpi
       rsAbiertos: rsResumen.abiertos || 0, rsInteresados: rsResumen.interesados || 0, // Resi
+      rcAbiertos: rcResumen.abiertos || 0, rcInteresados: rcResumen.interesados || 0, // Resi 2 (Compri)
       ...(await chrome.storage.local.get("prCasos").then(({ prCasos = {} }) => { const v = Object.values(prCasos).filter((x) => x.activo !== false); return { prHecm: v.filter((x) => x.hecm).length, prHer: v.filter((x) => x.hecm && x.fallecido).length, prPasados: v.filter((x) => x.pasadoAHeri).length }; })), // Prope
       hrHecm: Object.keys(hrCasos).length, hrRev: hrPasos.revisados || 0, hrBrazo: Object.values(hrCasos).filter((x) => x.estado === "brazo").length, // Heri
       // Línea HECM: Chequi 3 → Veri 3 → Owny 3 (o Wibi 3)
@@ -203,7 +204,7 @@
   //   zbuyer     = zBuyer (Zeta, Redi, Timi: Gmail, Lofty y Teams)
   //   actualizar = Actualizar leads (Acti, Veri 2, Owny 2)
   //   hecm       = HECM (Prope, Heri, Chequi 3, Veri 3, Owny 3, Wibi 3)
-  const BRAZO_DE = { cp: "nuevos", pr: "hecm", hr: "hecm", ch3: "hecm", bv3: "hecm", ow3: "hecm", wb3: "hecm", pw: "nuevos", ch: "nuevos", wb: "nuevos", bv: "nuevos", ow: "nuevos", lf: "nuevos", tx: "nuevos", cb: "nuevos", rs: "nuevos", li: "nuevos", al: "nuevos", ra: "zonas", te: "zonas",
+  const BRAZO_DE = { cp: "nuevos", pr: "hecm", hr: "hecm", ch3: "hecm", bv3: "hecm", ow3: "hecm", wb3: "hecm", pw: "nuevos", ch: "nuevos", wb: "nuevos", bv: "nuevos", ow: "nuevos", lf: "nuevos", tx: "nuevos", cb: "nuevos", rs: "nuevos", rc: "nuevos", li: "nuevos", al: "nuevos", ra: "zonas", te: "zonas",
     zb: "zbuyer", rd: "zbuyer", ti: "zbuyer", ac: "actualizar", bv2: "actualizar", ow2: "actualizar" };
   const NOMBRE_BRAZO = { nuevos: "Leads nuevos", zbuyer: "zBuyer", actualizar: "Actualizar leads", hecm: "HECM", zonas: "Zonas calientes" };
   const brazoActual = () => { try { return BRAZO_DE[document.documentElement.dataset.mod] || "nuevos"; } catch (e) { return "nuevos"; } };
