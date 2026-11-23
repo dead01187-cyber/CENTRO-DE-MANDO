@@ -273,3 +273,6 @@ html.n8n[data-mod] button { border-radius: 8px !important; transition: transform
 html.n8n[data-mod] button:active:not(:disabled) { transform: scale(.97); }
 html.n8n[data-mod] input, html.n8n[data-mod] select, html.n8n[data-mod] textarea { border-radius: 8px !important; }
 html.n8n[data-mod] input:focus, html.n8n[data-mod] select:focus, html.n8n[data-mod] textarea:focus { border-color: #0a84ff !important; box-shadow: 0 0 0 3px rgba(10,132,255,.2) !important; outline: none; }
+
+/* Fluidez (v1.80.1): los íconos de línea de los agentes no brincan (eso corría también en pestañas ocultas) */
+html[data-mod] .rb .ico svg.ico-linea { animation: none !important; }

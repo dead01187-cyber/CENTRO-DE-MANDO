@@ -95,7 +95,7 @@ function aplicarCam() {
   a.style.transformOrigin = "0 0";
   a.style.transform = N8N() ? `translate(${cam.x}px, ${cam.y}px) scale(${cam.s})` : "";
   const z = document.getElementById("camZoom"); if (z) z.textContent = Math.round(cam.s * 100) + "%";
-  try { medir(); } catch (e) {}
+  seguirCam();
   clearTimeout(camGuardar); camGuardar = setTimeout(() => chrome.storage.local.set({ mandoCam: cam }), 400);
 }
 function zoomEn(f, cx, cy) {
@@ -104,6 +104,17 @@ function zoomEn(f, cx, cy) {
   const s2 = Math.max(.35, Math.min(2, cam.s * f));
   cam.x = cx - (cx - cam.x) * (s2 / cam.s); cam.y = cy - (cy - cam.y) * (s2 / cam.s); cam.s = s2;
   aplicarCam();
+}
+// Fluidez (v1.80.1): mientras arrastras o haces zoom, el lienzo de las líneas se mueve con la cámara
+// por CSS (no se mide ni se redibuja nada); 140 ms después de detenerte se mide de verdad una vez.
+let camBase = null, camFin = null;
+function seguirCam() {
+  const a = arbolEl();
+  if (!camBase || !a) { try { medir(); } catch (e) {} return; }
+  const k = cam.s / camBase.s;
+  const tx = camBase.ox + cam.x - k * (camBase.ox + camBase.x), ty = camBase.oy + cam.y - k * (camBase.oy + camBase.y);
+  cL.style.transformOrigin = "0 0"; cL.style.transform = `translate(${tx}px, ${ty}px) scale(${k})`;
+  clearTimeout(camFin); camFin = setTimeout(() => { cL.style.transform = ""; try { medir(); } catch (e) {} }, 140);
 }
 function encuadrar() { // que quepa todo el flujo en la pantalla
   const E = $("escena"), a = arbolEl(); if (!a) return;
@@ -216,6 +227,7 @@ function medir() {
     if (q) cajas[m] = { x: q.left - esc.left, y: q.top - esc.top, w: q.width, h: q.height };
   }
   lazos = [...TUBERIA.map(([a, b]) => armar(a, b, "tubo")), ...MANDO.map(([a, b]) => armar(a, b, "mando"))].filter(Boolean);
+  { const ar = arbolEl(), cr = cL.getBoundingClientRect(); if (ar && !cL.style.transform) { const r = ar.getBoundingClientRect(); camBase = { s: cam.s, x: cam.x, y: cam.y, ox: r.left - cr.left - cam.x, oy: r.top - cr.top - cam.y }; } }
   for (const p of particulas) p.l = lazos.find((l) => l.a === p.l.a && l.b === p.l.b) || p.l;
 }
 function armar(a, b, tipo) {

@@ -258,3 +258,15 @@ body.n8n.sin-vidrio *, body.n8n.sin-vidrio .hud, body.n8n.sin-vidrio .cajon { -w
 @media (prefers-reduced-motion: reduce) {
   body.n8n *, body.n8n *::before { animation: none !important; transition: none !important; }
 }
+
+/* =====================================================================
+   Fluidez en reposo (v1.80.1): nada se anima "para siempre".
+   Antes Capi y las tarjetas con error animaban sombras sin parar, y como
+   están sobre vidrio, el navegador recalculaba el desenfoque en cada cuadro.
+   ===================================================================== */
+body.n8n .arbol .capi:not(.trabajando):not(.pensando):not(.error):not(.ayuda) { animation: none !important;
+  box-shadow: var(--vid-luz), 0 0 0 1px rgba(255,214,10,.45), 0 0 16px -6px rgba(255,214,10,.6) !important; }
+body.n8n .estacion.error, body.n8n .estacion.ayuda { animation: none !important; border-color: #ff453a !important;
+  box-shadow: var(--vid-luz), 0 0 0 1px rgba(255,69,58,.55) !important; }
+body.n8n .pulso { animation: none !important; background: #30d158; box-shadow: 0 0 0 3px rgba(48,209,88,.18); width: 8px; height: 8px; }
+body.n8n .estacion.trabajando::before, body.n8n .estacion.pensando::before { will-change: opacity; }
