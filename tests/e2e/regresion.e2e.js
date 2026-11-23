@@ -17,8 +17,8 @@ const LEADS = [
 const PLANTILLA = { txPlantillas: [{ id: "p1", nombre: "Prueba", texto: "Hola {nombre}, prueba." }], txConfig: { plantilla: "p1" } };
 const BAJA_103 = { smsBajas: { tels: { "9493728833": { t: 1, motivo: "baja", fuente: "Resi" } }, leads: {} } };
 
-async function texiMandar(amb) {
-  const tx = await amb.pagina("tx.html");
+async function texiMandar(amb, pagina = "tx.html") {
+  const tx = await amb.pagina(pagina);
   await tx.fill("#etapa", "Warm"); await tx.click("#buscar");
   await tx.waitForFunction(() => !document.getElementById("buscar").disabled && /encontr|lista|lead/i.test(document.getElementById("status").textContent), null, { timeout: 20000 });
   await tx.click("#mandar"); await tx.click("#si");
@@ -338,6 +338,31 @@ test("Apariencia: el control de vidrio cambia la intensidad al instante, en 0 qu
     assert.match(await blur(), /blur\(26px\)/);
     const redibujos = await m.evaluate(async () => { let c = 0; const f = window.dibujarLazos; window.dibujarLazos = (t) => { c++; f(t); }; await new Promise((r) => setTimeout(r, 1500)); window.dibujarLazos = f; return c; });
     assert.ok(redibujos <= 2, `se redibujó ${redibujos} veces en reposo`);
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});
+
+test("Compri: solo manda a leads Buyer, con la misma llave de Texi; y no repite el mismo día un número que ya recibió de Texi", async () => {
+  const LEADS_C = [
+    lead(201, "9495550201", { leadTypes: [2] }),          // Buyer: sí
+    lead(202, "9495550202"),                              // Seller: no (es de Texi)
+    lead(203, "9495550203", { leadTypes: [2, 1] }),       // Buyer y Seller: Texi le manda primero; Compri lo salta hoy
+    lead(204, "9495550204", { leadTypes: [5] }),          // Renter: no
+  ];
+  const amb = await abrir({ leads: LEADS_C, storage: { txKey: "llave-falsa", ...PLANTILLA, cbPlantillas: [{ id: "c1", nombre: "Compradores", texto: "Hi {nombre}, buyer test." }], cbConfig: { plantilla: "c1" } }, horaCA: "2026-01-15T10:00" });
+  try {
+    const finTexi = await texiMandar(amb, "tx.html");
+    assert.deepEqual(amb.lofty.estado.sms.map((x) => x.phoneNumber).sort(), ["9495550202", "9495550203"], finTexi);
+    const finCompri = await texiMandar(amb, "cb.html");
+    const deCompri = amb.lofty.estado.sms.slice(2).map((x) => x.phoneNumber);
+    assert.deepEqual(deCompri, ["9495550201"], finCompri);
+    assert.ok(amb.lofty.estado.sms.slice(2).every((x) => /buyer test/.test(x.content)));
+    const st = await amb.leer(["cbLista", "cbHoy", "txHoy", "smsRegistro"]);
+    assert.equal(st.cbHoy.n, 1); assert.equal(st.txHoy.n, 2);
+    const salto = st.cbLista.find((x) => x.id === "203");
+    assert.equal(salto.estado, "error"); assert.match(salto.detalle, /ya recibió un SMS hoy de Texi o Compri/);
+    assert.ok(st.smsRegistro.some((e) => e.fuente === "Compri" && e.estado === "enviado" && e.tel === "9495550201"));
+    assert.ok(!st.cbLista.some((x) => x.id === "202" || x.id === "204"), "Seller y Renter no entran en la lista de Compri");
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });

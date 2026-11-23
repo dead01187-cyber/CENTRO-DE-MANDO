@@ -105,8 +105,8 @@
 
   // Los números que muestran el panel y el Centro de Mando
   async function conteos() {
-    const { addresses = {}, zone = "", bvState = {}, lote = [], bvPendientes = [], loftyListos = 0, svEventos = [], chActivo, loftyKey, chDestino, lote_wb = [], txHoy = {}, hrCasos = {}, hrPasos = {}, cpResumen = {}, rsResumen = {}, liResumen = {}, alResumen = {}, carpiRes = {}, wibiRes = {}, radarRes = {}, termiRes = {} } =
-      await chrome.storage.local.get(["addresses", "zone", "bvState", "lote", "bvPendientes", "loftyListos", "svEventos", "chActivo", "loftyKey", "chDestino", "lote_wb", "txHoy", "hrCasos", "hrPasos", "cpResumen", "rsResumen", "liResumen", "alResumen", "carpiRes", "wibiRes", "radarRes", "termiRes"]);
+    const { addresses = {}, zone = "", bvState = {}, lote = [], bvPendientes = [], loftyListos = 0, svEventos = [], chActivo, loftyKey, chDestino, lote_wb = [], txHoy = {}, cbHoy = {}, hrCasos = {}, hrPasos = {}, cpResumen = {}, rsResumen = {}, liResumen = {}, alResumen = {}, carpiRes = {}, wibiRes = {}, radarRes = {}, termiRes = {} } =
+      await chrome.storage.local.get(["addresses", "zone", "bvState", "lote", "bvPendientes", "loftyListos", "svEventos", "chActivo", "loftyKey", "chDestino", "lote_wb", "txHoy", "cbHoy", "hrCasos", "hrPasos", "cpResumen", "rsResumen", "liResumen", "alResumen", "carpiRes", "wibiRes", "radarRes", "termiRes"]);
     const cfg = { chActivo, loftyKey };
     const zs = zonasDe(zone), done = bvState.done || {};
     const todos = Object.entries(addresses).filter(([, a]) => sirve(a));
@@ -157,6 +157,7 @@
           own3: lote_hr.length, pend3: bvPendientes_hr.length, destino3: chDestino_hr === "wb" ? "wb" : "bv" };
       })()),
       txHoy: txHoy.dia === new Date().toLocaleDateString("en-CA") ? txHoy.n || 0 : 0, // Texi: SMS mandados hoy
+      cbHoy: cbHoy.dia === new Date().toLocaleDateString("en-CA") ? cbHoy.n || 0 : 0, // Compri: SMS mandados hoy
       enviados: svEventos.filter((e) => new Date(e.t).toDateString() === hoy && /Enviados a Lofty/i.test(e.texto))
         .reduce((s, e) => s + (parseInt((e.texto.match(/(\d+)/) || [])[1], 10) || 0), 0),
       svEventos,
@@ -202,7 +203,7 @@
   //   zbuyer     = zBuyer (Zeta, Redi, Timi: Gmail, Lofty y Teams)
   //   actualizar = Actualizar leads (Acti, Veri 2, Owny 2)
   //   hecm       = HECM (Prope, Heri, Chequi 3, Veri 3, Owny 3, Wibi 3)
-  const BRAZO_DE = { cp: "nuevos", pr: "hecm", hr: "hecm", ch3: "hecm", bv3: "hecm", ow3: "hecm", wb3: "hecm", pw: "nuevos", ch: "nuevos", wb: "nuevos", bv: "nuevos", ow: "nuevos", lf: "nuevos", tx: "nuevos", rs: "nuevos", li: "nuevos", al: "nuevos", ra: "zonas", te: "zonas",
+  const BRAZO_DE = { cp: "nuevos", pr: "hecm", hr: "hecm", ch3: "hecm", bv3: "hecm", ow3: "hecm", wb3: "hecm", pw: "nuevos", ch: "nuevos", wb: "nuevos", bv: "nuevos", ow: "nuevos", lf: "nuevos", tx: "nuevos", cb: "nuevos", rs: "nuevos", li: "nuevos", al: "nuevos", ra: "zonas", te: "zonas",
     zb: "zbuyer", rd: "zbuyer", ti: "zbuyer", ac: "actualizar", bv2: "actualizar", ow2: "actualizar" };
   const NOMBRE_BRAZO = { nuevos: "Leads nuevos", zbuyer: "zBuyer", actualizar: "Actualizar leads", hecm: "HECM", zonas: "Zonas calientes" };
   const brazoActual = () => { try { return BRAZO_DE[document.documentElement.dataset.mod] || "nuevos"; } catch (e) { return "nuevos"; } };

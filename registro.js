@@ -63,6 +63,7 @@
     rd: R("Redi", "Redacta el borrador de reclamo a zBuyer", "CRM", "rd.html", ["lee_crm", "escribe_correo"]),
     // ---- GROW: contacto y seguimiento ----
     tx: R("Texi", "Manda SMS a los leads Seller que escojas", "GROW", "tx.html", ["lee_crm", "escribe_crm", "envia_sms"]),
+    cb: R("Compri", "Manda SMS a los leads Buyer que escojas (misma cuenta de Lofty que Texi)", "GROW", "cb.html", ["lee_crm", "escribe_crm", "envia_sms"]),
     rs: R("Resi", "Lee las respuestas a los SMS y da seguimiento", "GROW", "rs.html", ["lee_crm", "escribe_crm", "envia_sms"],
       [{ id: "revisar", desc: "Revisar las respuestas a los SMS (no manda nada; deja notas en Lofty si están prendidas)", aprobacion: false, boton: "run" }]),
     al: R("Marki", "Agente Lofty: marca a los leads, manda SMS y mueve el pipeline", "GROW", "al.html", ["lee_crm", "escribe_crm", "envia_sms"]),

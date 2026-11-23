@@ -2,7 +2,7 @@
 <html lang="es" data-mod="tx">
 <head>
 <meta charset="utf-8">
-<title>SMS a leads</title>
+<title>SMS a leads Seller</title>
 <style>
   :root { --c: #059669; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
   * { box-sizing: border-box; }
@@ -47,7 +47,7 @@
     <div class="grid" style="margin-top:8px">
       <label class="f" style="grid-column:1/-1">API key de la OTRA cuenta de Lofty<input type="password" id="key" placeholder="Pega aquí la API key (Settings → Integrations → API)" autocomplete="off"></label>
       <div class="row" style="grid-column:1/-1"><button id="guardarKey" class="mini">Guardar y probar</button><button id="quitarKey" class="mini">Quitar</button></div>
-      <div class="hint" style="grid-column:1/-1">Esta API key es solo de Texi: Lofti, Chequi y Acti siguen usando la de la pestaña Lofty. La cuenta necesita un número virtual activo en Lofty para mandar SMS.</div>
+      <div class="hint" style="grid-column:1/-1">Esta API key es de Texi y Compri (la usan los dos). Lofti, Chequi y Acti siguen usando la de la pestaña Lofty. La cuenta necesita un número virtual activo en Lofty para mandar SMS.</div>
     </div>
   </details>
 
@@ -88,7 +88,7 @@
   <div class="row"><button id="mandar" class="primary" disabled>Revisar y mandar los marcados</button><button id="marcarTodos" class="mini">Marcar todos</button><button id="desmarcar" class="mini">Ninguno</button></div>
   <div class="row vistas"><button id="vFaltan" class="mini on">Faltan</button><button id="vMandados" class="mini">Ya mandados</button><button id="vProblema" class="mini">Opt-out / error</button></div>
   <ul id="lista"><li class="empty">Escribe una etapa o un tag y dale “Buscar leads”. Te enseño a quién le voy a mandar y qué dice el mensaje antes de mandar nada.</li></ul>
-  <div class="hint">Solo mando a leads Seller y a números de California. Un SMS mandado ya no se puede borrar, por eso nada sale sin tu OK.</div>
+  <div class="hint">Solo mando a leads Seller y a números de California. Me turno con Compri (salen del mismo número) y no le escribo a quien ya recibió un SMS de Compri hoy. Un SMS mandado ya no se puede borrar, por eso nada sale sin tu OK.</div>
 </main>
 <script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script><script src="politica-sms.js"></script>
 <script src="tx.js"></script>

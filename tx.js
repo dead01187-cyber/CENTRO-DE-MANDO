@@ -1,6 +1,12 @@
 // =====================================================================
-// Texi: manda SMS a los leads que escojas (por etapa del pipeline y/o tag)
-// desde OTRA cuenta de Lofty (su propia API key, "txKey").
+// Texi y Compri (v1.81.0): mandan SMS a los leads que escojas (por etapa del pipeline y/o tag)
+// desde OTRA cuenta de Lofty (su propia API key, "txKey", la MISMA para los dos).
+// · Texi (tx.html): solo leads Seller (Lofty leadTypes 1).
+// · Compri (cb.html): solo leads Buyer (Lofty leadTypes 2).
+//   Tipos según developer.lofty.com: Other -1, Seller 1, Buyer 2, Renter 5, Investor 6, Agent 7, Homeowner 8, Landlord 9.
+// · Comparten: la llave, las bajas (cuenta "tx"), las respuestas de Resi, el ritmo del número
+//   (un SMS cada 6–12 s entre los dos) y no le mandan dos veces el mismo día al mismo número.
+// · Cada uno tiene sus plantillas, su lista, su registro de enviados y su contador del día.
 // · Primero arma la lista y te enseña a quién y qué le va a mandar.
 // · Nada sale sin tu OK (un solo OK para todos los marcados).
 // · Solo manda a números de California.
@@ -24,12 +30,20 @@ const esCA = (t) => { const d = digitos(t); return d.length === 10 && LADAS_CA.h
 const bonito = (d) => `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 
 const PLANTILLA_EJEMPLO = { id: "p1", nombre: "Saludo", texto: "Hi {nombre}, this is Christopher with Rubio Real Estate. Are you still the owner of {direccion}? I have a buyer interested in the area." };
+// ¿Texi o Compri? Lo dice la página (data-mod="tx" o "cb")
+const AGENTES = {
+  tx: { nombre: "Texi", tipo: "Seller", codigo: 1, re: /seller/i, ejemplo: PLANTILLA_EJEMPLO },
+  cb: { nombre: "Compri", tipo: "Buyer", codigo: 2, re: /buyer/i,
+    ejemplo: { id: "p1", nombre: "Compradores", texto: "Hi {nombre}, this is Christopher with Rubio Real Estate. Are you still looking for a home in {ciudad}? I can send you new listings that match what you want." } },
+};
+const YO = document.documentElement.dataset.mod === "cb" ? "cb" : "tx", A = AGENTES[YO];
+const K = (s) => YO + s; // llaves propias de cada agente: tx… / cb… (Config, Plantillas, Lista, Enviados, Hoy)
 let plantillas = [], selId = "", lista = [], corriendo = false, parar = false;
 
 // ---------- API de Lofty de la OTRA cuenta ----------
 async function api(path, opts = {}) {
   const { txKey } = await chrome.storage.local.get("txKey");
-  if (!txKey) throw Object.assign(new Error("Falta la API key de la cuenta de Lofty de Texi (arriba, en )."), { sinKey: true });
+  if (!txKey) throw Object.assign(new Error(`Falta la API key de la cuenta de Lofty de ${A.nombre} (arriba, en “Cuenta de Lofty para los SMS”).`), { sinKey: true });
   let r;
   for (let intento = 0; ; intento++) { // 429 = Lofty pide ir más lento (no procesó nada): esperar y reintentar
     r = await fetch("https://api.lofty.com/v1.0" + path, {
@@ -50,8 +64,8 @@ async function api(path, opts = {}) {
 
 // ---------- Configuración ----------
 async function cargar() {
-  const { txConfig = {}, txPlantillas, txKey } = await chrome.storage.local.get(["txConfig", "txPlantillas", "txKey"]);
-  plantillas = Array.isArray(txPlantillas) && txPlantillas.length ? txPlantillas : [PLANTILLA_EJEMPLO];
+  const st = await chrome.storage.local.get([K("Config"), K("Plantillas"), "txKey"]), txConfig = st[K("Config")] || {}, txPlantillas = st[K("Plantillas")], txKey = st.txKey;
+  plantillas = Array.isArray(txPlantillas) && txPlantillas.length ? txPlantillas : [A.ejemplo];
   selId = plantillas.some((p) => p.id === txConfig.plantilla) ? txConfig.plantilla : plantillas[0].id;
   $("etapa").value = txConfig.etapa || ""; $("tag").value = txConfig.tag || ""; $("orden").value = txConfig.orden === "nuevos" ? "nuevos" : "viejos";
   $("cuentaTxt").textContent = txKey ? "· conectada" : "· falta la API key";
@@ -59,8 +73,8 @@ async function cargar() {
   pintarPlantillas();
 }
 const plantilla = () => plantillas.find((p) => p.id === selId) || plantillas[0];
-function guardarCfg() { chrome.storage.local.set({ txConfig: { etapa: $("etapa").value.trim(), tag: $("tag").value.trim(), plantilla: selId, orden: $("orden").value } }); }
-function guardarPlantillas() { chrome.storage.local.set({ txPlantillas: plantillas }); }
+function guardarCfg() { chrome.storage.local.set({ [K("Config")]: { etapa: $("etapa").value.trim(), tag: $("tag").value.trim(), plantilla: selId, orden: $("orden").value } }); }
+function guardarPlantillas() { chrome.storage.local.set({ [K("Plantillas")]: plantillas }); }
 function pintarPlantillas() {
   $("plantilla").innerHTML = plantillas.map((p) => `<option value="${esc(p.id)}"${p.id === selId ? " selected" : ""}>${esc(p.nombre || "(sin nombre)")}</option>`).join("");
   const p = plantilla(); $("plNombre").value = p.nombre; $("plTexto").value = p.texto; largo();
@@ -80,16 +94,16 @@ function ordenar() {
   const nuevos = $("orden").value === "nuevos";
   lista.sort((a, b) => (!a.creado) - (!b.creado) || (nuevos ? b.creado - a.creado : a.creado - b.creado));
 }
-$("orden").onchange = () => { guardarCfg(); ordenar(); chrome.storage.local.set({ txLista: lista }); pintarLista(); };
+$("orden").onchange = () => { guardarCfg(); ordenar(); chrome.storage.local.set({ [K("Lista")]: lista }); pintarLista(); };
 $("guardarKey").onclick = async () => {
   const k = $("key").value.trim();
   if (!k) { ver("Pega primero la API key."); return; }
   await chrome.storage.local.set({ txKey: k }); $("key").value = "";
   ver("Probando la API key…");
-  try { await api("/leads?limit=1"); $("cuentaTxt").textContent = "· conectada"; decir("Listo: la cuenta de Lofty de Texi responde bien."); $("cuenta").open = false; }
+  try { await api("/leads?limit=1"); $("cuentaTxt").textContent = "· conectada"; decir(`Listo: la cuenta de Lofty de ${A.nombre} responde bien (es la misma de Texi y Compri).`); $("cuenta").open = false; }
   catch (e) { $("cuentaTxt").textContent = "· la API key no funcionó"; decir(`La API key no funcionó: ${e.message}`, "error"); }
 };
-$("quitarKey").onclick = async () => { await chrome.storage.local.remove("txKey"); $("cuentaTxt").textContent = "· falta la API key"; ver("Quité la API key de Texi."); };
+$("quitarKey").onclick = async () => { await chrome.storage.local.remove("txKey"); $("cuentaTxt").textContent = "· falta la API key"; ver("Quité la API key (Texi y Compri usan la misma)."); };
 
 // ---------- Mensaje para cada lead ----------
 function calleDe(l) {
@@ -104,12 +118,12 @@ function mensaje(x) {
 }
 const destinos = (x) => x.ca; // a TODOS sus números de California
 
-// Solo leads Seller: en Lofty el tipo Seller es el 1 (leadTypes); a veces viene como texto "Seller"
-function esSeller(l) {
+// Solo leads del tipo de este agente (Texi: Seller = 1; Compri: Buyer = 2); a veces viene como texto
+function esDelTipo(l) {
   const tipos = [].concat(l.leadTypes || [], l.leadType != null ? l.leadType : [], l.type != null ? l.type : []);
   return tipos.some((t) => {
     const v = t && typeof t === "object" ? t.id ?? t.typeId ?? t.name ?? t.typeName : t;
-    return Number(v) === 1 || /seller/i.test(String(v));
+    return Number(v) === A.codigo || A.re.test(String(v));
   });
 }
 
@@ -150,7 +164,8 @@ async function buscar() {
   guardarCfg();
   corriendo = true; parar = false; $("buscar").disabled = true; $("mandar").disabled = true; $("confirma").hidden = true;
   window.robot && robot.set("trabajando", "Buscando leads en Lofty…");
-  const { txEnviados = {}, rsNoEscribir = {}, rsRespondieron = {}, rsNoEntregados = {}, smsBajas = {} } = await chrome.storage.local.get(["txEnviados", "rsNoEscribir", "rsRespondieron", "rsNoEntregados", "smsBajas"]);
+  const st0 = await chrome.storage.local.get([K("Enviados"), "rsNoEscribir", "rsRespondieron", "rsNoEntregados", "smsBajas"]);
+  const { rsNoEscribir = {}, rsRespondieron = {}, rsNoEntregados = {}, smsBajas = {} } = st0, txEnviados = st0[K("Enviados")] || {};
   const bajaTel = (smsBajas.tels || {}), bajaLead = (smsBajas.leads || {});
   const encontrados = []; let revisados = 0, sinCA = 0, noSeller = 0, bajas = 0, noEntrega = 0, optOut = 0;
   try {
@@ -163,7 +178,7 @@ async function buscar() {
         revisados++;
         if (etapa && norm(l.stage) !== norm(etapa)) continue;
         if (tag && !(l.tags || []).some((t) => norm(t.tagName || t.name || t) === norm(tag))) continue;
-        if (!esSeller(l)) { noSeller++; continue; } // solo Seller
+        if (!esDelTipo(l)) { noSeller++; continue; } // solo los de su tipo (Seller o Buyer)
         if (rsNoEscribir[String(l.leadId || l.id)] || bajaLead[`tx:${l.leadId || l.id}`]) { bajas++; continue; } // Resi / baja permanente: pidió que no le escribieran, número equivocado o enojado
         if (leadOptOut(l)) { optOut++; continue; } // Lofty: no se le pueden mandar textos (opt-out)
         const fueraOpt = numerosOptOut(l);
@@ -179,18 +194,18 @@ async function buscar() {
         const { calle, ciudad } = calleDe(l);
         const env = txEnviados[id], resp = rsRespondieron[id];
         encontrados.push({ id, nombre: tc(l.firstName || "").split(" ")[0] || "there", apellido: tc(l.lastName || ""), calle: tc(calle), ciudad: tc(ciudad),
-          ca, fuera: tels.filter((n) => !esCA(n)).length, seller: true, creado: creadoLofty(l.createTime || l.createdTime || l.createDate), etapa: l.stage || "", antes: env ? env.t : 0,
+          ca, fuera: tels.filter((n) => !esCA(n)).length, tipo: YO, seller: YO === "tx", creado: creadoLofty(l.createTime || l.createdTime || l.createDate), etapa: l.stage || "", antes: env ? env.t : 0,
           marcado: !(env && Date.now() - env.t < 7 * 864e5) && !resp, respondio: resp ? resp.t : 0, estado: "", detalle: "" });
       }
       offset += leads.length;
       if (leads.length < 100) break;
     }
     lista = encontrados; ordenar();
-    await chrome.storage.local.set({ txLista: lista.map((x) => ({ ...x })) });
+    await chrome.storage.local.set({ [K("Lista")]: lista.map((x) => ({ ...x })) });
     pintarLista();
-    const salte = [noSeller ? `${noSeller} que no son Seller` : "", sinCA ? `${sinCA} sin número de CA` : "", bajas ? `${bajas} que pidieron no recibir SMS (Resi)` : "", optOut ? `${optOut} opt-out en Lofty (no reciben textos)` : "", noEntrega ? `${noEntrega} cuyos números no reciben SMS (Resi)` : ""].filter(Boolean).join(", ");
-    if (!lista.length) decir(`No encontré leads Seller${etapa ? ` en “${etapa}”` : ""}${tag ? ` con el tag “${tag}”` : ""} con teléfono de California` + (salte ? ` (salté ${salte})` : "") + ".");
-    else decir(`Encontré ${lista.length} lead(s) Seller con teléfono de California` + (salte ? ` (salté ${salte})` : "") + `. Revisa la lista y el mensaje; cuando estés listo dale “Revisar y mandar”.`);
+    const salte = [noSeller ? `${noSeller} que no son ${A.tipo}` : "", sinCA ? `${sinCA} sin número de CA` : "", bajas ? `${bajas} que pidieron no recibir SMS (Resi)` : "", optOut ? `${optOut} opt-out en Lofty (no reciben textos)` : "", noEntrega ? `${noEntrega} cuyos números no reciben SMS (Resi)` : ""].filter(Boolean).join(", ");
+    if (!lista.length) decir(`No encontré leads ${A.tipo}${etapa ? ` en “${etapa}”` : ""}${tag ? ` con el tag “${tag}”` : ""} con teléfono de California` + (salte ? ` (salté ${salte})` : "") + ".");
+    else decir(`Encontré ${lista.length} lead(s) ${A.tipo} con teléfono de California` + (salte ? ` (salté ${salte})` : "") + `. Revisa la lista y el mensaje; cuando estés listo dale “Revisar y mandar”.`);
     window.robot && robot.set(lista.length ? "feliz" : "idle", lista.length ? `${lista.length} leads listos para revisar` : "Sin leads");
   } catch (e) {
     decir(e.sinKey ? e.message : `No pude traer los leads: ${e.message}`, "error");
@@ -223,31 +238,49 @@ function pintarLista() {
       ${x.estado === "error" ? `<small style="color:#b91c1c">${esc(x.detalle)}</small>` : x.estado === "saltado" ? `<small style="color:#854d0e">${esc(x.detalle)}</small>` : x.estado === "enviado" && x.detalle ? `<small style="color:#166534">${esc(x.detalle)}</small>` : ""}
       <div class="sms">${esc(mensaje(x))}</div></div></li>`;
   }).join("") + (idx.length > MAX ? `<li class="empty">…y ${(idx.length - MAX).toLocaleString()} más (enseño los primeros ${MAX}).</li>` : "");
-  $("lista").querySelectorAll("input[type=checkbox]").forEach((c) => (c.onchange = () => { lista[+c.dataset.i].marcado = c.checked; chrome.storage.local.set({ txLista: lista }); contar(); }));
+  $("lista").querySelectorAll("input[type=checkbox]").forEach((c) => (c.onchange = () => { lista[+c.dataset.i].marcado = c.checked; chrome.storage.local.set({ [K("Lista")]: lista }); contar(); }));
   contar();
 }
 const porMandar = () => lista.filter((x) => x.marcado && !x.estado && grupo(x) === "faltan"); // a los que ya se les mandó no se les vuelve a mandar
 async function contar() {
-  const { txHoy = {} } = await chrome.storage.local.get("txHoy");
+  const txHoy = (await chrome.storage.local.get(K("Hoy")))[K("Hoy")] || {};
   $("nLista").textContent = lista.filter((x) => grupo(x) === "faltan").length.toLocaleString(); $("nMarcados").textContent = porMandar().length.toLocaleString();
   $("nHoy").textContent = txHoy.dia === hoy() ? txHoy.n || 0 : 0;
   $("mandar").disabled = corriendo || !porMandar().length;
 }
-$("marcarTodos").onclick = () => { lista.forEach((x) => { if (!x.estado && grupo(x) === "faltan") x.marcado = true; }); chrome.storage.local.set({ txLista: lista }); pintarLista(); };
+$("marcarTodos").onclick = () => { lista.forEach((x) => { if (!x.estado && grupo(x) === "faltan") x.marcado = true; }); chrome.storage.local.set({ [K("Lista")]: lista }); pintarLista(); };
 ["vFaltan", "vMandados", "vProblema"].forEach((id) => ($(id).onclick = () => { vista = { vFaltan: "faltan", vMandados: "mandados", vProblema: "problema" }[id]; pintarLista(); }));
-$("desmarcar").onclick = () => { lista.forEach((x) => { if (!x.estado && grupo(x) === "faltan") x.marcado = false; }); chrome.storage.local.set({ txLista: lista }); pintarLista(); };
+$("desmarcar").onclick = () => { lista.forEach((x) => { if (!x.estado && grupo(x) === "faltan") x.marcado = false; }); chrome.storage.local.set({ [K("Lista")]: lista }); pintarLista(); };
 
 // ---------- 2) Revisar y dar el OK ----------
 $("mandar").onclick = () => {
   const m = porMandar(); if (!m.length) return;
   const n = m.reduce((s, x) => s + destinos(x).length, 0);
   if (!plantilla().texto.trim()) { ver("La plantilla está vacía."); return; }
-  $("confTxt").innerHTML = `Vas a mandar <b>${n} SMS</b> a <b>${m.length} lead(s)</b> con la plantilla <b>${esc(plantilla().nombre)}</b>, desde la cuenta de Lofty de Texi, en orden de <b>${$("orden").value === "nuevos" ? "más nuevos a más viejos" : "más viejos a más nuevos"}</b>.<br>
-    Ejemplo: <i>${esc(mensaje(m[0]))}</i><br><span class="hint">Un SMS mandado ya no se puede borrar. Mando uno cada 6–12 segundos; puedes parar cuando quieras.</span>`;
+  $("confTxt").innerHTML = `Vas a mandar <b>${n} SMS</b> a <b>${m.length} lead(s)</b> con la plantilla <b>${esc(plantilla().nombre)}</b>, desde la cuenta de Lofty de Texi y Compri, en orden de <b>${$("orden").value === "nuevos" ? "más nuevos a más viejos" : "más viejos a más nuevos"}</b>.<br>
+    Ejemplo: <i>${esc(mensaje(m[0]))}</i><br><span class="hint">Un SMS mandado ya no se puede borrar. Mando uno cada 6–12 segundos (turnándome con ${YO === "cb" ? "Texi" : "Compri"} si los dos están mandando); puedes parar cuando quieras.</span>`;
   $("confirma").hidden = false; $("confirma").scrollIntoView({ block: "nearest" });
 };
 $("no").onclick = () => { $("confirma").hidden = true; ver("Cancelado: no mandé nada."); };
 $("si").onclick = () => { $("confirma").hidden = true; mandar(); };
+
+// ---------- Turno del número (compartido entre Texi y Compri) ----------
+// Los dos mandan desde el mismo número virtual de Lofty. Con un candado entre pestañas, nunca sale más de
+// un SMS cada 6–12 s entre los dos, y ninguno le manda a un número que ya recibió un SMS de Texi o Compri hoy
+// (día de California). Regresa "ok", "yaHoy" o "parado".
+const diaCA = (ms = Date.now()) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(ms);
+async function turnoNumero(num, parado) {
+  const correr = async () => {
+    const { smsUltimoTx = 0, smsRegistro = [] } = await chrome.storage.local.get(["smsUltimoTx", "smsRegistro"]);
+    const hoyCA = diaCA();
+    if (smsRegistro.some((e) => e && e.estado === "enviado" && e.tel === num && (e.fuente === "Texi" || e.fuente === "Compri") && diaCA(e.t) === hoyCA)) return "yaHoy";
+    const espera = smsUltimoTx + 6000 + Math.random() * 6000 - Date.now();
+    for (let t = 0; t < espera; t += 500) { if (parado()) return "parado"; await sleep(Math.min(500, espera - t)); }
+    await chrome.storage.local.set({ smsUltimoTx: Date.now() });
+    return "ok";
+  };
+  return typeof navigator !== "undefined" && navigator.locks ? navigator.locks.request("sms-numero-tx", correr) : correr();
+}
 
 // ---------- 3) Mandar ----------
 async function mandar() {
@@ -265,10 +298,10 @@ async function mandar() {
         const dl = await api(`/leads/${encodeURIComponent(x.id)}`); const lf = dl.lead || dl.data || dl;
         const fueraOpt = numerosOptOut(lf);
         if (noEsc[x.id] || leadOptOut(lf)) {
-          await SMS.marcarBaja({ leadId: x.id, cuenta: "tx", tels: x.ca, motivo: "opt-out en Lofty", fuente: "Texi" });
+          await SMS.marcarBaja({ leadId: x.id, cuenta: "tx", tels: x.ca, motivo: "opt-out en Lofty", fuente: A.nombre });
           x.estado = "saltado"; x.detalle = "opt-out: Lofty dice que ya no recibe textos"; saltados++; pintarLista(); continue;
         }
-        if (fueraOpt.size) await SMS.marcarBaja({ tels: [...fueraOpt], motivo: "Do Not Text / DNC en Lofty", fuente: "Texi" });
+        if (fueraOpt.size) await SMS.marcarBaja({ tels: [...fueraOpt], motivo: "Do Not Text / DNC en Lofty", fuente: A.nombre });
         if (fueraOpt.size) { x.ca = x.ca.filter((n) => !fueraOpt.has(n)); if (!x.ca.length) { x.estado = "saltado"; x.detalle = "opt-out: sus números están marcados Do Not Text / DNC"; saltados++; pintarLista(); continue; } }
         notaTel = await validarNumeros(x, lf); if (notaTel) { if (/^cambié/.test(notaTel)) validados++; ver(`${x.nombre} ${x.apellido}: ${notaTel}`); }
       } catch (e) {
@@ -276,7 +309,7 @@ async function mandar() {
         x.estado = "error"; x.detalle = "no pude revisar en Lofty si se dio de baja; no le mandé nada (" + e.message + ")"; mal++;
         if (!primerError) primerError = `${x.nombre} ${x.apellido} → no pude revisar opt-out: ${e.message}`;
         if (e.status === 401 || e.status === 403) parar = true;
-        await chrome.storage.local.set({ txLista: lista }); pintarLista();
+        await chrome.storage.local.set({ [K("Lista")]: lista }); pintarLista();
         if (mal >= 3 && !ok) { decir(`No pude revisar el opt-out de los primeros 3 leads; me detengo. Lofty dijo: ${primerError}`, "error"); break; }
         continue;
       }
@@ -288,51 +321,54 @@ async function mandar() {
         if (parar) break;
         if (!esCA(num)) continue; // doble seguro
         // Fase 1: política común de SMS (bajas permanentes, horario 8–21 h de California; falla cerrada)
-        const pol = await SMS.puedeMandar({ tel: num, leadId: x.id, cuenta: "tx", fuente: "Texi" });
+        const pol = await SMS.puedeMandar({ tel: num, leadId: x.id, cuenta: "tx", fuente: A.nombre });
         if (!pol.ok) {
-          await SMS.anotar({ fuente: "Texi", leadId: x.id, tel: num, estado: "bloqueado", motivo: pol.motivo });
+          await SMS.anotar({ fuente: A.nombre, leadId: x.id, tel: num, estado: "bloqueado", motivo: pol.motivo });
           if (pol.baja) { optNums.push(`${bonito(num)}: ${pol.motivo}`); continue; }
           errores.push(`${bonito(num)}: ${pol.motivo}`); if (!primerError) primerError = pol.motivo;
           if (pol.horario || pol.tope || /política/.test(pol.motivo)) { parar = true; decir(`Me detengo: ${pol.motivo}.`, "error"); break; }
           continue;
         }
+        // Turno del número (compartido con el otro agente) y "ya recibió hoy" de Texi o Compri
+        const turno = await turnoNumero(num, () => parar);
+        if (turno === "parado") { await SMS.devolverLugar(); break; }
+        if (turno === "yaHoy") { await SMS.devolverLugar(); await SMS.anotar({ fuente: A.nombre, leadId: x.id, tel: num, estado: "bloqueado", motivo: "ya recibió un SMS hoy de Texi o Compri" }); errores.push(`${bonito(num)}: ya recibió un SMS hoy de Texi o Compri`); continue; }
         ver(`Mandando SMS a ${x.nombre} ${x.apellido} · ${bonito(num)}… (${ok + mal + 1} de ${m.length})`);
         try { await api("/message/sms/send", { method: "POST", body: { leadId: Number(x.id), content: contenido, phoneNumber: num, phoneCode: "1" } }); sms++; enviados++;
-          await SMS.anotar({ fuente: "Texi", leadId: x.id, tel: num, estado: "enviado", plantilla: plantilla().nombre, texto: contenido }); }
+          await SMS.anotar({ fuente: A.nombre, leadId: x.id, tel: num, estado: "enviado", plantilla: plantilla().nombre, texto: contenido }); }
         catch (e) {
           await SMS.devolverLugar();
-          await SMS.anotar({ fuente: "Texi", leadId: x.id, tel: num, estado: "error", motivo: e.message });
-          if (errorEsOptOut(e.message)) { await SMS.marcarBaja({ tel: num, motivo: "Lofty rechazó por opt-out", fuente: "Texi" }); optNums.push(`${bonito(num)}: ${e.message}`); continue; }
+          await SMS.anotar({ fuente: A.nombre, leadId: x.id, tel: num, estado: "error", motivo: e.message });
+          if (errorEsOptOut(e.message)) { await SMS.marcarBaja({ tel: num, motivo: "Lofty rechazó por opt-out", fuente: A.nombre }); optNums.push(`${bonito(num)}: ${e.message}`); continue; }
           errores.push(`${bonito(num)}: ${e.message}`); if (!primerError) primerError = `${x.nombre} ${x.apellido} ${bonito(num)} → ${e.message}`; if (e.status === 401 || e.status === 403) parar = true; }
-        if (!parar) await sleep(6000 + Math.random() * 6000);
       }
       if (enviados) {
         x.estado = "enviado"; x.detalle = [notaTel, ...errores].filter(Boolean).join(" · "); ok++;
-        const { txEnviados = {}, txHoy = {} } = await chrome.storage.local.get(["txEnviados", "txHoy"]);
+        const st1 = await chrome.storage.local.get([K("Enviados"), K("Hoy")]), txEnviados = st1[K("Enviados")] || {}, txHoy = st1[K("Hoy")] || {};
         txEnviados[x.id] = { t: Date.now(), plantilla: plantilla().nombre, n: enviados };
         const ks = Object.keys(txEnviados); if (ks.length > 3000) ks.sort((a, b) => txEnviados[a].t - txEnviados[b].t).slice(0, ks.length - 3000).forEach((k) => delete txEnviados[k]);
-        await chrome.storage.local.set({ txEnviados, txHoy: { dia: hoy(), n: (txHoy.dia === hoy() ? txHoy.n || 0 : 0) + enviados } });
+        await chrome.storage.local.set({ [K("Enviados")]: txEnviados, [K("Hoy")]: { dia: hoy(), n: (txHoy.dia === hoy() ? txHoy.n || 0 : 0) + enviados } });
       } else if (errores.length) { x.estado = "error"; x.detalle = [notaTel, ...errores].filter(Boolean).join(" · "); mal++; }
       else if (optNums.length) { x.estado = "saltado"; x.detalle = "opt-out según Lofty · " + optNums.join(" · "); saltados++; }
       else x.estado = ""; // no se alcanzó a mandar (se paró antes)
-      await chrome.storage.local.set({ txLista: lista });
+      await chrome.storage.local.set({ [K("Lista")]: lista });
       pintarLista();
       if (mal >= 3 && !ok) { decir(`Fallaron los primeros 3 SMS; me detengo para que revises. Lofty dijo: ${primerError}`, "error"); break; }
     }
     const txt = `${parar ? "Detenido. " : "Listo: "}mandé ${sms} SMS a ${ok} lead(s)` + (validados ? `; cambié ${validados} de “Bad Number” a “Valid Number”` : "") + (saltados ? `; salté ${saltados} opt-out` : "") + (mal ? `; ${mal} con error. Primer error: ${primerError}` : "") + ".";
     decir(txt, mal && !ok ? "error" : undefined);
     window.robot && robot.set(mal && !ok ? "error" : "feliz", txt);
-  } finally { corriendo = false; $("buscar").disabled = false; await chrome.storage.local.set({ txLista: lista }); pintarLista(); }
+  } finally { corriendo = false; $("buscar").disabled = false; await chrome.storage.local.set({ [K("Lista")]: lista }); pintarLista(); }
 }
 $("buscar").onclick = buscar;
 $("stop").onclick = () => { parar = true; ver("Parando…"); };
 
-chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch.txHoy || ch.txKey)) { contar(); if (ch.txKey) $("cuentaTxt").textContent = ch.txKey.newValue ? "· conectada" : "· falta la API key"; } });
+chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch[K("Hoy")] || ch.txKey)) { contar(); if (ch.txKey) $("cuentaTxt").textContent = ch.txKey.newValue ? "· conectada" : "· falta la API key"; } });
 (async () => {
   await cargar();
-  const { txLista = [] } = await chrome.storage.local.get("txLista");
-  lista = txLista.filter((x) => x.seller).map((x) => ({ ...x, estado: x.estado === "mandando" ? "" : x.estado })); // listas viejas sin el filtro Seller se descartan
-  { const { txEnviados = {} } = await chrome.storage.local.get("txEnviados"); for (const x of lista) if (!x.antes && txEnviados[x.id] && x.estado !== "enviado") x.antes = txEnviados[x.id].t; }
+  const txLista = (await chrome.storage.local.get(K("Lista")))[K("Lista")] || [];
+  lista = txLista.filter((x) => (x.tipo || (x.seller ? "tx" : "")) === YO).map((x) => ({ ...x, estado: x.estado === "mandando" ? "" : x.estado })); // listas viejas sin el filtro Seller se descartan
+  { const txEnviados = (await chrome.storage.local.get(K("Enviados")))[K("Enviados")] || {}; for (const x of lista) if (!x.antes && txEnviados[x.id] && x.estado !== "enviado") x.antes = txEnviados[x.id].t; }
   ordenar();
   pintarLista();
 })();
