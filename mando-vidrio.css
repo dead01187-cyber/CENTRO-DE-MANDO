@@ -270,3 +270,11 @@ body.n8n .estacion.error, body.n8n .estacion.ayuda { animation: none !important;
   box-shadow: var(--vid-luz), 0 0 0 1px rgba(255,69,58,.55) !important; }
 body.n8n .pulso { animation: none !important; background: #30d158; box-shadow: 0 0 0 3px rgba(48,209,88,.18); width: 8px; height: 8px; }
 body.n8n .estacion.trabajando::before, body.n8n .estacion.pensando::before { will-change: opacity; }
+
+/* Bitácora en una columna a la izquierda, a todo lo alto (v1.85.0) */
+body.n8n .lateral-izq { width: 320px; padding: 16px 0 16px 16px; }
+body.n8n .lateral-izq .bitacora { flex: 1 1 auto; max-height: none; min-height: 0; }
+body.n8n .lateral-izq .bitacora #log { flex: 1 1 auto; max-height: none; min-height: 0; overflow-y: auto; }
+@media (max-width: 1250px) { body.n8n .lateral-izq { width: 260px; } }
+/* los controles de zoom van pegados a la orilla del lienzo, no encima de la bitácora */
+body.n8n #camara { left: 14px; }
