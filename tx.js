@@ -7,6 +7,8 @@
 // · Comparten: la llave, las bajas (cuenta "tx"), las respuestas de Resi, el ritmo del número
 //   (un SMS cada 6–12 s entre los dos) y no le mandan dos veces el mismo día al mismo número.
 // · Cada uno tiene sus plantillas, su lista, su registro de enviados y su contador del día.
+// · Texi 2 (t2.html, v1.83.0): leads Seller desde OTRA cuenta de Lofty ("t2Key"), con su propio número y su
+//   propio ritmo (manda en paralelo con Texi). Ninguno le escribe el mismo día a un teléfono que ya recibió de otro.
 // · Primero arma la lista y te enseña a quién y qué le va a mandar.
 // · Nada sale sin tu OK (un solo OK para todos los marcados).
 // · Solo manda a números de California.
@@ -32,17 +34,20 @@ const bonito = (d) => `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 const PLANTILLA_EJEMPLO = { id: "p1", nombre: "Saludo", texto: "Hi {nombre}, this is Christopher with Rubio Real Estate. Are you still the owner of {direccion}? I have a buyer interested in the area." };
 // ¿Texi o Compri? Lo dice la página (data-mod="tx" o "cb")
 const AGENTES = {
-  tx: { nombre: "Texi", tipo: "Seller", codigo: 1, re: /seller/i, ejemplo: PLANTILLA_EJEMPLO },
+  tx: { nombre: "Texi", tipo: "Seller", codigo: 1, re: /seller/i, ejemplo: PLANTILLA_EJEMPLO, llave: "txKey", cuenta: "tx" },
+  // Texi 2 (v1.83.0): leads Seller desde OTRA cuenta de Lofty, con su propia llave y su propio número
+  t2: { nombre: "Texi 2", tipo: "Seller", codigo: 1, re: /seller/i, ejemplo: PLANTILLA_EJEMPLO, llave: "t2Key", cuenta: "t2" },
   cb: { nombre: "Compri", tipo: "Buyer", codigo: 2, re: /buyer/i,
-    ejemplo: { id: "p1", nombre: "Compradores", texto: "Hi {nombre}, this is Christopher with Rubio Real Estate. Are you still looking for a home in {ciudad}? I can send you new listings that match what you want." } },
+    ejemplo: { id: "p1", nombre: "Compradores", texto: "Hi {nombre}, this is Christopher with Rubio Real Estate. Are you still looking for a home in {ciudad}? I can send you new listings that match what you want." }, llave: "txKey", cuenta: "tx" },
 };
-const YO = document.documentElement.dataset.mod === "cb" ? "cb" : "tx", A = AGENTES[YO];
+const YO = AGENTES[document.documentElement.dataset.mod] ? document.documentElement.dataset.mod : "tx", A = AGENTES[YO];
+const MISMA_CUENTA = A.cuenta === "tx"; // Texi y Compri comparten cuenta (y sus Resis); Texi 2 tiene la suya
 const K = (s) => YO + s; // llaves propias de cada agente: tx… / cb… (Config, Plantillas, Lista, Enviados, Hoy)
 let plantillas = [], selId = "", lista = [], corriendo = false, parar = false;
 
 // ---------- API de Lofty de la OTRA cuenta ----------
 async function api(path, opts = {}) {
-  const { txKey } = await chrome.storage.local.get("txKey");
+  const txKey = (await chrome.storage.local.get(A.llave))[A.llave];
   if (!txKey) throw Object.assign(new Error(`Falta la API key de la cuenta de Lofty de ${A.nombre} (arriba, en “Cuenta de Lofty para los SMS”).`), { sinKey: true });
   let r;
   for (let intento = 0; ; intento++) { // 429 = Lofty pide ir más lento (no procesó nada): esperar y reintentar
@@ -64,7 +69,7 @@ async function api(path, opts = {}) {
 
 // ---------- Configuración ----------
 async function cargar() {
-  const st = await chrome.storage.local.get([K("Config"), K("Plantillas"), "txKey"]), txConfig = st[K("Config")] || {}, txPlantillas = st[K("Plantillas")], txKey = st.txKey;
+  const st = await chrome.storage.local.get([K("Config"), K("Plantillas"), A.llave]), txConfig = st[K("Config")] || {}, txPlantillas = st[K("Plantillas")], txKey = st[A.llave];
   plantillas = Array.isArray(txPlantillas) && txPlantillas.length ? txPlantillas : [A.ejemplo];
   selId = plantillas.some((p) => p.id === txConfig.plantilla) ? txConfig.plantilla : plantillas[0].id;
   $("etapa").value = txConfig.etapa || ""; $("tag").value = txConfig.tag || ""; $("orden").value = txConfig.orden === "nuevos" ? "nuevos" : "viejos";
@@ -98,12 +103,12 @@ $("orden").onchange = () => { guardarCfg(); ordenar(); chrome.storage.local.set(
 $("guardarKey").onclick = async () => {
   const k = $("key").value.trim();
   if (!k) { ver("Pega primero la API key."); return; }
-  await chrome.storage.local.set({ txKey: k }); $("key").value = "";
+  await chrome.storage.local.set({ [A.llave]: k }); $("key").value = "";
   ver("Probando la API key…");
-  try { await api("/leads?limit=1"); $("cuentaTxt").textContent = "· conectada"; decir(`Listo: la cuenta de Lofty de ${A.nombre} responde bien (es la misma de Texi y Compri).`); $("cuenta").open = false; }
+  try { await api("/leads?limit=1"); $("cuentaTxt").textContent = "· conectada"; decir(`Listo: la cuenta de Lofty de ${A.nombre} responde bien${MISMA_CUENTA ? " (es la misma de Texi y Compri)" : ""}.`); $("cuenta").open = false; }
   catch (e) { $("cuentaTxt").textContent = "· la API key no funcionó"; decir(`La API key no funcionó: ${e.message}`, "error"); }
 };
-$("quitarKey").onclick = async () => { await chrome.storage.local.remove("txKey"); $("cuentaTxt").textContent = "· falta la API key"; ver("Quité la API key (Texi y Compri usan la misma)."); };
+$("quitarKey").onclick = async () => { await chrome.storage.local.remove(A.llave); $("cuentaTxt").textContent = "· falta la API key"; ver(MISMA_CUENTA ? "Quité la API key (Texi y Compri usan la misma)." : `Quité la API key de ${A.nombre}.`); };
 
 // ---------- Mensaje para cada lead ----------
 function calleDe(l) {
@@ -165,6 +170,7 @@ async function buscar() {
   corriendo = true; parar = false; $("buscar").disabled = true; $("mandar").disabled = true; $("confirma").hidden = true;
   window.robot && robot.set("trabajando", "Buscando leads en Lofty…");
   const st0 = await chrome.storage.local.get([K("Enviados"), "rsNoEscribir", "rcNoEscribir", "rsRespondieron", "rcRespondieron", "rsNoEntregados", "smsBajas"]);
+  if (!MISMA_CUENTA) for (const k of ["rsNoEscribir", "rcNoEscribir", "rsRespondieron", "rcRespondieron", "rsNoEntregados"]) delete st0[k]; // datos de Resi: son de la otra cuenta (otros ids)
   const { rsNoEntregados = {}, smsBajas = {} } = st0, txEnviados = st0[K("Enviados")] || {};
   // Resi (Texi) y Resi 2 (Compri) anotan cada uno sus bajas y quién contestó: se respetan las de los dos
   const rsNoEscribir = { ...(st0.rsNoEscribir || {}), ...(st0.rcNoEscribir || {}) }, rsRespondieron = { ...(st0.rsRespondieron || {}), ...(st0.rcRespondieron || {}) };
@@ -181,7 +187,7 @@ async function buscar() {
         if (etapa && norm(l.stage) !== norm(etapa)) continue;
         if (tag && !(l.tags || []).some((t) => norm(t.tagName || t.name || t) === norm(tag))) continue;
         if (!esDelTipo(l)) { noSeller++; continue; } // solo los de su tipo (Seller o Buyer)
-        if (rsNoEscribir[String(l.leadId || l.id)] || bajaLead[`tx:${l.leadId || l.id}`]) { bajas++; continue; } // Resi / baja permanente: pidió que no le escribieran, número equivocado o enojado
+        if (rsNoEscribir[String(l.leadId || l.id)] || bajaLead[`${A.cuenta}:${l.leadId || l.id}`]) { bajas++; continue; } // Resi / baja permanente: pidió que no le escribieran, número equivocado o enojado
         if (leadOptOut(l)) { optOut++; continue; } // Lofty: no se le pueden mandar textos (opt-out)
         const fueraOpt = numerosOptOut(l);
         const tels = [...new Set([...(l.phones || []), l.phone, l.mobilePhone, l.homePhone, l.workPhone].filter(Boolean).map((p) => digitos(p && typeof p === "object" ? p.phone || p.number || p.value : p)).filter((x) => x.length === 10))];
@@ -259,8 +265,8 @@ $("mandar").onclick = () => {
   const m = porMandar(); if (!m.length) return;
   const n = m.reduce((s, x) => s + destinos(x).length, 0);
   if (!plantilla().texto.trim()) { ver("La plantilla está vacía."); return; }
-  $("confTxt").innerHTML = `Vas a mandar <b>${n} SMS</b> a <b>${m.length} lead(s)</b> con la plantilla <b>${esc(plantilla().nombre)}</b>, desde la cuenta de Lofty de Texi y Compri, en orden de <b>${$("orden").value === "nuevos" ? "más nuevos a más viejos" : "más viejos a más nuevos"}</b>.<br>
-    Ejemplo: <i>${esc(mensaje(m[0]))}</i><br><span class="hint">Un SMS mandado ya no se puede borrar. Mando uno cada 6–12 segundos (turnándome con ${YO === "cb" ? "Texi" : "Compri"} si los dos están mandando); puedes parar cuando quieras.</span>`;
+  $("confTxt").innerHTML = `Vas a mandar <b>${n} SMS</b> a <b>${m.length} lead(s)</b> con la plantilla <b>${esc(plantilla().nombre)}</b>, desde la cuenta de Lofty de ${MISMA_CUENTA ? "Texi y Compri" : A.nombre}, en orden de <b>${$("orden").value === "nuevos" ? "más nuevos a más viejos" : "más viejos a más nuevos"}</b>.<br>
+    Ejemplo: <i>${esc(mensaje(m[0]))}</i><br><span class="hint">Un SMS mandado ya no se puede borrar. Mando uno cada 6–12 segundos ${MISMA_CUENTA ? `(turnándome con ${YO === "cb" ? "Texi" : "Compri"} si los dos están mandando)` : "(desde su propio número)"}; puedes parar cuando quieras.</span>`;
   $("confirma").hidden = false; $("confirma").scrollIntoView({ block: "nearest" });
 };
 $("no").onclick = () => { $("confirma").hidden = true; ver("Cancelado: no mandé nada."); };
@@ -273,15 +279,16 @@ $("si").onclick = () => { $("confirma").hidden = true; mandar(); };
 const diaCA = (ms = Date.now()) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(ms);
 async function turnoNumero(num, parado) {
   const correr = async () => {
-    const { smsUltimoTx = 0, smsRegistro = [] } = await chrome.storage.local.get(["smsUltimoTx", "smsRegistro"]);
+    const ULT = A.cuenta === "tx" ? "smsUltimoTx" : "smsUltimo_" + A.cuenta; // un ritmo por número (por cuenta)
+    const { [ULT]: smsUltimoTx = 0, smsRegistro = [] } = await chrome.storage.local.get([ULT, "smsRegistro"]);
     const hoyCA = diaCA();
-    if (smsRegistro.some((e) => e && e.estado === "enviado" && e.tel === num && (e.fuente === "Texi" || e.fuente === "Compri") && diaCA(e.t) === hoyCA)) return "yaHoy";
+    if (smsRegistro.some((e) => e && e.estado === "enviado" && e.tel === num && ["Texi", "Compri", "Texi 2"].includes(e.fuente) && diaCA(e.t) === hoyCA)) return "yaHoy";
     const espera = smsUltimoTx + 6000 + Math.random() * 6000 - Date.now();
     for (let t = 0; t < espera; t += 500) { if (parado()) return "parado"; await sleep(Math.min(500, espera - t)); }
-    await chrome.storage.local.set({ smsUltimoTx: Date.now() });
+    await chrome.storage.local.set({ [ULT]: Date.now() });
     return "ok";
   };
-  return typeof navigator !== "undefined" && navigator.locks ? navigator.locks.request("sms-numero-tx", correr) : correr();
+  return typeof navigator !== "undefined" && navigator.locks ? navigator.locks.request("sms-numero-" + A.cuenta, correr) : correr();
 }
 
 // ---------- 3) Mandar ----------
@@ -296,11 +303,11 @@ async function mandar() {
       let notaTel = "";
       // Justo antes de mandar: revisar en Lofty que no se haya dado de baja (STOP) desde que se armó la lista
       try {
-        const { rsNoEscribir: n1 = {}, rcNoEscribir: n2 = {} } = await chrome.storage.local.get(["rsNoEscribir", "rcNoEscribir"]); const noEsc = { ...n1, ...n2 };
+        const { rsNoEscribir: n1 = {}, rcNoEscribir: n2 = {} } = MISMA_CUENTA ? await chrome.storage.local.get(["rsNoEscribir", "rcNoEscribir"]) : {}; const noEsc = { ...n1, ...n2 };
         const dl = await api(`/leads/${encodeURIComponent(x.id)}`); const lf = dl.lead || dl.data || dl;
         const fueraOpt = numerosOptOut(lf);
         if (noEsc[x.id] || leadOptOut(lf)) {
-          await SMS.marcarBaja({ leadId: x.id, cuenta: "tx", tels: x.ca, motivo: "opt-out en Lofty", fuente: A.nombre });
+          await SMS.marcarBaja({ leadId: x.id, cuenta: A.cuenta, tels: x.ca, motivo: "opt-out en Lofty", fuente: A.nombre });
           x.estado = "saltado"; x.detalle = "opt-out: Lofty dice que ya no recibe textos"; saltados++; pintarLista(); continue;
         }
         if (fueraOpt.size) await SMS.marcarBaja({ tels: [...fueraOpt], motivo: "Do Not Text / DNC en Lofty", fuente: A.nombre });
@@ -323,7 +330,7 @@ async function mandar() {
         if (parar) break;
         if (!esCA(num)) continue; // doble seguro
         // Fase 1: política común de SMS (bajas permanentes, horario 8–21 h de California; falla cerrada)
-        const pol = await SMS.puedeMandar({ tel: num, leadId: x.id, cuenta: "tx", fuente: A.nombre });
+        const pol = await SMS.puedeMandar({ tel: num, leadId: x.id, cuenta: A.cuenta, fuente: A.nombre });
         if (!pol.ok) {
           await SMS.anotar({ fuente: A.nombre, leadId: x.id, tel: num, estado: "bloqueado", motivo: pol.motivo });
           if (pol.baja) { optNums.push(`${bonito(num)}: ${pol.motivo}`); continue; }
@@ -365,7 +372,7 @@ async function mandar() {
 $("buscar").onclick = buscar;
 $("stop").onclick = () => { parar = true; ver("Parando…"); };
 
-chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch[K("Hoy")] || ch.txKey)) { contar(); if (ch.txKey) $("cuentaTxt").textContent = ch.txKey.newValue ? "· conectada" : "· falta la API key"; } });
+chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && (ch[K("Hoy")] || ch[A.llave])) { contar(); if (ch[A.llave]) $("cuentaTxt").textContent = ch[A.llave].newValue ? "· conectada" : "· falta la API key"; } });
 (async () => {
   await cargar();
   const txLista = (await chrome.storage.local.get(K("Lista")))[K("Lista")] || [];

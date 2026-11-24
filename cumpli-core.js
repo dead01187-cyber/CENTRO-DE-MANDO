@@ -32,7 +32,7 @@
     for (const e of enviados) {
       const d = d10(e.tel), quien = `${e.fuente || "?"} → ${fmt(d)}`;
       const bt = bajas.tels && bajas.tels[d];
-      const bl = e.leadId != null && bajas.leads && (bajas.leads[`tx:${e.leadId}`] || bajas.leads[`al:${e.leadId}`] || bajas.leads[`lofty:${e.leadId}`]);
+      const bl = e.leadId != null && bajas.leads && (bajas.leads[`tx:${e.leadId}`] || bajas.leads[`t2:${e.leadId}`] || bajas.leads[`al:${e.leadId}`] || bajas.leads[`lofty:${e.leadId}`]);
       const b = [bt, bl].filter((x) => x && x.t && x.t < e.t).sort((a, c) => a.t - c.t)[0];
       if (b) add("alta", "SMS a una baja", `${quien}: se mandó después de la baja (${b.motivo}, ${cuando(b.t)})`, e.t);
       const hr = horaCA(e.t);

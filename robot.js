@@ -64,6 +64,7 @@
     mapa: ["......A.......", "......X.......", "..XXXXXXXXXX..", "..XLLLLLLLLX..", "..XLWDLLWDLX..", "..XLDDLLDDLX..",
            "..XLLLLLLLLX..", "..XLLDDDDLLX..", "..XXXXXXXXXX..", "..RRRRRR.XX...", "..RLLLLR.XXXX.", "..RRRRRR.XX...", "....R...XX.XX."] };
 
+  ROBOTS.t2 = { ...ROBOTS.tx, nombre: "Texi 2", rol: "Manda SMS a leads Seller desde otra cuenta de Lofty", color: "#10b981", claro: "#a7f3d0", oscuro: "#064e3b" };
   ROBOTS.cb = { ...ROBOTS.tx, nombre: "Compri", rol: "Manda SMS a los leads Buyer que escojas", color: "#0ea5e9", claro: "#bae6fd", oscuro: "#0c4a6e" };
   ROBOTS.rs = { nombre: "Resi", rol: "Lee las respuestas a los SMS y da seguimiento", color: "#0d9488", claro: "#99f6e4", oscuro: "#134e4a",
     mapa: ["...A....A.....", "...X....X.....", "..XXXXXXXXXX..", "..XLLLLLLLLX..", "..XLWDLLWDLX..", "..XLDDLLDDLX..",
@@ -126,7 +127,7 @@
     "users": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
     "database": '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
   };
-  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database", "tb":"layout-dashboard", "cb":"key-round", "rc":"message-square-reply"};
+  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database", "tb":"layout-dashboard", "cb":"key-round", "t2":"message-square", "rc":"message-square-reply"};
 
   // Ícono de cada agente: línea fina del color de su sección (antes era pixel art; los mapas se quedan solo como color)
   function robotSVG(mod) {

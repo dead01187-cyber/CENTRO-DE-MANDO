@@ -391,3 +391,21 @@ test("Resi 2: los casos de leads Buyer (Compri) se pasan solos de Resi a Resi 2;
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });
+
+test("Texi 2: usa su propia llave (otra cuenta), solo Seller, y salta un teléfono que ya recibió hoy de Texi", async () => {
+  const LEADS_2 = [lead(401, "9495550401"), lead(402, "9495550402", { leadTypes: [2] }), lead(403, "9495550403")];
+  const hoyCA = Date.parse("2026-01-15T17:30:00Z"); // 9:30 am en California, el mismo día del reloj de la prueba
+  const amb = await abrir({ leads: LEADS_2, horaCA: "2026-01-15T10:00",
+    storage: { t2Key: "llave-de-la-otra-cuenta", t2Plantillas: [{ id: "p1", nombre: "Prueba", texto: "Hola {nombre}, Texi 2." }], t2Config: { plantilla: "p1" },
+      smsRegistro: [{ t: hoyCA, fuente: "Texi", tel: "9495550403", estado: "enviado" }] } }); // sin txKey: Texi 2 no la necesita
+  try {
+    const fin = await texiMandar(amb, "t2.html");
+    assert.deepEqual(amb.lofty.estado.sms.map((x) => x.phoneNumber), ["9495550401"], fin);
+    const st = await amb.leer(["t2Lista", "t2Hoy", "smsRegistro", "txHoy"]);
+    assert.equal(st.t2Hoy.n, 1); assert.equal(st.txHoy, undefined);
+    assert.ok(!st.t2Lista.some((x) => x.id === "402"), "el Buyer no entra");
+    assert.match(st.t2Lista.find((x) => x.id === "403").detalle, /ya recibió un SMS hoy/);
+    assert.ok(st.smsRegistro.some((e) => e.fuente === "Texi 2" && e.estado === "enviado" && e.tel === "9495550401"));
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});
