@@ -24,6 +24,7 @@ const DEFAULTS = {
   removeTag: "Contact verified",
   filterStage: "Cold 12 Month +",
   filterTag: "Contact verified",
+  filterTipo: "", // v1.84.0: "" = todos, "1" = solo Seller, "2" = solo Buyer (tipos de Lofty)
   maxCallMin: 30,
 };
 
@@ -189,7 +190,7 @@ function setRunningUI(on) {
   $("skip").disabled = !on;
 }
 
-const FIELDS = ["apiKey", "smsMode", "targetStage", "answeredStage", "removeTag", "filterStage", "filterTag", "maxCallMin"];
+const FIELDS = ["apiKey", "smsMode", "targetStage", "answeredStage", "removeTag", "filterStage", "filterTag", "filterTipo", "maxCallMin"];
 const CHECKS = ["doCalls", "autoSave", "caOnly", "deleteNonCA", "doSms", "skipPrimary"];
 
 const N_MSGS = 1; // solo SMS 1
@@ -271,20 +272,35 @@ async function api(path, opts = {}) {
 const hasTag = (lead, tag) =>
   (lead.tags || []).some((t) => (t.tagName || t).toLowerCase() === tag.toLowerCase());
 
-async function fetchMatchingLeads(limit = 50) {
-  const q = new URLSearchParams({ limit: String(limit), offset: "0" });
-  if (cfg.filterStage) q.set("stage", cfg.filterStage);
-  if (cfg.filterTag) q.set("allTags", cfg.filterTag);
-  const data = await api("/v1.0/leads?" + q.toString());
-  const leads = (data && data.leads) || [];
-  // Doble filtro por si la API ignora algún parámetro.
-  const filtered = leads.filter(
-    (l) =>
-      (!cfg.filterStage || (l.stage || "").toLowerCase() === cfg.filterStage.toLowerCase()) &&
-      (!cfg.filterTag || hasTag(l, cfg.filterTag))
-  );
-  const total = data && data._metadata ? data._metadata.total : filtered.length;
-  return { leads: filtered, total };
+// Tipo de lead en Lofty (developer.lofty.com): Seller = 1, Buyer = 2. Un lead "Buyer y Seller" entra en los dos.
+const TIPO_NOMBRE = { "": "", "1": "Seller", "2": "Buyer" };
+function esDelTipo(l) {
+  if (!cfg.filterTipo) return true;
+  const quiero = Number(cfg.filterTipo), re = quiero === 2 ? /buyer/i : /seller/i;
+  const tipos = [].concat(l.leadTypes || [], l.leadType != null ? l.leadType : []);
+  return tipos.some((t) => Number(t) === quiero || re.test(String(t)));
+}
+const pasaFiltro = (l) =>
+  (!cfg.filterStage || (l.stage || "").toLowerCase() === cfg.filterStage.toLowerCase()) &&
+  (!cfg.filterTag || hasTag(l, cfg.filterTag)) && esDelTipo(l);
+
+// Trae leads que cumplen el filtro. Con tipo de lead, pasa página por página (los de otro tipo se quedan en el
+// filtro de etapa/tag y llenarían la primera página); se detiene en cuanto junta `limit` o al revisar 3000.
+async function fetchMatchingLeads(limit = 50, seen = null) {
+  const out = []; let total = 0, revisados = 0;
+  for (let offset = 0; out.length < limit && revisados < (cfg.filterTipo ? 3000 : 100); ) {
+    const q = new URLSearchParams({ limit: "100", offset: String(offset) });
+    if (cfg.filterStage) q.set("stage", cfg.filterStage);
+    if (cfg.filterTag) q.set("allTags", cfg.filterTag);
+    const data = await api("/v1.0/leads?" + q.toString());
+    const leads = (data && data.leads) || [];
+    if (offset === 0) total = data && data._metadata ? data._metadata.total : leads.length;
+    revisados += leads.length;
+    for (const l of leads) if (pasaFiltro(l) && !(seen && seen.has(String(l.leadId)))) out.push(l); // doble filtro por si la API ignora algún parámetro
+    if (leads.length < 100) break;
+    offset += leads.length;
+  }
+  return { leads: out.slice(0, limit), total, tipo: TIPO_NOMBRE[cfg.filterTipo || ""] };
 }
 
 function isToday(timeStr) {
@@ -574,7 +590,7 @@ async function run() {
     // Fase 1: los SMS masivos ya no arrancan con un solo clic
     let total = "?"; try { total = (await fetchMatchingLeads(1)).total; } catch (e) {}
     const pol = await SMS.config();
-    const okSms = await preguntar(`Marki va a mandar SMS automáticamente, lead por lead, a los leads de “${cfg.filterStage || "todas las etapas"}”${cfg.filterTag ? ` con el tag “${cfg.filterTag}”` : ""} (Lofty dice ${total}).\n\nMensaje: “${activeMessages()[0].text}”\n\nSolo a números de California, de ${pol.desde}:00 a ${pol.hasta}:00 hora de California${pol.tope > 0 ? `, máximo ${pol.tope} SMS al día` : ", sin tope diario"}, y nunca a bajas ni números DNC. Un SMS mandado no se puede borrar.`, "Sí, mandar SMS", "Cancelar");
+    const okSms = await preguntar(`Marki va a mandar SMS automáticamente, lead por lead, a los leads${cfg.filterTipo ? ` ${TIPO_NOMBRE[cfg.filterTipo]}` : ""} de “${cfg.filterStage || "todas las etapas"}”${cfg.filterTag ? ` con el tag “${cfg.filterTag}”` : ""} (Lofty dice ${total}${cfg.filterTipo ? " contando todos los tipos" : ""}).\n\nMensaje: “${activeMessages()[0].text}”\n\nSolo a números de California, de ${pol.desde}:00 a ${pol.hasta}:00 hora de California${pol.tope > 0 ? `, máximo ${pol.tope} SMS al día` : ", sin tope diario"}, y nunca a bajas ni números DNC. Un SMS mandado no se puede borrar.`, "Sí, mandar SMS", "Cancelar");
     if (!okSms) { log("Cancelado: no arranqué."); return; }
   }
   running = true; stopRequested = false;
@@ -586,9 +602,9 @@ async function run() {
   try {
     while (!stopRequested) {
       setStatus("Buscando el siguiente lead…");
-      const { leads, total } = await fetchMatchingLeads(50);
-      const next = leads.find((l) => !seen.has(String(l.leadId)));
-      setCounts(`Pendientes: ${total}`);
+      const { leads, total, tipo } = await fetchMatchingLeads(1, seen);
+      const next = leads[0];
+      setCounts(`Pendientes: ${total}${tipo ? ` (de todos los tipos; trabajo solo ${tipo})` : ""}`);
       if (!next) { log("No quedan leads con ese filtro."); break; }
       seen.add(String(next.leadId));
       try {
@@ -627,8 +643,8 @@ $("save").onclick = async () => { await saveCfg(); log("Ajustes guardados."); };
 $("test").onclick = async () => {
   await saveCfg();
   try {
-    const { total } = await fetchMatchingLeads(1);
-    log(`Conexión OK. Leads con el filtro: ${total}`);
+    const { total, tipo } = await fetchMatchingLeads(1);
+    log(`Conexión OK. Leads con el filtro de etapa/tag: ${total}` + (tipo ? `; Marki solo trabaja los ${tipo}.` : " (todos los tipos)."));
   } catch (e) { log("Error: " + e.message); }
 };
 $("preview").onclick = $("test").onclick;

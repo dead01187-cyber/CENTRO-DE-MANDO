@@ -409,3 +409,23 @@ test("Texi 2: usa su propia llave (otra cuenta), solo Seller, y salta un teléfo
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });
+
+test("Marki: el filtro 'Tipo de lead' trabaja solo Buyer o solo Seller (pasando página si hace falta)", async () => {
+  // 130 Sellers primero (más de una página de Lofty) y 2 Buyers al final, todos en la misma etapa
+  const muchos = Array.from({ length: 130 }, (_, i) => lead(500 + i, "94955" + String(10000 + i)));
+  const LEADS_M = [...muchos, lead(701, "9495550701", { leadTypes: [2] }), lead(702, "9495550702", { leadTypes: [1, 2] })];
+  const amb = await abrir({ leads: LEADS_M, storage: { alCfg: { apiKey: "llave-marki", filterStage: "Warm", filterTag: "", filterTipo: "2", fase1: true } } });
+  try {
+    const p = await amb.pagina("al.html"); await p.waitForTimeout(1500);
+    assert.equal(await p.inputValue("#filterTipo"), "2");
+    const buyers = await p.evaluate(async () => (await fetchMatchingLeads(10)).leads.map((l) => l.leadId));
+    assert.deepEqual(buyers, [701, 702]);
+    await p.selectOption("#filterTipo", "1"); await p.evaluate(() => saveCfg());
+    const sellers = await p.evaluate(async () => (await fetchMatchingLeads(200)).leads.length);
+    assert.equal(sellers, 131); // los 130 Sellers + el que es Buyer y Seller
+    await p.selectOption("#filterTipo", ""); await p.evaluate(() => saveCfg());
+    assert.equal(await p.evaluate(async () => (await fetchMatchingLeads(1)).leads[0].leadId), 500);
+    assert.equal((await amb.leer("alCfg")).alCfg.filterTipo, "");
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});
