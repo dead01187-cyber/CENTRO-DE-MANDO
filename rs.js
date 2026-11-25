@@ -45,7 +45,7 @@ const bonito = (d) => `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 
 const DEF = { auto: true, cadaMin: 10, ia: true, notas: true, diasSeg: 3, horasAviso: 2, etapaBaja: "No Active Plans", verNumero: false,
   // Fase Anna 2 (Resi con IA)
-  nombre: "Christopher", asistente: false, aprobar: true, etapaCaliente: "Hot", etapaTibio: "Warm" };
+  nombre: "Mark", asistente: false, aprobar: true, etapaCaliente: "Hot", etapaTibio: "Warm" };
 const CAT = {
   caliente: { txt: "Caliente", cls: "bad", orden: -2 },
   sensible: { txt: "Para ti (legal / financiamiento / herencia)", cls: "bad", orden: -1 },
@@ -98,6 +98,7 @@ const entra = (x) => /^\s*in/i.test(String(x.direction || x.textDirection || "")
 async function cargar() {
   const { rsConfig = {}, rsCasos = {} } = await almacen.get(["rsConfig", "rsCasos"]);
   cfg = { ...DEF, ...rsConfig }; casos = rsCasos;
+  if (cfg.nombre === "Christopher") { cfg.nombre = "Mark"; almacen.set({ rsConfig: cfg }); } // ahora se presenta como Mark
   // v1.59: ver el número abría Lofty y cambiaba de lead sin que lo pidieras → ahora viene apagado (solo con el botón de cada lead)
   if (!rsConfig.verNumeroV2) { cfg.verNumero = false; cfg.verNumeroV2 = true; almacen.set({ rsConfig: cfg }); }
   // Los "No" que antes quedaban sin borrador: ahora llevan la pregunta del próximo año (solo si no les has contestado)
@@ -143,7 +144,7 @@ function borradorBase(cat, c, texto) {
   const es = enEspanol(texto), n = c.nombre || (es ? "" : "there"), calle = c.calle || (es ? "su propiedad" : "your property"), ciudad = c.ciudad || (es ? "la zona" : "the area");
   if (es) return ({
     interesado: `¡Gracias ${n}! ¿Tiene unos minutos hoy o mañana para una llamada rápida? Le explico cuánto podría valer ${calle} y lo que tengo en mente.`,
-    pregunta: `Hola ${n}, soy ${cfg.nombre || "Christopher"} de Rubio Real Estate. Trabajo con compradores en ${ciudad} y quería saber si consideraría una oferta por ${calle}. ¿Le puedo llamar un momento?`,
+    pregunta: `Hola ${n}, soy ${cfg.nombre || "Mark"} de Rubio Real Estate. Trabajo con compradores en ${ciudad} y quería saber si consideraría una oferta por ${calle}. ¿Le puedo llamar un momento?`,
     mas_tarde: NEXT_YEAR.es,
     no: NEXT_YEAR.es,
     otro: `Gracias por contestar, ${n}. ¿Le puedo llamar un momento para platicar sobre ${calle}?`,
@@ -151,7 +152,7 @@ function borradorBase(cat, c, texto) {
   }[cat] || "").replace(/\s+,/g, ",").replace(/  +/g, " ");
   return ({
     interesado: `Thanks ${n}! Do you have a few minutes today or tomorrow for a quick call? I can walk you through what ${calle} could sell for and what I have in mind.`,
-    pregunta: `Hi ${n}, this is ${cfg.nombre || "Christopher"} with Rubio Real Estate. I work with buyers in ${ciudad} and wanted to see if you'd consider an offer on ${calle}. Is now a good time for a quick call?`,
+    pregunta: `Hi ${n}, this is ${cfg.nombre || "Mark"} with Rubio Real Estate. I work with buyers in ${ciudad} and wanted to see if you'd consider an offer on ${calle}. Is now a good time for a quick call?`,
     mas_tarde: NEXT_YEAR.en,
     no: NEXT_YEAR.en,
     otro: `Thanks for getting back to me, ${n}. Would you have a minute for a quick call about ${calle}?`,

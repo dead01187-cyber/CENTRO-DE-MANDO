@@ -27,10 +27,10 @@ const VIGILAR_MS = 30 * 60e3;
 
 const DEF = {
   activo: true, modo: "ok", cuenta: "txKey", fuentes: "zBuyer", sms: true, email: true, marki: true,
-  smsSeller: "Hi {nombre}, this is Christopher with Rubio Real Estate. I saw your request about your home in {ciudad}. When's a good time for a quick call about its value? Reply STOP to opt out.",
-  smsBuyer: "Hi {nombre}, this is Christopher with Rubio Real Estate. I saw you're looking for a home in {ciudad}. What are you looking for? I can send you the best options. Reply STOP to opt out.",
+  smsSeller: "Hi {nombre}, this is Mark with Rubio Real Estate. I saw your request about your home in {ciudad}. When's a good time for a quick call about its value? Reply STOP to opt out.",
+  smsBuyer: "Hi {nombre}, this is Mark with Rubio Real Estate. I saw you're looking for a home in {ciudad}. What are you looking for? I can send you the best options. Reply STOP to opt out.",
   emailAsunto: "Your home in {ciudad}",
-  emailCuerpo: "Hi {nombre},\n\nThanks for reaching out about your home in {ciudad}. I'm Christopher Rubio-Novack with Rubio Real Estate. I'd be glad to prepare a free, no-obligation estimate of what your home could sell for in today's market and walk you through your options.\n\nWhat's a good time for a quick call?\n\nBest,\nChristopher Rubio-Novack\nRubio Real Estate",
+  emailCuerpo: "Hi {nombre},\n\nThanks for reaching out about your home in {ciudad}. I'm Mark with Rubio Real Estate. I'd be glad to prepare a free, no-obligation estimate of what your home could sell for in today's market and walk you through your options.\n\nWhat's a good time for a quick call?\n\nBest,\nMark\nRubio Real Estate",
 };
 let cfg = { ...DEF }, tarjetas = {}, ocupado = false, timer = null;
 
@@ -56,6 +56,10 @@ const CHECKS = ["activo", "sms", "email", "marki"];
 async function cargar() {
   const { ryConfig = {}, ryTarjetas = {} } = await chrome.storage.local.get(["ryConfig", "ryTarjetas"]);
   cfg = { ...DEF, ...ryConfig }; tarjetas = ryTarjetas;
+  // Ahora se presenta como Mark (antes Christopher): actualiza los textos guardados
+  let cambio = false;
+  for (const k of ["smsSeller", "smsBuyer", "emailCuerpo"]) { const v = String(cfg[k] || "").replace(/Christopher Rubio-Novack/g, "Mark").replace(/\bChristopher\b/g, "Mark"); if (v !== cfg[k]) { cfg[k] = v; cambio = true; } }
+  if (cambio) await chrome.storage.local.set({ ryConfig: cfg });
   CAMPOS.forEach((k) => ($(k).value = cfg[k])); CHECKS.forEach((k) => ($(k).checked = !!cfg[k]));
 }
 async function guardarCfg() {

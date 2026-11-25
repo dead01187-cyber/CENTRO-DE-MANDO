@@ -16,7 +16,7 @@
     buyer: { cuando: "cuándo quiere comprar", porque: "qué busca y por qué", precio: "su presupuesto", agente: "si ya tiene agente" },
   };
 
-  function prompt({ nombre = "Christopher", asistente = false, tipo = "seller", calif = {}, NEXT_YEAR }) {
+  function prompt({ nombre = "Mark", asistente = false, tipo = "seller", calif = {}, NEXT_YEAR }) {
     const yo = asistente ? `${nombre}'s assistant at Rubio Real Estate` : `${nombre} with Rubio Real Estate`;
     const e = ETIQ[tipo] || ETIQ.seller;
     const faltan = CALIF.filter((k) => !calif[k]).map((k) => e[k]);

@@ -31,14 +31,14 @@ const digitos = (t) => { let d = String(t || "").replace(/\D/g, ""); if (d.lengt
 const esCA = (t) => { const d = digitos(t); return d.length === 10 && LADAS_CA.has(d.slice(0, 3)); };
 const bonito = (d) => `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 
-const PLANTILLA_EJEMPLO = { id: "p1", nombre: "Saludo", texto: "Hi {nombre}, this is Christopher with Rubio Real Estate. Are you still the owner of {direccion}? I have a buyer interested in the area." };
+const PLANTILLA_EJEMPLO = { id: "p1", nombre: "Saludo", texto: "Hi {nombre}, this is Mark with Rubio Real Estate. Are you still the owner of {direccion}? I have a buyer interested in the area." };
 // ¿Texi o Compri? Lo dice la página (data-mod="tx" o "cb")
 const AGENTES = {
   tx: { nombre: "Texi", tipo: "Seller", codigo: 1, re: /seller/i, ejemplo: PLANTILLA_EJEMPLO, llave: "txKey", cuenta: "tx" },
   // Texi 2 (v1.83.0): leads Seller desde OTRA cuenta de Lofty, con su propia llave y su propio número
   t2: { nombre: "Texi 2", tipo: "Seller", codigo: 1, re: /seller/i, ejemplo: PLANTILLA_EJEMPLO, llave: "t2Key", cuenta: "t2" },
   cb: { nombre: "Compri", tipo: "Buyer", codigo: 2, re: /buyer/i,
-    ejemplo: { id: "p1", nombre: "Compradores", texto: "Hi {nombre}, this is Christopher with Rubio Real Estate. Are you still looking for a home in {ciudad}? I can send you new listings that match what you want." }, llave: "txKey", cuenta: "tx" },
+    ejemplo: { id: "p1", nombre: "Compradores", texto: "Hi {nombre}, this is Mark with Rubio Real Estate. Are you still looking for a home in {ciudad}? I can send you new listings that match what you want." }, llave: "txKey", cuenta: "tx" },
 };
 const YO = AGENTES[document.documentElement.dataset.mod] ? document.documentElement.dataset.mod : "tx", A = AGENTES[YO];
 const MISMA_CUENTA = A.cuenta === "tx"; // Texi y Compri comparten cuenta (y sus Resis); Texi 2 tiene la suya
@@ -71,6 +71,8 @@ async function api(path, opts = {}) {
 async function cargar() {
   const st = await chrome.storage.local.get([K("Config"), K("Plantillas"), A.llave]), txConfig = st[K("Config")] || {}, txPlantillas = st[K("Plantillas")], txKey = st[A.llave];
   plantillas = Array.isArray(txPlantillas) && txPlantillas.length ? txPlantillas : [A.ejemplo];
+  // Ahora se presenta como Mark (antes Christopher): actualiza las plantillas guardadas
+  if (plantillas.some((p) => /\bthis is Christopher\b|\bsoy Christopher\b/i.test(p.texto || ""))) { plantillas = plantillas.map((p) => ({ ...p, texto: String(p.texto || "").replace(/\b(this is|soy) Christopher\b/gi, "$1 Mark") })); chrome.storage.local.set({ [K("Plantillas")]: plantillas }); }
   selId = plantillas.some((p) => p.id === txConfig.plantilla) ? txConfig.plantilla : plantillas[0].id;
   $("etapa").value = txConfig.etapa || ""; $("tag").value = txConfig.tag || ""; $("orden").value = txConfig.orden === "nuevos" ? "nuevos" : "viejos";
   $("cuentaTxt").textContent = txKey ? "· conectada" : "· falta la API key";
