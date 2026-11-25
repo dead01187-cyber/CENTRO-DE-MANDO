@@ -8,10 +8,10 @@ const EXT = path.resolve(__dirname, "../..");
 // horaCA: "2026-01-15T10:00" = 10:00 hora de California
 const aUTC = (horaCA) => { const d = new Date(horaCA + ":00Z"); const off = new Date(d.toLocaleString("en-US", { timeZone: "America/Los_Angeles" })) - new Date(d.toLocaleString("en-US", { timeZone: "UTC" })); return new Date(d.getTime() - off); };
 
-async function abrir({ leads = [], fallar = {}, storage = {}, horaCA = "2026-01-15T10:00", textos = {}, pool = [], claude = null } = {}) {
+async function abrir({ leads = [], fallar = {}, storage = {}, horaCA = "2026-01-15T10:00", textos = {}, pool = [], claude = null, citas = {} } = {}) {
   const perfil = fs.mkdtempSync(path.join(os.tmpdir(), "geo-prueba-"));
   const ctx = await chromium.launchPersistentContext(perfil, { headless: true, channel: "chromium", args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`] });
-  const lofty = loftyFalso({ leads, fallar, textos, pool });
+  const lofty = loftyFalso({ leads, fallar, textos, pool, citas });
   await ctx.route("**/*", (r) => (r.request().url().startsWith("chrome-extension://") ? r.continue() : r.abort()));
   await ctx.route("https://api.lofty.com/**", lofty.atender);
   // Claude falso (opcional): claude(cuerpoDeLaPeticion) → texto que "contesta" Claude
