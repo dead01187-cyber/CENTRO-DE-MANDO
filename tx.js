@@ -175,7 +175,11 @@ async function buscar() {
   // Resi (Texi) y Resi 2 (Compri) anotan cada uno sus bajas y quién contestó: se respetan las de los dos
   const rsNoEscribir = { ...(st0.rsNoEscribir || {}), ...(st0.rcNoEscribir || {}) }, rsRespondieron = { ...(st0.rsRespondieron || {}), ...(st0.rcRespondieron || {}) };
   const bajaTel = (smsBajas.tels || {}), bajaLead = (smsBajas.leads || {});
-  const encontrados = []; let revisados = 0, sinCA = 0, noSeller = 0, bajas = 0, noEntrega = 0, optOut = 0;
+  const encontrados = []; let revisados = 0, sinCA = 0, noSeller = 0, bajas = 0, noEntrega = 0, optOut = 0, conAnna = 0;
+  // Fase Anna 1: los leads que están con Anna (AI Sales Agent de Lofty) y no están silenciados no entran
+  let poolAnna = new Set();
+  try { if (window.Cerebro && MISMA_CUENTA) poolAnna = new Set((await Cerebro.poolAnna()).map((x) => x.leadId)); }
+  catch (e) { decir(`No pude leer el pool de Anna (${e.message}); reviso uno por uno antes de mandar.`); }
   try {
     for (let offset = 0; offset < 20000 && !parar; ) {
       ver(`Buscando en Lofty${etapa ? ` la etapa “${etapa}”` : ""}${tag ? ` con el tag “${tag}”` : ""}… (${revisados} revisados, ${encontrados.length} encontrados)`);
@@ -187,6 +191,7 @@ async function buscar() {
         if (etapa && norm(l.stage) !== norm(etapa)) continue;
         if (tag && !(l.tags || []).some((t) => norm(t.tagName || t.name || t) === norm(tag))) continue;
         if (!esDelTipo(l)) { noSeller++; continue; } // solo los de su tipo (Seller o Buyer)
+        if (poolAnna.has(String(l.leadId || l.id)) && !(await Cerebro.muteado(String(l.leadId || l.id)).catch(() => false))) { conAnna++; continue; } // lo trabaja Anna
         if (rsNoEscribir[String(l.leadId || l.id)] || bajaLead[`${A.cuenta}:${l.leadId || l.id}`]) { bajas++; continue; } // Resi / baja permanente: pidió que no le escribieran, número equivocado o enojado
         if (leadOptOut(l)) { optOut++; continue; } // Lofty: no se le pueden mandar textos (opt-out)
         const fueraOpt = numerosOptOut(l);
@@ -211,7 +216,7 @@ async function buscar() {
     lista = encontrados; ordenar();
     await chrome.storage.local.set({ [K("Lista")]: lista.map((x) => ({ ...x })) });
     pintarLista();
-    const salte = [noSeller ? `${noSeller} que no son ${A.tipo}` : "", sinCA ? `${sinCA} sin número de CA` : "", bajas ? `${bajas} que pidieron no recibir SMS (Resi)` : "", optOut ? `${optOut} opt-out en Lofty (no reciben textos)` : "", noEntrega ? `${noEntrega} cuyos números no reciben SMS (Resi)` : ""].filter(Boolean).join(", ");
+    const salte = [noSeller ? `${noSeller} que no son ${A.tipo}` : "", sinCA ? `${sinCA} sin número de CA` : "", bajas ? `${bajas} que pidieron no recibir SMS (Resi)` : "", optOut ? `${optOut} opt-out en Lofty (no reciben textos)` : "", conAnna ? `${conAnna} que trabaja Anna` : "", noEntrega ? `${noEntrega} cuyos números no reciben SMS (Resi)` : ""].filter(Boolean).join(", ");
     if (!lista.length) decir(`No encontré leads ${A.tipo}${etapa ? ` en “${etapa}”` : ""}${tag ? ` con el tag “${tag}”` : ""} con teléfono de California` + (salte ? ` (salté ${salte})` : "") + ".");
     else decir(`Encontré ${lista.length} lead(s) ${A.tipo} con teléfono de California` + (salte ? ` (salté ${salte})` : "") + `. Revisa la lista y el mensaje; cuando estés listo dale “Revisar y mandar”.`);
     window.robot && robot.set(lista.length ? "feliz" : "idle", lista.length ? `${lista.length} leads listos para revisar` : "Sin leads");
@@ -226,7 +231,7 @@ let vista = "faltan";
 const grupo = (x) => (x.estado === "enviado" || (x.antes && x.estado !== "mandando") ? "mandados" : x.estado === "error" || x.estado === "saltado" ? "problema" : "faltan");
 function pintarVistas() {
   const n = { faltan: 0, mandados: 0, problema: 0 }; for (const x of lista) n[grupo(x)]++;
-  $("vFaltan").textContent = `Faltan (${n.faltan.toLocaleString()})`; $("vMandados").textContent = `Ya mandados (${n.mandados.toLocaleString()})`; $("vProblema").textContent = `Opt-out / error (${n.problema.toLocaleString()})`;
+  $("vFaltan").textContent = `Faltan (${n.faltan.toLocaleString()})`; $("vMandados").textContent = `Ya mandados (${n.mandados.toLocaleString()})`; $("vProblema").textContent = `Saltados / error (${n.problema.toLocaleString()})`;
   for (const [id, v] of [["vFaltan", "faltan"], ["vMandados", "mandados"], ["vProblema", "problema"]]) $(id).classList.toggle("on", vista === v);
   $("marcarTodos").hidden = $("desmarcar").hidden = vista !== "faltan";
 }
@@ -237,7 +242,7 @@ function pintarLista() {
   const MAX = 500; // con miles de leads se enseñan los primeros 500 (el envío sí toma todos los marcados)
   if (!idx.length) { $("lista").innerHTML = `<li class="empty">${vista === "faltan" ? "Ya no falta nadie: a todos los de la lista ya se les mandó." : vista === "mandados" ? "Todavía no se le ha mandado a ninguno de esta lista." : "Ninguno con opt-out o error."}</li>`; contar(); return; }
   $("lista").innerHTML = idx.slice(0, MAX).map((i) => { const x = lista[i];
-    const est = x.estado === "enviado" ? `<span class="tag ok">enviado</span>` : x.estado === "error" ? `<span class="tag bad" title="${esc(x.detalle)}">error</span>` : x.estado === "mandando" ? `<span class="tag wait">mandando…</span>` : x.estado === "saltado" ? `<span class="tag wait" title="${esc(x.detalle)}">opt-out</span>` : "";
+    const est = x.estado === "enviado" ? `<span class="tag ok">enviado</span>` : x.estado === "error" ? `<span class="tag bad" title="${esc(x.detalle)}">error</span>` : x.estado === "mandando" ? `<span class="tag wait">mandando…</span>` : x.estado === "saltado" ? `<span class="tag wait" title="${esc(x.detalle)}">saltado</span>` : "";
     return `<li><input type="checkbox" data-i="${i}" ${x.marcado && grupo(x) === "faltan" ? "checked" : ""} ${grupo(x) !== "faltan" || x.estado ? "disabled" : ""}>
       <div class="addr"><b>${esc(`${x.nombre === "there" ? "" : x.nombre} ${x.apellido}`.trim() || "(sin nombre)")}</b> ${est}
       <small>${x.creado ? `En Lofty desde ${dia(x.creado)} · ` : ""}${destinos(x).map(bonito).join(" · ")}${x.fuera ? ` · ${x.fuera} de fuera de CA (no se manda)` : ""}${x.calle ? ` · ${esc(x.calle)}` : ""}</small>
@@ -321,6 +326,15 @@ async function mandar() {
         await chrome.storage.local.set({ [K("Lista")]: lista }); pintarLista();
         if (mal >= 3 && !ok) { decir(`No pude revisar el opt-out de los primeros 3 leads; me detengo. Lofty dijo: ${primerError}`, "error"); break; }
         continue;
+      }
+      // Fase Anna 1: el Cerebro (24 h entre todos, una persona le escribió, está con Anna). Falla cerrada.
+      if (window.Cerebro) {
+        const cb = await Cerebro.puedo({ leadId: x.id, canal: "sms", robot: A.nombre, llave: A.llave, respetaAnna: MISMA_CUENTA }); // Anna es de la cuenta principal: no aplica a Texi 2
+        if (!cb.ok) {
+          x.estado = cb.codigo === "error" ? "error" : "saltado"; x.detalle = "Cerebro: " + cb.motivo;
+          if (cb.codigo === "error") { mal++; if (!primerError) primerError = cb.motivo; if (cb.sinKey || cb.status === 401 || cb.status === 403) parar = true; } else saltados++;
+          await chrome.storage.local.set({ [K("Lista")]: lista }); pintarLista(); continue;
+        }
       }
       x.estado = "mandando"; pintarLista();
       window.robot && robot.set("trabajando", `Mandando SMS a ${x.nombre} ${x.apellido}…`);

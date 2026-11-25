@@ -324,6 +324,11 @@ async function revisar(aMano) {
     for (const [k, c] of Object.entries(casos)) if (!["descartado"].includes(c.estado) && ahora - (c.t || 0) < 30 * D && !ids.includes(k)) ids.push(k);
     // Solo los leads de mi agente (Texi → Resi, Compri → Resi 2); los casos del otro se le pasan
     { const mios = []; for (const id of ids) { const d = await duenoDe(id); if (d === MI_AGENTE) mios.push(id); else if (casos[id]) await traspasar(id); } ids = mios; }
+    // Fase Anna 1: los leads que trabaja Anna (en su pool y sin silenciar) los atiende ella, no Resi
+    if (window.Cerebro) {
+      let pool = null; try { pool = new Set((await Cerebro.poolAnna()).map((x) => x.leadId)); } catch (e) { pool = null; }
+      if (pool) { const libres = []; for (const id of ids) { if (pool.has(String(id)) && !(await Cerebro.muteado(String(id)).catch(() => false))) continue; libres.push(id); } ids = libres; }
+    }
     const { rsVistos = [] } = await almacen.get("rsVistos");
     const vistos = new Set(rsVistos);
     let i = 0;
@@ -447,6 +452,13 @@ async function vigilar() {
 }
 
 // ---------- Acciones (todas con tu OK) ----------
+// Fase Anna 1: el Cerebro antes de mandar (24 h entre todos, una persona le escribió, está con Anna). Falla cerrada.
+async function cerebroDeja(id, esRespuesta) {
+  if (!window.Cerebro) return true;
+  const cb = await Cerebro.puedo({ leadId: id, canal: "sms", robot: NOMBRE, llave: "txKey", esRespuesta });
+  if (!cb.ok) { await SMS.anotar({ fuente: NOMBRE, leadId: id, estado: "bloqueado", motivo: "Cerebro: " + cb.motivo }); decir(`No mandé el SMS. Cerebro: ${cb.motivo}.`, cb.codigo === "error" ? "error" : undefined); }
+  return cb.ok;
+}
 async function mandar(id) {
   const c = casos[id]; if (!c) return;
   const li = document.querySelector(`li[data-id="${CSS.escape(id)}"]`);
@@ -456,6 +468,7 @@ async function mandar(id) {
   if (SIN_RESPUESTA.has(c.categoria) && !(await preguntar(`${c.nombre} está marcado como “${CAT[c.categoria].txt}”. ¿Seguro que le quieres escribir?`, "Sí, escribirle", "No"))) return;
   { const b = await SMS.bajaDe({ tel: num, leadId: id, cuenta: "tx" }); if (b || c.bajaPermanente) { ver(`No se puede: ${c.nombre || "este lead"} tiene baja permanente (${(b && b.motivo) || c.bajaPermanente}). No le mandé nada.`); return; } }
   if (!(await preguntar(`Mandar este SMS a ${`${c.nombre} ${c.apellido}`.trim()} · ${bonito(num)}:\n\n“${texto}”\n\nUn SMS mandado ya no se puede borrar.`, "Mandar", "Cancelar"))) { ver("No mandé nada."); return; }
+  if (!(await cerebroDeja(id, true))) return;
   const pol = await SMS.puedeMandar({ tel: num, leadId: id, cuenta: "tx", fuente: NOMBRE });
   if (!pol.ok) { await SMS.anotar({ fuente: NOMBRE, leadId: id, tel: num, estado: "bloqueado", motivo: pol.motivo }); decir(`No mandé el SMS: ${pol.motivo}.`, "error"); return; }
   try {
@@ -582,6 +595,7 @@ async function mandarPersonalizado() {
   const b = await SMS.bajaDe({ tel: num, leadId: elegido.id, cuenta: "tx" });
   if (b || rsNoEscribir[elegido.id]) { ver(`No se puede: ${elegido.nombre || "este lead"} tiene baja (${(b && b.motivo) || rsNoEscribir[elegido.id].motivo}). No le mandé nada.`); return; }
   if (!(await preguntar(`Mandar este SMS a ${`${elegido.nombre} ${elegido.apellido}`.trim()} · ${bonito(num)}:\n\n“${texto}”\n\nUn SMS mandado ya no se puede borrar.`, "Mandar", "Cancelar"))) { ver("No mandé nada."); return; }
+  if (!(await cerebroDeja(elegido.id, false))) return;
   const pol = await SMS.puedeMandar({ tel: num, leadId: elegido.id, cuenta: "tx", fuente: NOMBRE });
   if (!pol.ok) { await SMS.anotar({ fuente: NOMBRE, leadId: elegido.id, tel: num, estado: "bloqueado", motivo: pol.motivo }); decir(`No mandé el SMS: ${pol.motivo}.`, "error"); return; }
   $("compoMandar").disabled = true;

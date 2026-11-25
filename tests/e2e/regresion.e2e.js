@@ -360,7 +360,7 @@ test("Compri: solo manda a leads Buyer, con la misma llave de Texi; y no repite 
     const st = await amb.leer(["cbLista", "cbHoy", "txHoy", "smsRegistro"]);
     assert.equal(st.cbHoy.n, 1); assert.equal(st.txHoy.n, 2);
     const salto = st.cbLista.find((x) => x.id === "203");
-    assert.equal(salto.estado, "error"); assert.match(salto.detalle, /ya recibió un SMS hoy de Texi o Compri/);
+    assert.equal(salto.estado, "saltado"); assert.match(salto.detalle, /Cerebro: ya recibió un SMS hace \d+ min \(Texi\); máximo 1 cada 24 h/); // Fase Anna 1: lo frena el Cerebro
     assert.ok(st.smsRegistro.some((e) => e.fuente === "Compri" && e.estado === "enviado" && e.tel === "9495550201"));
     assert.ok(!st.cbLista.some((x) => x.id === "202" || x.id === "204"), "Seller y Renter no entran en la lista de Compri");
     assert.deepEqual(amb.errores, []);

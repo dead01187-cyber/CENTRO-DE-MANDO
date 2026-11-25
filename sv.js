@@ -462,6 +462,8 @@ const TOOLS = [
     input_schema: { type: "object", properties: { modulo: { type: "string", enum: MODS_CAPI }, campo: { type: "string" }, valor: { type: "string" } }, required: ["modulo", "campo", "valor"] } },
   { name: "mostrar_modulo", description: "Cambia la pestaña visible del panel.",
     input_schema: { type: "object", properties: { modulo: { type: "string", enum: [...MODS_CAPI, "tb", "sv"] } }, required: ["modulo"] } },
+  { name: "rayo_pendientes", description: "Lista los leads nuevos que Rayo tiene esperando la aprobación del jefe (nombre, ciudad, SMS que saldría). Úsala SIEMPRE antes de rayo_aprobar y léele al jefe a quién y qué se va a mandar.", input_schema: { type: "object", properties: {} } },
+  { name: "rayo_aprobar", description: "Aprueba leads de Rayo para que los contacte (SMS, email y cola de Marki). SOLO cuando el jefe lo pidió en su último mensaje y DESPUÉS de haberle leído la lista con rayo_pendientes. ids = los leadId que el jefe aprobó (o todos los de la lista si dijo 'todos').", input_schema: { type: "object", properties: { ids: { type: "array", items: { type: "string" } } }, required: ["ids"] } },
   { name: "interruptor", description: "Prende o apaga un agente (su interruptor del Centro de Mando). Un agente apagado no trabaja ni revisa nada solo. SOLO úsala cuando el jefe te lo pidió en su último mensaje (ej. 'apaga a Wibi', 'prende a Zeta'). Nunca por un aviso automático.",
     input_schema: { type: "object", properties: { robot: { type: "string", enum: REGISTRO.ids() }, prender: { type: "boolean" } }, required: ["robot", "prender"] } },
   { name: "listar_pestanas", description: "Lista las pestañas abiertas de Chrome.", input_schema: { type: "object", properties: {} } },
@@ -484,7 +486,7 @@ const TOOLS = [
 const SITIOS_LEIBLES = /^https:\/\/([a-z0-9-]+\.)*(propwire\.com|beenverified\.com|lofty\.com|properant\.com|occlerkrecorder\.gov|mail\.google\.com|teams\.live\.com|teams\.microsoft\.com|zillow\.com|redfin\.com|realtor\.com)\//i;
 const esPWoBV = (u) => /^https:\/\/([a-z0-9-]+\.)?(propwire|beenverified)\.com\//i.test(u || "");
 const siNo = (v) => /^(s[ií]|true|1|yes|on)$/i.test(String(v).trim());
-let turnoAutomatico = false;
+let turnoAutomatico = false, rayoListado = null; // rayoListado: lo que Capi le leyó al jefe (para aprobar por voz)
 
 // Fase 2b: subir a Lofty = tarea "subir" de Lofti en el bus. Siempre pide la aprobación del jefe (tarjeta Aprobar / Rechazar);
 // Capi no puede aprobar. Antes Capi daba clic en la página de Lofti.
@@ -570,6 +572,23 @@ async function ejecutar(nombre, a, deRobot = false) {
     case "pausar_mision": if (!mision) return "No hay misión."; mision.estado = "pausada"; mision.tareaPropi = null; guardarMision(); await cancelarTareasMision(); return "Misión en pausa.";
     case "seguir_mision": if (!mision) return "No hay misión."; mision.estado = "corriendo"; mision.rondasSinAvance = 0; guardarMision(); correrMision(); return "Seguimos.";
     case "cancelar_mision": if (!mision) return "No hay misión."; mision.estado = "cancelada"; guardarMision(); await cancelarTareasMision(); mision = null; return "Misión cancelada.";
+    case "rayo_pendientes": {
+      const { ryTarjetas = {} } = await chrome.storage.local.get("ryTarjetas");
+      const p = Object.values(ryTarjetas).filter((x) => x.estado === "por aprobar");
+      rayoListado = { t: Date.now(), ids: p.map((x) => String(x.leadId)) };
+      if (!p.length) return "Rayo no tiene leads esperando aprobación.";
+      return p.map((x) => `${x.leadId}: ${x.nombre} ${x.apellido} (${x.ciudad || "sin ciudad"}, ${x.comprador ? "Buyer" : "Seller"}, entró ${new Date(x.creado).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}). SMS: "${x.sms}"`).join("\n");
+    }
+    case "rayo_aprobar": {
+      // Candados: solo el jefe (no un aviso automático ni otro robot) y solo lo que Capi le acaba de leer (5 min)
+      if (deRobot || turnoAutomatico) return "Solo el jefe aprueba a Rayo.";
+      if (!rayoListado || Date.now() - rayoListado.t > 5 * 60e3) return "Primero usa rayo_pendientes y léele la lista al jefe.";
+      const ids = [].concat(a.ids || []).map(String).filter((x) => rayoListado.ids.includes(x));
+      if (!ids.length) return "Esos leads no están en la lista que le leíste al jefe.";
+      await chrome.storage.local.set({ ryAprobar: { ids, por: "Capi (voz del jefe)", t: Date.now() } });
+      rayoListado = null;
+      return `Listo: aprobé ${ids.length} lead(s) de Rayo; los contacta ya (si es horario).`;
+    }
     case "interruptor": {
       if (deRobot || turnoAutomatico) return "Solo el jefe prende o apaga agentes.";
       const { robotsApagados = {} } = await chrome.storage.local.get("robotsApagados");
@@ -813,6 +832,8 @@ const ACCIONES = {
   pausar_mision: () => "Pausando la misión", seguir_mision: () => "Reanudando la misión", cancelar_mision: () => "Cancelando la misión",
   subir_leads: (a) => a.soloUnoDePrueba ? "Subiendo 1 lead de prueba a Lofty" : "Subiendo los leads a Lofty",
   interruptor: (a) => `${a.prender ? "Prendiendo" : "Apagando"} a ${ROBOT_DE[a.robot] || a.robot}`,
+  rayo_pendientes: () => "Revisando los leads nuevos de Rayo",
+  rayo_aprobar: (a) => `Aprobando ${[].concat(a.ids || []).length} lead(s) de Rayo`,
   delegar: (a) => `Le encargo a ${ROBOT_DE[a.robot] || a.robot}: ${String(a.tarea || "").slice(0, 80)}`,
   leer_modulo: (a) => `Leyendo la pestaña ${MODULOS[a.modulo] || a.modulo}`,
   clic: (a) => `Clic en “${((BOTONES[a.modulo] || {})[a.boton] || a.boton)}” (${MODULOS[a.modulo] || a.modulo})`,

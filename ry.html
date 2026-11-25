@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="ry">
+<head>
+<meta charset="utf-8">
+<title>Rayo · Leads nuevos</title>
+<style>
+  :root { --c: #f59e0b; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], input[type=password], input[type=number], select, textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; background: #fff; }
+  textarea { min-height: 90px; resize: vertical; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  .mini { padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 42vh; overflow: auto; }
+  li { padding: 7px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: flex-start; }
+  li:last-child { border-bottom: 0; } li .addr { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  li .sms { font-size: 11.5px; color: #334155; background: #f1f5f9; border-radius: 8px; padding: 4px 7px; margin-top: 3px; white-space: pre-wrap; }
+  .vistas button.on { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .ok { background: #dcfce7; color: #166534; } .bad { background: #fee2e2; color: #991b1b; } .wait { background: #fef9c3; color: #854d0e; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+  #confirma { border: 2px solid var(--c); background: #ecfdf5; }
+  #confirma[hidden] { display: none; }
+  #largo.mal { color: #b91c1c; font-weight: 600; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <label class="chk"><input type="checkbox" id="activo"> <b>Vigilar leads nuevos cada 60 s</b></label>
+      <button id="revisar" class="mini">Revisar ahora</button>
+    </div>
+    <div class="grid" style="margin-top:8px">
+      <label class="f">Modo<select id="modo"><option value="ok">Con mi OK (apruebo yo o Capi)</option><option value="auto">Automático (sale solo)</option></select></label>
+      <label class="f">Cuenta de Lofty<select id="cuenta"><option value="txKey">La de Texi (Resi atiende las respuestas)</option><option value="loftyKey">La principal (la de Lofti)</option></select></label>
+    </div>
+    <div class="hint" id="modoTxt" style="margin-top:6px"></div>
+  </div>
+
+  <div class="nums">
+    <div class="card"><div class="count" id="nPend">0</div><small>por aprobar</small></div>
+    <div class="card"><div class="count" id="nHechos">0</div><small>contactados</small></div>
+    <div class="card"><div class="count" id="nAnna">0</div><small>ganó Anna</small></div>
+    <div class="card"><div class="count" id="nTiempo">—</div><small>tiempo promedio</small></div>
+  </div>
+
+  <div class="row"><button id="aprobarTodas" class="primary" hidden>Aprobar y contactar a todos los pendientes</button></div>
+  <div class="card" id="status">Listo.</div>
+  <ul id="lista"></ul>
+
+  <details class="card">
+    <summary>Qué hace Rayo con cada lead nuevo</summary>
+    <div style="display:grid;gap:8px;margin-top:8px">
+      <label class="f">Fuentes de leads nuevos (separadas por coma)<input type="text" id="fuentes" placeholder="zBuyer"></label>
+      <div class="hint">Solo atiende leads nuevos de estas fuentes, para no tocar los que suben tus propios robots (Lofti/Propwire). Vacío = todas las fuentes.</div>
+      <label class="chk"><input type="checkbox" id="marki"> Ponerlo en la cola de Marki para llamarlo</label>
+      <label class="chk"><input type="checkbox" id="sms"> Mandarle SMS</label>
+      <label class="f">SMS para Sellers<textarea id="smsSeller"></textarea></label>
+      <label class="f">SMS para Buyers<textarea id="smsBuyer"></textarea></label>
+      <label class="chk"><input type="checkbox" id="email"> Mandarle email de presentación</label>
+      <label class="f">Asunto del email<input type="text" id="emailAsunto"></label>
+      <label class="f">Email<textarea id="emailCuerpo" style="min-height:150px"></textarea></label>
+      <div class="hint">Puedes usar {nombre}, {apellido}, {ciudad} y {direccion}. Antes de contactar reviso que Anna no le haya escrito ya; si no, la silencio en ese lead y contacto yo. Respeto bajas, DNC, horario 8–21 h de California y el Cerebro (máximo 1 SMS por lead cada 24 h entre todos y nada si una persona le escribió).</div>
+    </div>
+  </details>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script><script src="politica-sms.js"></script><script src="cerebro-core.js"></script><script src="cerebro.js"></script>
+<script src="ry.js"></script>
+</body>
+</html>

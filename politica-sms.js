@@ -85,7 +85,17 @@
         smsRegistro.push({ t: Date.now(), ...ev });
         await chrome.storage.local.set({ smsRegistro: smsRegistro.slice(-REGISTRO_MAX) });
       });
+      // Fase Anna 1: cada SMS que sí salió también queda en el Cerebro (registro de contactos de todos los robots)
+      if (ev && ev.estado === "enviado" && ev.leadId != null && ev.leadId !== "") {
+        await (typeof navigator !== "undefined" && navigator.locks ? navigator.locks.request("cerebro", (x) => guardarContacto(ev)) : guardarContacto(ev));
+      }
     } catch (e) { /* el registro nunca debe tumbar al agente */ }
+  }
+
+  async function guardarContacto(ev) {
+    const { cerebroContactos = [] } = await chrome.storage.local.get("cerebroContactos");
+    cerebroContactos.push({ t: Date.now(), leadId: String(ev.leadId), canal: "sms", robot: String(ev.fuente || ""), tel: String(ev.tel || "") });
+    await chrome.storage.local.set({ cerebroContactos: cerebroContactos.slice(-8000) });
   }
 
   // ---------- La pregunta antes de cada SMS ----------

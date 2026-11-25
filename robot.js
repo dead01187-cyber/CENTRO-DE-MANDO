@@ -64,6 +64,7 @@
     mapa: ["......A.......", "......X.......", "..XXXXXXXXXX..", "..XLLLLLLLLX..", "..XLWDLLWDLX..", "..XLDDLLDDLX..",
            "..XLLLLLLLLX..", "..XLLDDDDLLX..", "..XXXXXXXXXX..", "..RRRRRR.XX...", "..RLLLLR.XXXX.", "..RRRRRR.XX...", "....R...XX.XX."] };
 
+  ROBOTS.ry = { ...ROBOTS.tx, nombre: "Rayo", rol: "Llega antes que Anna a los leads nuevos", color: "#f59e0b", claro: "#fde68a", oscuro: "#78350f" };
   ROBOTS.t2 = { ...ROBOTS.tx, nombre: "Texi 2", rol: "Manda SMS a leads Seller desde otra cuenta de Lofty", color: "#10b981", claro: "#a7f3d0", oscuro: "#064e3b" };
   ROBOTS.cb = { ...ROBOTS.tx, nombre: "Compri", rol: "Manda SMS a los leads Buyer que escojas", color: "#0ea5e9", claro: "#bae6fd", oscuro: "#0c4a6e" };
   ROBOTS.rs = { nombre: "Resi", rol: "Lee las respuestas a los SMS y da seguimiento", color: "#0d9488", claro: "#99f6e4", oscuro: "#134e4a",
@@ -97,6 +98,7 @@
 
   // Íconos de línea (Lucide v0.469.0, licencia ISC: https://lucide.dev/license). Uno por función.
   const FORMAS = {
+    "zap": '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
     "key-round": '<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>',
     "layout-dashboard": '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
     "sparkles": '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
@@ -127,7 +129,7 @@
     "users": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
     "database": '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
   };
-  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database", "tb":"layout-dashboard", "cb":"key-round", "t2":"message-square", "rc":"message-square-reply"};
+  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database", "tb":"layout-dashboard", "cb":"key-round", "t2":"message-square", "ry":"zap", "rc":"message-square-reply"};
 
   // Ícono de cada agente: línea fina del color de su sección (antes era pixel art; los mapas se quedan solo como color)
   function robotSVG(mod) {

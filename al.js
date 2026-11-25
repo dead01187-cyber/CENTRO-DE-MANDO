@@ -24,6 +24,7 @@ const DEFAULTS = {
   removeTag: "Contact verified",
   filterStage: "Cold 12 Month +",
   filterTag: "Contact verified",
+  esperaRayo: true, // Fase Anna 1: cola de Rayo primero y esperar leads nuevos
   filterTipo: "", // v1.84.0: "" = todos, "1" = solo Seller, "2" = solo Buyer (tipos de Lofty)
   maxCallMin: 30,
 };
@@ -191,7 +192,7 @@ function setRunningUI(on) {
 }
 
 const FIELDS = ["apiKey", "smsMode", "targetStage", "answeredStage", "removeTag", "filterStage", "filterTag", "filterTipo", "maxCallMin"];
-const CHECKS = ["doCalls", "autoSave", "caOnly", "deleteNonCA", "doSms", "skipPrimary"];
+const CHECKS = ["doCalls", "autoSave", "caOnly", "deleteNonCA", "doSms", "skipPrimary", "esperaRayo"];
 
 const N_MSGS = 1; // solo SMS 1
 function renderMsgs() {
@@ -271,6 +272,27 @@ async function api(path, opts = {}) {
 
 const hasTag = (lead, tag) =>
   (lead.tags || []).some((t) => (t.tagName || t).toLowerCase() === tag.toLowerCase());
+
+// ---------- Cola de Rayo (Fase Anna 1) ----------
+// Rayo deja aquí los leads nuevos que ganó (alCola = [{ leadId, t, nombre }]). Marki los atiende antes que su filtro.
+async function siguienteDeCola(seen) {
+  if (!cfg.esperaRayo) return null;
+  if (!SMS.enHorario(await SMS.config())) return null; // nada de llamar de noche: la cola espera a las 8 am (hora de California)
+  const { alCola = [] } = await chrome.storage.local.get("alCola");
+  const item = alCola.find((x) => !seen.has(String(x.leadId)));
+  if (!item) return null;
+  await chrome.storage.local.set({ alCola: alCola.filter((x) => String(x.leadId) !== String(item.leadId)) });
+  try {
+    const d = await api(`/v1.0/leads/${encodeURIComponent(item.leadId)}`);
+    const l = (d && (d.lead || d.data || d)) || null;
+    if (!l || !l.leadId) { log(`  Cola de Rayo: no encontré el lead ${item.leadId}.`); return null; }
+    log(`Cola de Rayo: ${`${l.firstName || ""} ${l.lastName || ""}`.trim() || item.leadId} (lead nuevo).`);
+    return { ...l, deRayo: true };
+  } catch (e) { log(`  Cola de Rayo: no pude leer el lead ${item.leadId} (${e.message}); lo dejo en la cola.`); const { alCola: c = [] } = await chrome.storage.local.get("alCola"); await chrome.storage.local.set({ alCola: [item, ...c] }); return null; }
+}
+async function pintarCola() { const { alCola = [] } = await chrome.storage.local.get("alCola"); const t = $("colaTxt"); if (t) t.textContent = alCola.length ? `Cola de Rayo: ${alCola.length} lead(s) esperando` : ""; }
+chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch.alCola) pintarCola(); });
+pintarCola();
 
 // Tipo de lead en Lofty (developer.lofty.com): Seller = 1, Buyer = 2. Un lead "Buyer y Seller" entra en los dos.
 const TIPO_NOMBRE = { "": "", "1": "Seller", "2": "Buyer" };
@@ -486,6 +508,11 @@ async function processLead(lead) {
     catch (e) { stats.errors++; log("  No pude borrar números fuera de CA: " + e.message); }
   }
 
+  // Fase Anna 1: el Cerebro. Si una persona le escribió en 24 h o lo trabaja Anna, Marki no lo toca (falla cerrada).
+  if (window.Cerebro) {
+    const cb = await Cerebro.puedo({ leadId: lead.leadId, canal: "llamada", robot: "Marki", clave: cfg.apiKey, respetaAnna: !lead.deRayo });
+    if (!cb.ok) { log(`  ↷ Cerebro: ${cb.motivo}. Lo salto.`); return "skipped"; }
+  }
   // 1) Llamadas
   if (cfg.doCalls && lead.cannotCall) {
     log("  Lofty tiene este lead marcado como 'no llamar'. No se marca.");
@@ -497,7 +524,7 @@ async function processLead(lead) {
       if (borrados.has(d10(p))) { log(`  ↷ ${fmt(p)} — lo borraste, no se marca`); continue; }
       setStatus(`Llamando a ${name}: ${fmt(p)}`);
       const r = await callOnPage(tabId, p);
-      if (r && r.ok) { stats.calls++; log(`  ${fmt(p)} — guardada`); }
+      if (r && r.ok) { stats.calls++; log(`  ${fmt(p)} — guardada`); if (window.Cerebro) Cerebro.anotar({ leadId: lead.leadId, canal: "llamada", robot: "Marki", tel: d10(p) }).catch(() => {}); }
       else { log(`  ${fmt(p)} — ${r ? r.error : "sin respuesta"}`); if (!stopRequested) stats.errors++; }
       setCounts();
       await sleep(1500);
@@ -531,7 +558,9 @@ async function processLead(lead) {
       const rsNoEscribir = { ...n1, ...n2 }; // Resi y Resi 2
       const leadSlot = await nextRot();
       const primaryDone = cfg.skipPrimary ? await sameMessageSentToday(lead.leadId) : false;
-      if (rsNoEscribir && rsNoEscribir[String(lead.leadId)]) log(`  Resi lo tiene como “${rsNoEscribir[String(lead.leadId)].motivo}”; no se le manda SMS`);
+      const cbSms = window.Cerebro ? await Cerebro.puedo({ leadId: lead.leadId, canal: "sms", robot: "Marki", clave: cfg.apiKey, respetaAnna: !lead.deRayo }) : { ok: true };
+      if (!cbSms.ok) log(`  Cerebro: ${cbSms.motivo}. No le mando SMS.`);
+      else if (rsNoEscribir && rsNoEscribir[String(lead.leadId)]) log(`  Resi lo tiene como “${rsNoEscribir[String(lead.leadId)].motivo}”; no se le manda SMS`);
       else if (primaryDone === null) log("  Sin historial de SMS no sé si ya lo recibió hoy; no le mando (falla cerrada)");
       else for (let i = 0; i < phones.length; i++) {
         if (stopRequested) break;
@@ -602,9 +631,13 @@ async function run() {
   try {
     while (!stopRequested) {
       setStatus("Buscando el siguiente lead…");
-      const { leads, total, tipo } = await fetchMatchingLeads(1, seen);
-      const next = leads[0];
-      setCounts(`Pendientes: ${total}${tipo ? ` (de todos los tipos; trabajo solo ${tipo})` : ""}`);
+      let next = await siguienteDeCola(seen);
+      if (!next) {
+        const { leads, total, tipo } = await fetchMatchingLeads(1, seen);
+        next = leads[0];
+        setCounts(`Pendientes: ${total}${tipo ? ` (de todos los tipos; trabajo solo ${tipo})` : ""}`);
+      }
+      if (!next && cfg.esperaRayo) { setStatus(SMS.enHorario(await SMS.config()) ? "Esperando leads nuevos de Rayo…" : "Fuera de horario: la cola de Rayo espera a las 8 am (California)…"); await sleep(15000); continue; } // sigue vivo para la cola de Rayo
       if (!next) { log("No quedan leads con ese filtro."); break; }
       seen.add(String(next.leadId));
       try {

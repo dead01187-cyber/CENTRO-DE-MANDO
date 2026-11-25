@@ -257,7 +257,50 @@ async function verificar(rep) {
   const malos = rep.movidos.filter((c) => !c.ok);
   for (const c of malos) rep.fallidos.push({ ...c, por: "Lofty no reflejó el cambio de etapa" });
   rep.movidos = rep.movidos.filter((c) => c.ok);
+  // Fase Anna 1: si Anna (AI Sales Agent) trabajaba ese lead, también se silencia ahí
+  if (window.Cerebro && rep.movidos.length) {
+    ver("Revisando si Anna trabajaba a los que moví…");
+    for (const c of rep.movidos) {
+      try {
+        const an = await Cerebro.anna(c.id);
+        if (an.enPool && !an.silenciado) c.anna = (await Cerebro.silenciarAnna(c.id, `Limpi lo movió a ${cfg.destino}`, "Limpi")) ? "silenciada" : "no pude silenciarla";
+      } catch (e) { c.anna = "no pude revisar a Anna (" + e.message + ")"; }
+      await sleep(250);
+    }
+    const n = rep.movidos.filter((c) => c.anna === "silenciada").length;
+    if (n) window.svLog && svLog(`Limpi: silencié a Anna en ${n} lead(s) que pasaron a ${cfg.destino}.`);
+  }
 }
+
+// ---------- Anna: silenciar a los de números fuera de California (con tu OK, viendo la lista antes) ----------
+let annaFuera = [];
+async function revisarAnnaFuera() {
+  $("annaFueraBtn").disabled = true; ver("Leyendo el pool de Anna…");
+  try {
+    const pool = await Cerebro.poolAnna(true);
+    annaFuera = pool.filter((x) => { const d = String(x.phone || "").replace(/\D/g, "").slice(-10); return d.length === 10 && !SMS.esCA(d); });
+    const ul = $("annaFueraLista"); ul.textContent = "";
+    if (!annaFuera.length) { ul.innerHTML = `<span class="empty">De ${pool.length} leads de Anna, ninguno tiene número fuera de California.</span>`; $("annaFueraOk").hidden = true; ver("Listo."); return; }
+    for (const x of annaFuera) { const li = document.createElement("li"); li.textContent = `${x.firstName} ${x.lastName} · ${x.phone}`; ul.appendChild(li); }
+    $("annaFueraOk").hidden = false; $("annaFueraOk").textContent = `Silenciar a estos ${annaFuera.length} en Anna`;
+    ver(`De ${pool.length} leads de Anna, ${annaFuera.length} tienen número fuera de California. Revisa la lista; no silencio nada sin tu OK.`);
+  } catch (e) { ver("No pude leer el pool de Anna: " + e.message); }
+  finally { $("annaFueraBtn").disabled = false; }
+}
+async function silenciarAnnaFuera() {
+  if (!annaFuera.length) return;
+  if (!(await preguntar(`¿Silenciar a Anna en estos ${annaFuera.length} leads con número fuera de California? Anna deja de escribirles y llamarles (se puede deshacer en Lofty).`, "Sí, silenciar", "Cancelar"))) return;
+  $("annaFueraOk").disabled = true; let ok = 0, mal = 0;
+  for (const x of annaFuera) {
+    ver(`Silenciando en Anna… ${ok + mal + 1} de ${annaFuera.length}`);
+    try { if (await Cerebro.silenciarAnna(x.leadId, "número fuera de California", "Limpi")) ok++; else mal++; } catch (e) { mal++; }
+    await sleep(500);
+  }
+  decir(`Silencié a Anna en ${ok} lead(s) con número fuera de California${mal ? `; ${mal} no se pudieron` : ""}.`);
+  annaFuera = []; $("annaFueraOk").hidden = true; $("annaFueraOk").disabled = false; $("annaFueraLista").textContent = "";
+}
+$("annaFueraBtn").onclick = revisarAnnaFuera;
+$("annaFueraOk").onclick = silenciarAnnaFuera;
 
 // ---------- Reporte ----------
 function textoReporte(r) {
