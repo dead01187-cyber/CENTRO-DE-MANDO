@@ -65,3 +65,33 @@ Con el doble de llamadas, el costo sube a ~$180–220. Hay que comparar contra l
 - Vonage Voice API, precios: https://www.vonage.com/communications-apis/voice/pricing/
 - Vonage Business, planes: https://www.vonage.com/unified-communications/pricing/
 - FCC, voces de IA y TCPA (FCC-24-17): https://www.fcc.gov/document/fcc-confirms-tcpa-applies-ai-technologies-generate-human-voices
+
+---
+
+# Opciones gratis o baratas (investigado el 25 de noviembre de 2026)
+
+Supuesto para comparar: **~900 minutos al mes** (unas 600 llamadas).
+
+| # | Opción | Qué es | Costo aproximado al mes | ¿Servidor? | Riesgo o detalle |
+|---|---|---|---|---|---|
+| 1 | **Voicemail drop de Lofty** | Grabas UNA vez tu mensaje en Lofty y Marki lo deja con un clic cuando cae en buzón | **$0** (Lofty dice que viene en todos sus paquetes de llamadas) | No | No platica, solo deja recado. Un mensaje pregrabado también cuenta como "voz pregrabada" ante la TCPA |
+| 2 | **IA dentro del marcador de Lofty** | Marki sigue marcando con Lofty (la línea ya la pagas) y, al contestar, la extensión conecta el audio de la llamada con una IA de voz en el navegador (Gemini Live) | **~$20** (~$0.023 por min de Gemini) | No | El más barato con plática, pero es un "truco": depende de cómo Lofty maneja el micrófono, se puede romper si Lofty cambia algo, y puede ir contra sus términos de uso. Hay que probarlo primero |
+| 3 | **Telnyx AI Assistant** | Plataforma con voz, oído e IA en una sola tarifa, y su propio número | **~$60** ($0.05 motor + ~$0.006 IA + $0.007 línea por min; número $1 al mes) | No | La más barata "de verdad" y estable. Es más barata que ElevenLabs ($0.08), aunque la voz es un poco menos natural |
+| 4 | Otras plataformas parecidas | Ultravox (~$0.055/min con SIP), Plivo Voice AI (desde ~$0.035/min, sin confirmar si incluye la IA) | ~$35 – $55 + línea | No | Menos conocidas; probar primero |
+| 5 | **Hecho en casa** (Pipecat o LiveKit, código abierto, con Telnyx) | Armar nosotros el agente con piezas baratas | **~$15 – $35** (1 – 4 centavos por min) + servidor ~$5 – $10 | **Sí** | Barato en minutos, pero hay que programarlo, hospedarlo y cuidarlo |
+| — | ElevenLabs (lo de arriba) | Para comparar | ~$90 – $110 | No | La voz más natural |
+| — | Prueba gratis | ElevenLabs da 15 min gratis; Telnyx deja registrarse gratis | $0 | — | Solo para probar cómo suena |
+
+## Recomendación barata
+1. **Ya, gratis:** que Marki use el **voicemail drop de Lofty**. Grabas tu recado una vez y Marki lo deja en cada buzón; tú sigues hablando en vivo cuando alguien contesta. No hay que contratar nada. (Ojo: usar el recado pregrabado solo con leads que dieron consentimiento, como los de zBuyer.)
+2. **Si quieres IA que platique:** probar **Telnyx** (~$60 al mes por 900 min). Es casi la mitad que ElevenLabs y no necesita servidor.
+3. **Experimento:** la opción 2 (IA dentro del marcador de Lofty) es la más barata con plática (~$20), pero es frágil. Primero solo una prueba llamándote a ti.
+
+Las reglas legales de arriba aplican igual a todas: consentimiento, aviso de que es IA o grabación, horario de 8 am a 9 pm y DNC.
+
+### Fuentes extra
+- Telnyx Voice AI: https://telnyx.com/pricing/voice-ai-agents
+- Telnyx Voice API: https://telnyx.com/pricing/voice-api
+- Lofty, mensajes de voz en llamadas: https://help.lofty.com/hc/en-us/articles/360000315191-Voice-Messages-for-Inbound-Outbound-Calls
+- Gemini API, precios: https://aistudio.google.com/docs/pricing
+- Comparación de plataformas baratas: https://thunderphone.com/guides/cheapest-ai-voice-agent
