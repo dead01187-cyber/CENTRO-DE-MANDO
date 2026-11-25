@@ -1,5 +1,7 @@
-# Fase Anna 4: Marki con voz (solo investigación, no construido)
+# Fase Anna 4: Marki con voz — DESCARTADA POR AHORA (solo investigación, no construido)
 
+
+> **Estado:** descartada por ahora por decisión de Christopher (25 de noviembre de 2026). Queda como referencia por si se retoma.
 Precios revisados el 25 de noviembre de 2026 en las páginas oficiales de ElevenLabs y Vonage. Cambian seguido: confírmalos antes de contratar.
 
 ## Cómo funciona hoy
