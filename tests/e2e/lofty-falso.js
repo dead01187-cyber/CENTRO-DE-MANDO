@@ -29,6 +29,8 @@ module.exports = function loftyFalso({ leads = [], fallar = {}, textos = {}, poo
     if (metodo === "POST" && ruta === "/notes") { estado.notas.push(body); return json(route, { code: 0 }); }
     if (metodo === "POST" && ruta === "/message/sms/send") { estado.sms.push(body); return json(route, { code: 0 }); }
     if (metodo === "GET" && ruta === "/communication/text") return json(route, { texts: estado.textos[url.searchParams.get("leadId")] || [] });
+    if (metodo === "GET" && ruta === "/communication/agent") // SMS que entraron (para Resi): todos los inbound con su leadId
+      return json(route, { communications: Object.entries(estado.textos).flatMap(([leadId, ts]) => ts.filter((t) => /^in/i.test(t.direction)).map((t) => ({ ...t, leadId: Number(leadId) }))) });
     if (metodo === "GET" && /communication/.test(ruta)) return json(route, { texts: [], communications: [] });
     if (metodo === "POST" && ruta === "/message/email/send") { estado.emails.push(body); return json(route, { messageId: "m" + estado.emails.length }); }
     // Anna (AI Sales Agent)

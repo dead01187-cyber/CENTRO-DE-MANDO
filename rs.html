@@ -49,6 +49,7 @@
 </head>
 <body>
 <main>
+  <div class="card" id="etapasCaja" hidden><div class="row" style="justify-content:space-between"><span class="hint" id="etapasTxt"></span><button id="moverEtapas" class="mini primary">Mover todas (te enseño la lista)</button></div></div>
   <details class="card" id="ajustes">
     <summary>Ajustes de Resi</summary>
     <div class="grid" style="margin-top:8px">
@@ -59,7 +60,13 @@
       <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="notas"> <span>Dejar una nota en Lofty con lo que contestó cada lead</span></label>
       <label class="f">Seguimiento si no vuelve a escribir en (días)<input type="number" id="diasSeg" min="1" max="30" value="3"></label>
       <label class="f">Etapa para bajas (STOP / no interesa)<input type="text" id="etapaBaja" placeholder="Ej. No Active Plans"></label>
-      <div class="hint" style="grid-column:1/-1">Atiendo solo las respuestas de los leads de <b>Texi (Seller)</b>; las de Compri las atiende Resi 2. Misma cuenta de Lofty. Leo los SMS que te contestan, los clasifico y te dejo un borrador. <b>Nunca mando nada sin tu OK.</b> A las bajas, números equivocados y enojados no les escribo, y Texi ya no les vuelve a mandar.</div>
+      <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="aprobar"> <span><b>Aprobar cada respuesta antes de que salga</b> (si lo apagas, contesto solo: con el Cerebro, la política de SMS y a ritmo humano)</span></label>
+      <label class="f">Nombre con el que me presento<input type="text" id="nombre" placeholder="Christopher"></label>
+      <label class="chk"><input type="checkbox" id="asistente"> <span>Decir que soy su asistente (“Christopher's assistant”)</span></label>
+      <label class="f">Etapa para leads calientes<input type="text" id="etapaCaliente" placeholder="Hot"></label>
+      <label class="f">Etapa para interesados<input type="text" id="etapaTibio" placeholder="Warm"></label>
+      <div class="hint" style="grid-column:1/-1">Con IA califico cada plática (cuándo, por qué, precio y si ya tiene agente), dejo una nota en inglés en Lofty y te aviso con Capi cuando un lead está caliente. Si pregunta algo legal, de financiamiento o de herencias/trusts, no contesto y te lo paso. STOP = “no textos” (cannotText) en Lofty y fin. Las etapas no se mueven solas: te las sugiero y las mueves con un clic.</div>
+      <div class="hint" style="grid-column:1/-1">Atiendo solo las respuestas de los leads de <b>Texi (Seller)</b>; las de Compri las atiende Resi 2. Misma cuenta de Lofty. Leo los SMS que te contestan, los clasifico y te dejo un borrador. <b>Con “aprobar cada respuesta” prendido (así viene), nada sale sin tu OK.</b> A las bajas, números equivocados y enojados no les escribo, y Texi ya no les vuelve a mandar.</div>
     </div>
   </details>
   <details class="card" id="nuevo">
@@ -85,7 +92,7 @@
   <div class="row filtros"><button data-f="abiertos" class="sel">Por atender</button><button data-f="respondidos">Respondidos</button><button data-f="cerrados">Cerrados</button><button data-f="todos">Todos</button></div>
   <ul id="lista"><li class="empty">Dale “Revisar respuestas de SMS”.</li></ul>
 </main>
-<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script><script src="presupuesto.js"></script><script src="politica-sms.js"></script><script src="cerebro-core.js"></script><script src="cerebro.js"></script>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script><script src="presupuesto.js"></script><script src="politica-sms.js"></script><script src="cerebro-core.js"></script><script src="cerebro.js"></script><script src="resi-core.js"></script>
 <script src="rs.js"></script>
 </body>
 </html>

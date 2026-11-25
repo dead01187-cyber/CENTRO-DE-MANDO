@@ -43,8 +43,12 @@ const digitos = (t) => { let d = String(t || "").replace(/\D/g, ""); if (d.lengt
 const esCA = (t) => { const d = digitos(t); return d.length === 10 && LADAS_CA.has(d.slice(0, 3)); };
 const bonito = (d) => `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 
-const DEF = { auto: true, cadaMin: 10, ia: true, notas: true, diasSeg: 3, horasAviso: 2, etapaBaja: "No Active Plans", verNumero: false };
+const DEF = { auto: true, cadaMin: 10, ia: true, notas: true, diasSeg: 3, horasAviso: 2, etapaBaja: "No Active Plans", verNumero: false,
+  // Fase Anna 2 (Resi con IA)
+  nombre: "Christopher", asistente: false, aprobar: true, etapaCaliente: "Hot", etapaTibio: "Warm" };
 const CAT = {
+  caliente: { txt: "Caliente", cls: "bad", orden: -2 },
+  sensible: { txt: "Para ti (legal / financiamiento / herencia)", cls: "bad", orden: -1 },
   interesado: { txt: "Interesado", cls: "ok", orden: 0 },
   pregunta: { txt: "Pregunta", cls: "wait", orden: 1 },
   seguimiento: { txt: "Seguimiento", cls: "seg", orden: 2 },
@@ -55,7 +59,7 @@ const CAT = {
   enojado: { txt: "Enojado", cls: "bad", orden: 7 },
   baja: { txt: "Baja (STOP)", cls: "bad", orden: 8 },
 };
-const CAT_EN = { interesado: "Interested", pregunta: "Question", seguimiento: "Follow-up", mas_tarde: "Maybe later", otro: "Needs review", no: "Not interested", equivocado: "Wrong number", enojado: "Upset", baja: "Opt-out (STOP)" }; // para la nota en Lofty (en inglés)
+const CAT_EN = { caliente: "Hot lead", sensible: "Handed to agent (legal / financing / probate question)", interesado: "Interested", pregunta: "Question", seguimiento: "Follow-up", mas_tarde: "Maybe later", otro: "Needs review", no: "Not interested", equivocado: "Wrong number", enojado: "Upset", baja: "Opt-out (STOP)" }; // para la nota en Lofty (en inglés)
 const SIN_RESPUESTA = new Set(["equivocado", "enojado", "baja"]); // a estos no se les escribe
 // A los que dicen "No", "No thanks" o "Not right now": se les pregunta si se les puede contactar el próximo año
 const NEXT_YEAR = { en: "Would it be helpful if I checked back with you next year?", es: "¿Le serviría si le vuelvo a contactar el próximo año?" };
@@ -104,20 +108,24 @@ async function cargar() {
   if (mig) almacen.set({ rsCasos: casos });
   $("auto").checked = !!cfg.auto; $("cadaMin").value = cfg.cadaMin; $("ia").checked = !!cfg.ia; $("notas").checked = !!cfg.notas;
   $("diasSeg").value = cfg.diasSeg; $("etapaBaja").value = cfg.etapaBaja || ""; $("verNumero").checked = cfg.verNumero === true;
+  $("nombre").value = cfg.nombre || DEF.nombre; $("asistente").checked = !!cfg.asistente; $("aprobar").checked = cfg.aprobar !== false;
+  $("etapaCaliente").value = cfg.etapaCaliente || ""; $("etapaTibio").value = cfg.etapaTibio || "";
 }
 function guardarCfg() {
   cfg = { ...cfg, auto: $("auto").checked, ia: $("ia").checked, notas: $("notas").checked,
     cadaMin: Math.max(5, Math.min(240, parseInt($("cadaMin").value, 10) || 10)), diasSeg: Math.max(1, Math.min(30, parseInt($("diasSeg").value, 10) || 3)),
-    etapaBaja: $("etapaBaja").value.trim(), verNumero: $("verNumero").checked, verNumeroV2: true };
+    etapaBaja: $("etapaBaja").value.trim(), verNumero: $("verNumero").checked, verNumeroV2: true,
+    nombre: $("nombre").value.trim() || DEF.nombre, asistente: $("asistente").checked, aprobar: $("aprobar").checked,
+    etapaCaliente: $("etapaCaliente").value.trim(), etapaTibio: $("etapaTibio").value.trim() };
   almacen.set({ rsConfig: cfg }); programar();
 }
-["auto", "cadaMin", "ia", "notas", "diasSeg", "etapaBaja", "verNumero"].forEach((id) => ($(id).onchange = guardarCfg));
+["auto", "cadaMin", "ia", "notas", "diasSeg", "etapaBaja", "verNumero", "nombre", "asistente", "aprobar", "etapaCaliente", "etapaTibio"].forEach((id) => ($(id).onchange = guardarCfg));
 const guardarCasos = () => almacen.set({ rsCasos: casos });
 
 // ---------- Clasificar ----------
 const RE = {
   baja: /\b(stop|stop all|unsubscribe|remove me|take me off|opt[ -]?out|do ?n[o']?t (text|contact|message)|no (more )?(texts|messages)|no me (escrib\w*|mand\w*|contact\w*)|d[eé]jame de (escribir|mandar)|b[oó]rrame|baja)\b|^\s*(stop|quit|end|cancel)\s*\.?\s*$/i,
-  enojado: /\b(f+u+c+k|scam(mer)?|harass|report(ing)? you|lawyer|attorney|police|leave me alone|go away|piss off|estaf|acoso|abogado|polic[ií]a)/i,
+  enojado: /\b(f+u+c+k|scam(mer)?|harass|report(ing)? you|police|leave me alone|go away|piss off|estaf|acoso|polic[ií]a)/i,
   equivocado: /\b(wrong (number|person)|not the owner|i'?m not (the owner|\w+)|don'?t own|never owned|sold (it|the house|that) (years|a while)|no soy (el|la) (due[nñ]o|propietari)|n[uú]mero equivocado|ya no (es|vivo)|doesn'?t live here)\b/i,
   mas_tarde: /\b(maybe|not (right )?now|not yet|later|next year|in a (few|couple) (months|years)|someday|thinking about it|tal vez|quiz[aá]s|m[aá]s adelante|despu[eé]s|el pr[oó]ximo a[nñ]o|ahorita no)\b/i,
   no: /\b(not interested|no interest|no thanks?|no thank you|not selling|not for sale|never selling|won'?t sell|no estoy interesad|no me interesa|no gracias|no vendo|no est[aá] a la venta)\b|^\s*(no|nope|nah)\s*[.!]*\s*$/i,
@@ -126,6 +134,7 @@ const RE = {
 };
 function porReglas(texto) {
   if (window.SMS && SMS.RE_BAJA.test(texto)) return "baja"; // Fase 1: también ALTO, PARA, CANCELAR, REVOKE, STOPALL…
+  if (window.RESI_CORE && RESI_CORE.temaSensible(texto)) return "sensible"; // Fase Anna 2: legal, financiamiento, herencias → al jefe
   for (const k of ["baja", "enojado", "equivocado", "mas_tarde", "no", "interesado", "pregunta"]) if (RE[k].test(texto)) return k;
   return "otro";
 }
@@ -134,7 +143,7 @@ function borradorBase(cat, c, texto) {
   const es = enEspanol(texto), n = c.nombre || (es ? "" : "there"), calle = c.calle || (es ? "su propiedad" : "your property"), ciudad = c.ciudad || (es ? "la zona" : "the area");
   if (es) return ({
     interesado: `¡Gracias ${n}! ¿Tiene unos minutos hoy o mañana para una llamada rápida? Le explico cuánto podría valer ${calle} y lo que tengo en mente.`,
-    pregunta: `Hola ${n}, soy Christopher de Rubio Real Estate. Trabajo con compradores en ${ciudad} y quería saber si consideraría una oferta por ${calle}. ¿Le puedo llamar un momento?`,
+    pregunta: `Hola ${n}, soy ${cfg.nombre || "Christopher"} de Rubio Real Estate. Trabajo con compradores en ${ciudad} y quería saber si consideraría una oferta por ${calle}. ¿Le puedo llamar un momento?`,
     mas_tarde: NEXT_YEAR.es,
     no: NEXT_YEAR.es,
     otro: `Gracias por contestar, ${n}. ¿Le puedo llamar un momento para platicar sobre ${calle}?`,
@@ -142,7 +151,7 @@ function borradorBase(cat, c, texto) {
   }[cat] || "").replace(/\s+,/g, ",").replace(/  +/g, " ");
   return ({
     interesado: `Thanks ${n}! Do you have a few minutes today or tomorrow for a quick call? I can walk you through what ${calle} could sell for and what I have in mind.`,
-    pregunta: `Hi ${n}, this is Christopher with Rubio Real Estate. I work with buyers in ${ciudad} and wanted to see if you'd consider an offer on ${calle}. Is now a good time for a quick call?`,
+    pregunta: `Hi ${n}, this is ${cfg.nombre || "Christopher"} with Rubio Real Estate. I work with buyers in ${ciudad} and wanted to see if you'd consider an offer on ${calle}. Is now a good time for a quick call?`,
     mas_tarde: NEXT_YEAR.en,
     no: NEXT_YEAR.en,
     otro: `Thanks for getting back to me, ${n}. Would you have a minute for a quick call about ${calle}?`,
@@ -153,10 +162,8 @@ async function conIA(c, conv) {
   const { svKey, svModelo } = await almacen.get(["svKey", "svModelo"]);
   if (!cfg.ia || !svKey) return null;
   const historia = conv.slice(-12).map((m) => `${m.dir === "in" ? "LEAD" : "NOSOTROS"} (${new Date(m.t).toISOString().slice(0, 16)}): ${m.texto}`).join("\n");
-  const sistema = `Eres Resi, asistente de Christopher (Rubio Real Estate / The Irvine Realtors, California). Christopher le manda SMS a dueños de casas (leads Seller) para ver si venderían.
-Lee la conversación y clasifica la ÚLTIMA respuesta del lead. Categorías: interesado (quiere oferta, precio, llamada, dice que sí o "depende"), pregunta (pregunta quién es, de dónde sacó el número, etc.), mas_tarde (tal vez, más adelante, ahorita no), no (no le interesa, no vende), baja (pide que no le escriban: STOP, remove, unsubscribe), equivocado (no es el dueño, número equivocado, ya vendió hace tiempo), enojado (insultos, amenazas, dice que es estafa), otro.
-Escribe un borrador de respuesta SMS: en el mismo idioma del lead, máximo 280 caracteres, tono humano y amable, firma implícita de Christopher, sin prometer precios ni cifras, con el objetivo de conseguir una llamada. Si la categoría es "no" o "mas_tarde", el borrador es EXACTAMENTE: "${NEXT_YEAR.en}" (o, si el lead escribe en español, "${NEXT_YEAR.es}"). Si la categoría es baja, equivocado o enojado, el borrador va vacío.
-Contesta SOLO con JSON: {"categoria":"...","resumen":"una línea en español","summary":"the same summary in English (one line)","borrador":"...","urgente":true|false,"seguimientoDias":número o null}`;
+  // Fase Anna 2: califica (cuándo, por qué, precio, agente), corto y humano; Resi 2 atiende compradores
+  const sistema = RESI_CORE.prompt({ nombre: cfg.nombre || DEF.nombre, asistente: !!cfg.asistente, tipo: YO === "rc" ? "buyer" : "seller", calif: c.calif || {}, NEXT_YEAR });
   const usuario = `Lead: ${c.nombre} ${c.apellido}${c.calle ? `, dueño de ${c.calle}${c.ciudad ? `, ${c.ciudad}` : ""}` : ""}. Etapa en Lofty: ${c.etapa || "?"}.\n\nConversación:\n${historia}`;
   try {
     if (window.PRESUPUESTO) { const pr = await PRESUPUESTO.revisar("resi"); if (!pr.ok) return null; } // Fase 3: tope diario (queda la clasificación por reglas)
@@ -169,9 +176,10 @@ Contesta SOLO con JSON: {"categoria":"...","resumen":"una línea en español","s
     if (!r.ok) return null;
     if (window.PRESUPUESTO) await PRESUPUESTO.registrar("resi", d.usage);
     const txt = (d.content || []).map((b) => b.text || "").join("");
-    const j = JSON.parse((txt.match(/\{[\s\S]*\}/) || ["{}"])[0]);
-    if (!CAT[j.categoria]) return null;
-    return { categoria: j.categoria, resumen: String(j.resumen || "").slice(0, 200), summary: String(j.summary || "").slice(0, 200), borrador: SIN_RESPUESTA.has(j.categoria) ? "" : ["no", "mas_tarde"].includes(j.categoria) ? null : String(j.borrador || "").slice(0, 320), urgente: !!j.urgente, seguimientoDias: Number(j.seguimientoDias) || null };
+    const j = RESI_CORE.leerIA(txt);
+    if (!j || !CAT[j.categoria]) return null;
+    if (["no", "mas_tarde"].includes(j.categoria)) j.borrador = null; // se usa la pregunta del próximo año
+    return j;
   } catch (e) { return null; }
 }
 
@@ -349,12 +357,23 @@ async function revisar(aMano) {
         const desdeUlt = ent.filter((m) => !c.ultimoT || m.t > c.ultimoT);
         const texto = desdeUlt.map((m) => m.texto).join(" · ") || ultIn.texto;
         let cat = porReglas(texto), res = null;
-        if (!["baja"].includes(cat)) res = await conIA(c, conv); // una baja clara no necesita IA
-        if (res) cat = res.categoria;
+        if (!["baja", "sensible"].includes(cat)) res = await conIA(c, conv); // una baja clara o un tema delicado no necesitan IA
+        if (res && !(cat === "sensible")) cat = res.categoria;
+        if (res && res.categoria === "sensible") cat = "sensible"; // si la IA ve un tema delicado, gana
         Object.assign(c, { ultimoId: ultIn.id, ultimoT: ultIn.t, ultimo: texto, categoria: cat, resumen: res ? res.resumen : "", summary: res ? res.summary : "", urgente: res ? res.urgente : cat === "interesado",
           borrador: res && res.borrador != null ? res.borrador : borradorBase(cat, c, texto), conIA: !!res, t: ahora, estado: contestado ? "respondido" : (SIN_RESPUESTA.has(cat) ? "atender" : "abierto"),
           proximo: cat === "mas_tarde" ? ultIn.t + ((res && res.seguimientoDias) || 90) * D : 0, avisado: false, texi: !!txEnviados[id] });
         c.conv = conv.slice(-8);
+        // Fase Anna 2: calificación, temperatura y etapa sugerida (no se mueve sola: te enseño la lista)
+        if (res) { c.calif = RESI_CORE.unirCalif(c.calif, res.calif); c.temperatura = res.temperatura || c.temperatura || null; }
+        if (cat === "sensible") { c.borrador = ""; c.urgente = true; c.estado = "atender"; }
+        const prop = RESI_CORE.etapaPropuesta({ categoria: cat, temperatura: c.temperatura, etapaActual: c.etapa, etapaCaliente: cfg.etapaCaliente, etapaTibio: cfg.etapaTibio });
+        if (prop) c.etapaSugerida = prop;
+        // STOP: además de la baja permanente, cannotText en Lofty (y fin de la plática)
+        if (cat === "baja" && !c.cannotText) {
+          try { await api(`/v1.0/leads/${encodeURIComponent(id)}`, { method: "PUT", body: { cannotText: true } }); c.cannotText = true; }
+          catch (e) { decir(`No pude marcar “no textos” (cannotText) en Lofty a ${c.nombre || id}: ${e.message}. La baja sí quedó guardada aquí.`, "error"); }
+        }
         // Fase 1: baja PERMANENTE. Aunque después escriba otra cosa, ya no se le vuelve a mandar SMS.
         if (["baja", "equivocado", "enojado"].includes(cat)) {
           c.bajaPermanente = c.bajaPermanente || cat;
@@ -364,11 +383,11 @@ async function revisar(aMano) {
         if (["no", "mas_tarde"].includes(cat)) c.nextYear = true;
         nuevos++;
         for (const m of desdeUlt) vistos.add(m.id);
-        if (cfg.notas && !c.nota) {
-          try { await api("/v1.0/notes", { method: "POST", body: { leadId: Number(id), content: `Resi (SMS): the lead replied “${texto.slice(0, 300)}”. Classified as: ${CAT_EN[cat] || cat}.${c.summary ? " " + c.summary : ""}` } }); c.nota = ultIn.id; }
+        if (cfg.notas && c.nota !== ultIn.id) { // una nota (en inglés) por cada respuesta nueva, con la calificación
+          try { await api("/v1.0/notes", { method: "POST", body: { leadId: Number(id), content: RESI_CORE.notaEn({ texto, categoria: CAT_EN[cat] || cat, summary: c.summary, calif: c.calif || {}, etapa: c.etapaSugerida || "", tipo: YO === "rc" ? "buyer" : "seller" }) } }); c.nota = ultIn.id; }
           catch (e) { /* la nota es opcional */ }
         }
-        if (cat === "interesado" || cat === "pregunta") avisar.push(c);
+        if (["interesado", "pregunta", "caliente", "sensible"].includes(cat)) avisar.push(c);
       } else {
         c.conv = conv.slice(-8);
         if (contestado && c.estado === "abierto") { c.estado = "respondido"; c.respondidoT = ultOut.t; }
@@ -389,11 +408,18 @@ async function revisar(aMano) {
     if (faltan.length) setTimeout(() => completarNumeros(faltan), 1000); // sigue en segundo plano con todos los que faltan
     await pasarBajasATexi();
     await guardarCasos();
+    await contestarSolos(); // Fase Anna 2: solo si apagaste "aprobar cada respuesta"
     pintar();
     const ab = Object.values(casos).filter((c) => c.estado === "abierto" || c.estado === "atender");
     const txt = nuevos ? `Encontré ${nuevos} respuesta(s) nueva(s)${avisar.length ? `: ${avisar.length} interesado(s) o con pregunta` : ""}. Tienes ${ab.length} por atender.` : (aMano ? `Sin respuestas nuevas. Tienes ${ab.length} por atender.` : "");
     if (txt) decir(txt);
-    if (avisar.length) {
+    const calientes = avisar.filter((c) => c.categoria === "caliente"), sensibles = avisar.filter((c) => c.categoria === "sensible");
+    if (calientes.length || sensibles.length) {
+      const nom = (l) => l.slice(0, 3).map((c) => `${c.nombre} ${c.apellido}`.trim() || "un lead").join(", ");
+      const t = [calientes.length ? `${nom(calientes)} ${calientes.length > 1 ? "están" : "está"} CALIENTE${calientes.length > 1 ? "S" : ""} y quiere${calientes.length > 1 ? "n" : ""} hablar pronto` : "",
+        sensibles.length ? `${nom(sensibles)} preguntó algo legal, de financiamiento o de herencia: no le contesté, te lo paso` : ""].filter(Boolean).join(". ");
+      await almacen.set({ rsAviso: { t: ahora, n: avisar.length, urgente: true, texto: `Jefe, ${t}. Está en ${NOMBRE}.` } });
+    } else if (avisar.length) {
       const nombres = avisar.slice(0, 3).map((c) => `${c.nombre} ${c.apellido}`.trim() || "un lead").join(", ");
       await almacen.set({ rsAviso: { t: ahora, n: avisar.length, texto: `Jefe, ${nombres}${avisar.length > 3 ? ` y ${avisar.length - 3} más` : ""} contestaron el SMS y ${avisar.length > 1 ? "están" : "está"} interesado${avisar.length > 1 ? "s" : ""} o con pregunta. Tengo el borrador listo en Resi; ¿lo revisas?` } });
     }
@@ -452,6 +478,69 @@ async function vigilar() {
 }
 
 // ---------- Acciones (todas con tu OK) ----------
+// ---------- Fase Anna 2: respuestas automáticas (si apagas "aprobar cada respuesta") ----------
+const AUTO_OK = new Set(["interesado", "caliente", "pregunta", "otro", "seguimiento", "no", "mas_tarde"]);
+async function turnoNumero() { // ritmo humano: mismo candado que Texi y Compri (salen del mismo número)
+  const correr = async () => { const { smsUltimoTx: u = 0 } = await chrome.storage.local.get("smsUltimoTx"); const w = u + 6000 + Math.random() * 6000 - Date.now(); if (w > 0) await sleep(w); await chrome.storage.local.set({ smsUltimoTx: Date.now() }); };
+  return navigator.locks ? navigator.locks.request("sms-numero-tx", correr) : correr();
+}
+async function enviarAuto(id) {
+  const c = casos[id]; if (!c) return false;
+  const texto = personalizar(c.borrador || "", c), num = c.telResp && (c.tels || []).includes(c.telResp) ? c.telResp : (c.tels || [])[0];
+  if (!texto || !num || !esCA(num)) return false;
+  if (c.bajaPermanente || (await SMS.bajaDe({ tel: num, leadId: id, cuenta: "tx" }))) return false;
+  if (!(await cerebroDeja(id, true))) return false;
+  const pol = await SMS.puedeMandar({ tel: num, leadId: id, cuenta: "tx", fuente: NOMBRE });
+  if (!pol.ok) { await SMS.anotar({ fuente: NOMBRE, leadId: id, tel: num, estado: "bloqueado", motivo: pol.motivo }); c.autoPendiente = pol.motivo; return false; }
+  await turnoNumero();
+  try { await api("/v1.0/message/sms/send", { method: "POST", body: { leadId: Number(id), content: texto, phoneNumber: num, phoneCode: "1" } }); }
+  catch (e) { await SMS.devolverLugar(); await SMS.anotar({ fuente: NOMBRE, leadId: id, tel: num, estado: "error", motivo: e.message }); c.autoPendiente = e.message; return false; }
+  await SMS.anotar({ fuente: NOMBRE, leadId: id, tel: num, estado: "enviado", texto, auto: true });
+  Object.assign(c, { estado: "respondido", respondidoT: Date.now(), enviado: texto, borrador: "", autoMandado: c.ultimoId, autoPendiente: "" });
+  const { rsHoy = {} } = await almacen.get("rsHoy");
+  await almacen.set({ rsHoy: { dia: hoy(), n: (rsHoy.dia === hoy() ? rsHoy.n || 0 : 0) + 1 } });
+  return true;
+}
+async function contestarSolos() {
+  if (cfg.aprobar !== false) return 0;
+  let n = 0;
+  for (const c of Object.values(casos)) {
+    if (c.estado !== "abierto" || !AUTO_OK.has(c.categoria) || !c.borrador || c.autoMandado === c.ultimoId || c.bajaPermanente) continue;
+    if (await enviarAuto(c.leadId)) { n++; await guardarCasos(); }
+  }
+  if (n) decir(`${NOMBRE}: contesté solo a ${n} lead(s) (modo automático).`);
+  return n;
+}
+
+// ---------- Fase Anna 2: etapas sugeridas (nunca se mueven solas: te enseño la lista y mueves con un clic) ----------
+async function moverEtapa(id, preguntarAntes = true) {
+  const c = casos[id]; if (!c || !c.etapaSugerida) return false;
+  const a = c.etapaSugerida;
+  if (preguntarAntes && !(await preguntar(`Mover a ${`${c.nombre} ${c.apellido}`.trim()} de “${c.etapa || "?"}” a “${a}” en Lofty?`, "Mover", "Cancelar"))) return false;
+  try {
+    await api(`/v1.0/leads/${encodeURIComponent(id)}`, { method: "PUT", body: { stage: a } });
+    const d = await datosLead(id);
+    if (String(d.etapa).toLowerCase() !== a.toLowerCase()) throw new Error(`Lofty no reflejó el cambio (sigue en “${d.etapa}”; ¿existe la etapa “${a}”?)`);
+    c.etapa = d.etapa; c.etapaSugerida = "";
+    if (cfg.notas) api("/v1.0/notes", { method: "POST", body: { leadId: Number(id), content: `Resi: stage moved to "${a}" (approved by the agent) based on the lead's SMS replies.` } }).catch(() => {});
+    await guardarCasos(); pintar();
+    return true;
+  } catch (e) { decir(`No pude mover a ${c.nombre || id}: ${e.message}`, "error"); return false; }
+}
+async function moverTodas() {
+  const l = Object.values(casos).filter((c) => c.etapaSugerida && c.estado !== "limpiado");
+  if (!l.length) return;
+  if (!(await preguntar(`Mover estos ${l.length} lead(s) en Lofty?\n\n` + l.map((c) => `• ${`${c.nombre} ${c.apellido}`.trim()}: “${c.etapa || "?"}” → “${c.etapaSugerida}”`).join("\n"), "Mover todos", "Cancelar"))) return;
+  let ok = 0; for (const c of l) { if (await moverEtapa(c.leadId, false)) ok++; await sleep(400); }
+  decir(`Moví ${ok} de ${l.length} lead(s) a su etapa sugerida.`);
+}
+function pintarEtapas() {
+  const l = Object.values(casos).filter((c) => c.etapaSugerida && c.estado !== "limpiado");
+  $("etapasCaja").hidden = !l.length;
+  $("etapasTxt").textContent = l.length ? `${l.length} lead(s) con etapa sugerida: ` + l.slice(0, 6).map((c) => `${`${c.nombre} ${c.apellido}`.trim()} → ${c.etapaSugerida}`).join(" · ") + (l.length > 6 ? "…" : "") : "";
+}
+$("moverEtapas").onclick = moverTodas;
+
 // Fase Anna 1: el Cerebro antes de mandar (24 h entre todos, una persona le escribió, está con Anna). Falla cerrada.
 async function cerebroDeja(id, esRespuesta) {
   if (!window.Cerebro) return true;
@@ -500,13 +589,13 @@ function resumen() {
   const v = Object.values(casos);
   const ab = v.filter((c) => (c.estado === "abierto" || c.estado === "atender") && !SIN_RESPUESTA.has(c.categoria)); // STOP, equivocados y enojados no se atienden
   $("nAbiertos").textContent = ab.length;
-  $("nInteresados").textContent = v.filter((c) => c.estado !== "descartado" && c.categoria === "interesado").length;
+  $("nInteresados").textContent = v.filter((c) => c.estado !== "descartado" && (c.categoria === "interesado" || c.categoria === "caliente")).length; // los calientes también cuentan
   $("nSeg").textContent = v.filter((c) => c.estado === "abierto" && c.categoria === "seguimiento").length;
   $("nBajas").textContent = v.filter((c) => c.estado !== "limpiado" && ["baja", "equivocado", "enojado"].includes(c.categoria)).length;
   almacen.set({ rsResumen: { abiertos: ab.filter((c) => c.estado === "abierto").length, interesados: Number($("nInteresados").textContent), bajas: Number($("nBajas").textContent), t: Date.now() } });
 }
 function pintar() {
-  resumen();
+  resumen(); pintarEtapas();
   // No se muestran: lo que Limpi ya limpió, ni las conversaciones de STOP/unsubscribe, número equivocado o enojados
   // (siguen guardadas para que Texi nunca les vuelva a escribir)
   const todos = Object.values(casos).filter((c) => c.estado !== "limpiado" && !SIN_RESPUESTA.has(c.categoria));
@@ -524,6 +613,10 @@ function pintar() {
         <span class="hint">${fecha(c.ultimoT)}</span></div>
       <small>${tels.map(bonito).join(" · ") || "sin número de CA"}${c.calle ? ` · ${esc(c.calle)}${c.ciudad ? ", " + esc(c.ciudad) : ""}` : ""}${c.etapa ? ` · ${esc(c.etapa)}` : ""}${c.texi ? " · le escribió Texi" : ""}</small>
       ${c.resumen ? `<small>${esc(c.resumen)}</small>` : ""}
+      ${c.calif && Object.values(c.calif).some(Boolean) ? `<small class="calif">${[["cuando", YO === "rc" ? "Cuándo compra" : "Cuándo vende"], ["porque", YO === "rc" ? "Qué busca" : "Por qué"], ["precio", YO === "rc" ? "Presupuesto" : "Precio"], ["agente", "Agente"]].map(([k, t]) => `${t}: <b>${esc(c.calif[k] || "?")}</b>`).join(" · ")}</small>` : ""}
+      ${c.etapaSugerida ? `<div class="row"><span class="hint">Etapa sugerida: <b>${esc(c.etapaSugerida)}</b> (está en “${esc(c.etapa || "?")}”)</span><button class="mini" data-a="etapa">Mover a “${esc(c.etapaSugerida)}”</button></div>` : ""}
+      ${c.categoria === "sensible" && abierto ? `<small class="aviso">Preguntó algo legal, de financiamiento o de herencia/trust: no le contesté. Atiéndelo tú.</small>` : ""}
+      ${c.autoPendiente && abierto ? `<small class="aviso">No salió solo: ${esc(c.autoPendiente)}</small>` : ""}
       <div class="conv">${conv}</div>
       ${abierto && !SIN_RESPUESTA.has(c.categoria) ? `<textarea>${esc(c.borrador || "")}</textarea>
         <div class="row">${tels.length > 1 ? `<select>${tels.map((t) => `<option value="${t}">${bonito(t)}</option>`).join("")}</select>` : ""}
@@ -539,7 +632,7 @@ function pintar() {
   $("lista").querySelectorAll("textarea").forEach((t) => (t.oninput = () => { const id = t.closest("li").dataset.id; if (casos[id]) { casos[id].borrador = t.value; guardarCasos(); } }));
   $("lista").querySelectorAll("button[data-a]").forEach((b) => (b.onclick = () => {
     const id = b.closest("li").dataset.id;
-    ({ mandar, cerrar, reabrir, baja: moverBaja, numero: async (x) => { b.disabled = true; b.textContent = "Buscando…"; await completarNumeros([x], true); } })[b.dataset.a](id);
+    ({ mandar, cerrar, reabrir, baja: moverBaja, etapa: (x) => moverEtapa(x), numero: async (x) => { b.disabled = true; b.textContent = "Buscando…"; await completarNumeros([x], true); } })[b.dataset.a](id);
   }));
 }
 document.querySelectorAll("[data-f]").forEach((b) => (b.onclick = () => { filtro = b.dataset.f; pintar(); }));
