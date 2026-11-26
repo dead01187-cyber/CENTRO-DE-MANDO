@@ -116,12 +116,11 @@ async function revisarTarea() {
     if (e.status === 404) { fin({ estado: "error", error: "el puente se reinició y perdió la tarea" }); return; }
     estado("error", e.message); return; // el puente se apagó a medio camino: se sigue intentando
   }
-  const nuevas = C.nuevas(vistas, t.log || []);
-  vistas = (t.log || []).length;
-  if (nuevas.length) {
-    const pre = $("log"); pre.textContent += nuevas.join("\n") + "\n"; pre.scrollTop = pre.scrollHeight;
-    for (const l of nuevas) { const b = C.paraBitacora(l); if (b) bitacora(b); }
-  }
+  const log = t.log || [], nuevas = C.nuevas(vistas, log);
+  vistas = log.length;
+  const pre = $("log"), texto = log.join("\n");
+  if (pre.textContent !== texto) { pre.textContent = texto; pre.scrollTop = pre.scrollHeight; } // la línea de avance se actualiza sola
+  for (const l of nuevas) { const b = C.paraBitacora(l); if (b) bitacora(b); }
   const e = C.estadoTarea(t);
   if (C.VIVOS.includes(t.estado)) { $("status").textContent = e.texto; window.robot && robot.set("trabajando", e.texto); return; }
   fin(t);

@@ -277,7 +277,7 @@ class Tareas:
             if not t:
                 return None
             pos = list(self.fila).index(tid) + 1 if tid in self.fila else 0
-            return {k: (list(v) if k == "log" else v) for k, v in t.items() if k != "cancelar"} | {"en_fila": pos}
+            return {k: (list(v) if k == "log" else v) for k, v in t.items() if k not in ("cancelar", "_progreso")} | {"en_fila": pos}
 
     def cancelar(self, tid):
         with self.lock:
@@ -383,7 +383,7 @@ class Puente:
         try:
             d = self.home / "tareas"
             d.mkdir(parents=True, exist_ok=True)
-            (d / f"{t['id']}.json").write_text(json.dumps({k: v for k, v in t.items() if k != "cancelar"}, ensure_ascii=False, indent=1))
+            (d / f"{t['id']}.json").write_text(json.dumps({k: v for k, v in t.items() if k not in ("cancelar", "_progreso")}, ensure_ascii=False, indent=1))
         except OSError:
             pass
 
@@ -502,6 +502,15 @@ class Puente:
             p = Path(str(ev.get("ruta", "")))
             if str(p).startswith(str(carpeta_descargas(self.config))):
                 self.carpetas.add(str(p))
+        elif tipo == "progreso":
+            # el avance (Foto 3 de 24…) se actualiza en la misma línea para no llenar el log
+            linea = f"{time.strftime('%H:%M:%S')} {str(ev.get('txt') or '')[:200]}"
+            with tareas.lock:
+                if t["log"] and t.get("_progreso") and t["log"][-1] == t["_progreso"]:
+                    t["log"][-1] = linea
+                else:
+                    t["log"].append(linea)
+                t["_progreso"] = linea
         else:
             tareas.anotar(t, ev.get("txt") or texto)
 
