@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="nv">
+<head>
+<meta charset="utf-8">
+<title>Navi · navegador con Browser Use</title>
+<link rel="stylesheet" href="fase4.css">
+<style>
+  :root { --c: #7c3aed; }
+  label.f { display: grid; gap: 3px; font-size: 12px; color: var(--m); }
+  input[type=text], input[type=password], input[type=number] { padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; width: 100%; }
+  .chk { display: flex; gap: 6px; align-items: center; font-size: 12.5px; }
+  #params { display: grid; gap: 8px; }
+  #log { margin: 0; max-height: 38vh; overflow: auto; background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 8px 10px; font: 11.5px/1.45 ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-word; min-height: 60px; }
+  .estado-puente { font-size: 12px; } .estado-puente.ok { color: #166534; } .estado-puente.mal { color: #991b1b; font-weight: 600; } .estado-puente.ayuda { color: #854d0e; font-weight: 600; }
+  #resultado b { color: var(--c); } #resultado code, .id code { font-size: 11px; background: #f1f5f9; padding: 1px 4px; border-radius: 4px; word-break: break-all; }
+  button.peligro { color: #991b1b; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card hint">Navi maneja <b>tu Brave</b> con <b>Browser Use</b> a través de un puente que corre en tu Mac (<code>puente/</code>). Solo corre <b>recetas fijas</b> de la lista: baja fotos y datos de listings de Homes.com a <code>~/Downloads/navi/</code>, con pausas de ritmo humano. Si una página pide CAPTCHA, se detiene y te pide ayuda (nunca lo intenta resolver). <b>No toca Lofty ni manda nada.</b></div>
+
+  <div class="card" style="display:grid;gap:8px">
+    <label class="f">Clave del puente <input type="password" id="token" placeholder="La muestra puente/instalar.sh (o: cat ~/.navi/token)" autocomplete="off"></label>
+    <div class="row"><span id="puente" class="estado-puente">Sin revisar.</span><button id="revisar" style="margin-left:auto">Revisar puente</button></div>
+  </div>
+
+  <div class="card" style="display:grid;gap:8px">
+    <label class="f">Receta <select id="receta"><option value="">(primero revisa el puente)</option></select></label>
+    <div id="descReceta" class="hint"></div>
+    <div id="params"></div>
+    <div class="row"><button id="arrancar" class="primary" disabled>Arrancar</button><button id="cancelar" class="peligro" disabled>Cancelar</button></div>
+  </div>
+
+  <div id="status">Listo.</div>
+  <h3>Lo que va haciendo</h3>
+  <pre id="log"></pre>
+  <div id="resultado" class="card" hidden></div>
+  <div class="hint id">ID de esta extensión (va en <code>~/.navi/config.json</code>; <code>instalar.sh</code> te lo pide): <code id="extId"></code></div>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
+<script src="navi-core.js"></script><script src="navi.js"></script>
+</body>
+</html>

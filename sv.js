@@ -476,6 +476,8 @@ const TOOLS = [
   { name: "supervisor", description: "Le encarga algo a uno de tus 4 supervisores; cada uno piensa con su propio cerebro y solo toca SUS agentes. GEO = investigación territorial (Radar, Termi, Propi, Prope, Heri). CRM = calidad y sincronización de leads (Chequi, Chequi 3, Veri, Owny, Wibi, Carpi, Lofti, Acti, Limpi, Zeta, Redi). GROW = seguimiento y SMS sin mandar nada (Texi, Resi, Marki, Timi). OPS = diagnóstico técnico de todo, solo lectura (errores, agentes atorados, sesiones, gasto de Claude). Úsalo para problemas o revisiones de un área completa; para un solo agente usa delegar.",
     input_schema: { type: "object", properties: { supervisor: { type: "string", enum: ["GEO", "CRM", "GROW", "OPS"] }, tarea: { type: "string" } }, required: ["supervisor", "tarea"] } },
   { name: "ver_uso", description: "Uso de Claude de hoy por quien llama (Capi, cada supervisor, los cerebros de los agentes, Resi) contra su tope diario.", input_schema: { type: "object", properties: {} } },
+  { name: "navi_receta", description: "Le pide a Navi (Browser Use en el Brave del jefe, por el puente local) que corra UNA receta de su lista: fotos_listing (params: url de una propiedad de Homes.com → baja todas las fotos y datos.json) o listings_agente (params: url del perfil de un agente en Homes.com, fotos sí/no, maximo → CSV de listings activos). Solo cuando el jefe lo pidió. No toca Lofty ni manda nada.",
+    input_schema: { type: "object", properties: { receta: { type: "string" }, params: { type: "object" } }, required: ["receta", "params"] } },
   { name: "ver_tareas", description: "Lista las tareas del bus (las vivas y las últimas terminadas): de qué agente, qué acción, estado y resultado.", input_schema: { type: "object", properties: {} } },
   { name: "cancelar_tarea", description: "Cancela una tarea del bus que todavía no termina (por su id de ver_tareas).", input_schema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } },
   { name: "esperar", description: "Espera unos segundos (máx. 60) y regresa la foto nueva del flujo.",
@@ -638,6 +640,18 @@ async function ejecutar(nombre, a, deRobot = false) {
       if (!esPWoBV(t.url)) return "Solo puedo cerrar pestañas de Propwire o BeenVerified.";
       await chrome.tabs.remove(a.tabId); return "Cerrada.";
     }
+    case "navi_receta": {
+      // Solo el jefe (no un aviso automático ni otro robot) y solo recetas de la lista que el puente le dio a Navi
+      if (deRobot || turnoAutomatico) return "Solo el jefe le pide recetas a Navi.";
+      if ((await apagados()).nv) return "Navi está apagado con su interruptor. Pídele al jefe que lo prenda.";
+      const { nvRecetas = [] } = await chrome.storage.local.get("nvRecetas");
+      const r = nvRecetas.find((x) => x.nombre === String(a.receta || ""));
+      if (!r) return nvRecetas.length ? `Navi no tiene esa receta. Las que hay: ${nvRecetas.map((x) => x.nombre).join(", ")}.` : "Navi todavía no conoce sus recetas: el puente está apagado o falta la clave. Dile al jefe que abra Navi y revise el puente.";
+      const p = a.params && typeof a.params === "object" ? a.params : {};
+      const sobran = Object.keys(p).filter((k) => !(k in r.params));
+      if (sobran.length) return `Esa receta no usa: ${sobran.join(", ")}. Usa: ${Object.keys(r.params).join(", ")}.`;
+      return await pedirTarea("nv", "receta", `receta ${r.nombre}`, deRobot, { receta: r.nombre, params: p });
+    }
     case "ver_tareas": return await resumenTareas();
     case "cancelar_tarea": { const t = await Tareas.cancelar(String(a.id || "")); return t.estado === "cancelada" ? "Cancelada." : `Le pedí al agente que la cancele (estaba ${ESTADO_TXT[t.estado] || t.estado}).`; }
     case "esperar": await sleep(Math.min(60, Math.max(1, a.segundos || 10)) * 1000); return await estadoFlujo();
@@ -670,6 +684,8 @@ Heri (hipotecas inversas de Orange County): si el jefe dice algo como "Heri, bú
 Bus de tareas: algunas acciones (Chequi, Chequi 3, Zeta y Resi "revisar"; Limpi "limpiar") ya no son clics en la página: al usar clic con ese botón se crea una TAREA que el agente toma aunque su página se abra después. Te regreso el resultado, o te digo si quedó en fila. Las acciones delicadas (como la limpieza de Limpi) esperan la aprobación del jefe: a él le salen botones Aprobar / Rechazar en el chat; tú NO puedes aprobar, solo avísale. Usa ver_tareas para ver cómo van y cancelar_tarea si el jefe lo pide.
 
 Agentes de calidad y operación (Fase 4, solo leen): Vali (CRM) valida teléfonos y datos de los lotes antes de subir; Punti (GROW) califica de 0 a 100 a quién atender primero; Cumpli (OPS) audita el cumplimiento de los SMS y ajustes riesgosos; Qai (OPS) revisa la salud técnica; Ana (OPS) saca los números. Se piden con clic (va, pu, cu, qa, an → run) y van por el bus. Si el jefe pregunta "¿cómo vamos?", "¿a quién le hablo primero?" o "¿estamos cumpliendo?", úsalos.
+
+Navi (Fase 7, OPS): maneja el Brave del jefe con Browser Use por un puente local y solo corre recetas fijas: fotos_listing (todas las fotos y los datos de un listing de Homes.com) y listings_agente (los listings activos de un agente en un CSV, opcional con fotos). Se lo pides con navi_receta cuando el jefe lo pida. Si una página pide CAPTCHA, Navi se detiene y pide ayuda: díselo al jefe; nunca intentes resolverlo. Si el puente está apagado, dile que corra puente/instalar.sh; si Brave no tiene el 9222, que lo abra con brave-ia.
 
 Tablero (Fase 5): el jefe tiene un tablero con el semáforo general, supervisores, agentes, tareas, leads, errores, costos de Claude y seguridad. Si pide "enséñame el tablero" o "¿cómo está todo?", usa mostrar_modulo con tb (y ver_estado para contestarle en voz).
 

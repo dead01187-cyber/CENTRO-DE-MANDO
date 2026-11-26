@@ -83,6 +83,9 @@
       [{ id: "revisar", desc: "Revisar almacenamiento, tareas, llaves, errores y agentes", aprobacion: false, boton: "run" }]),
     an: R("Ana", "Saca los números: SMS, respuestas, leads, tareas y errores", "OPS", "an.html", [],
       [{ id: "calcular", desc: "Calcular las métricas de los últimos días", aprobacion: false, boton: "run" }]),
+    // ---- Fase 7: Navi maneja Brave con Browser Use por un puente local (solo recetas fijas) ----
+    nv: R("Navi", "Maneja tu Brave con Browser Use (puente local): baja fotos y datos de listings de Homes.com", "OPS", "navi.html", ["lee_web"],
+      [{ id: "receta", desc: "Correr una receta del puente de Browser Use (entrada: receta y params); solo recetas de la lista del puente", aprobacion: false }]),
     // ---- Supervisor principal ----
     sv: R("Capi", "Coordina a los agentes y te habla", "capi", "sv.html", []),
   };

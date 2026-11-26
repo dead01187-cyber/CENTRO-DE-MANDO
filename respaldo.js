@@ -12,8 +12,8 @@
 // =====================================================================
 (function () {
   const $ = (id) => document.getElementById(id);
-  const LLAVES = ["loftyKey", "txKey", "svKey", "elKey"];
-  const NOMBRE_LLAVE = { loftyKey: "Lofty", txKey: "Lofty de Texi", svKey: "Claude", elKey: "ElevenLabs", alCfg: "Lofty de Marki", radarCfg: "Census" };
+  const LLAVES = ["loftyKey", "txKey", "svKey", "elKey", "nvToken"];
+  const NOMBRE_LLAVE = { loftyKey: "Lofty", txKey: "Lofty de Texi", svKey: "Claude", elKey: "ElevenLabs", nvToken: "Puente de Navi", alCfg: "Lofty de Marki", radarCfg: "Census" };
 
   async function armarRespaldo() {
     const storage = await chrome.storage.local.get(null);
