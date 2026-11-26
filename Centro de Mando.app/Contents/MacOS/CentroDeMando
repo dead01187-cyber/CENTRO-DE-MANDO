@@ -1,11 +1,41 @@
 #!/bin/bash
-# Abre el Centro de Mando del "Agente Geo Farming" como app (ventana sin pestañas ni barra de direcciones).
-# Si Chrome muestra error, cambia el ID por el que sale en chrome://extensions (Agente Geo Farming → ID).
+# Abre el Centro de Mando del "Agente Geo Farming" como app (ventana sin pestañas ni barra de direcciones), en BRAVE.
+# Fase 7: Brave se abre con el puerto de depuración 9222 para que Navi (Browser Use) pueda manejarlo.
+# · Si Brave está cerrado: lo abre con --remote-debugging-port=9222.
+# · Si Brave ya está abierto CON el 9222: solo abre la ventana del Centro de Mando.
+# · Si Brave ya está abierto SIN el 9222: te avisa (no lo cierra a la fuerza). Ciérralo con ⌘Q y vuelve a abrir esta app,
+#   o ábrelo con tu alias brave-ia.
+# Si Brave muestra error, cambia el ID por el que sale en brave://extensions (Agente Geo Farming → ID).
 ID="ocapgeanpaepjfokihcaicpoankbdfad"
 URL="chrome-extension://$ID/mando.html"
-CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-if pgrep -xq "Google Chrome"; then
-  "$CHROME" --app="$URL" >/dev/null 2>&1 &
+PUERTO=9222
+APP="Brave Browser"
+BRAVE="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+# Si tu alias brave-ia usa otra carpeta de perfil (--user-data-dir=...), pon aquí la misma ruta; si no, déjalo vacío.
+DATOS=""
+
+EXTRA=()
+[ -n "$DATOS" ] && EXTRA+=("--user-data-dir=$DATOS")
+
+puerto_vivo() { curl -s -m 1 "http://127.0.0.1:$PUERTO/json/version" | grep -q webSocketDebuggerUrl; }
+avisar() { osascript -e "display dialog \"$1\" with title \"Centro de Mando\" buttons {\"$2\", \"Cancelar\"} default button \"$2\" with icon caution" >/dev/null 2>&1; }
+
+if [ ! -x "$BRAVE" ]; then
+  osascript -e 'display alert "No encuentro Brave" message "Instala Brave en Aplicaciones (brave.com) o cambia la ruta en este script." as critical' >/dev/null 2>&1
+  exit 1
+fi
+
+if pgrep -xq "$APP"; then
+  if ! puerto_vivo; then
+    # Brave abierto sin el 9222: no se cierra a la fuerza (podrías perder pestañas o formularios)
+    if ! avisar "Brave ya está abierto pero SIN el puerto 9222, así que Navi no podrá usar Browser Use.\n\nPara arreglarlo: cierra Brave con ⌘Q y vuelve a abrir el Centro de Mando (o ábrelo con brave-ia).\n\n¿Abro el Centro de Mando así, sin Navi?" "Abrir sin Navi"; then
+      exit 0
+    fi
+  fi
+  "$BRAVE" "${EXTRA[@]}" --app="$URL" >/dev/null 2>&1 &
 else
-  open -a "Google Chrome" --args --app="$URL"
+  open -a "$APP" --args --remote-debugging-port=$PUERTO "${EXTRA[@]}" --app="$URL"
+  # revisa que el 9222 sí quedó abierto (las versiones nuevas lo ignoran con el perfil normal: entonces usa DATOS o brave-ia)
+  for _ in 1 2 3 4 5 6 7 8 9 10; do puerto_vivo && exit 0; sleep 1; done
+  osascript -e 'display notification "Brave abrió, pero el puerto 9222 no responde. Navi no podrá usar Browser Use; ábrelo con brave-ia." with title "Centro de Mando"' >/dev/null 2>&1
 fi
