@@ -8,3 +8,11 @@ respaldo-*.json
 # Solo para las pruebas (npm install); nunca dentro de la extensión que carga Chrome
 node_modules/
 test-results/
+
+# Fase 7 (Navi): la clave y la config del puente viven en ~/.navi, nunca en el repo
+.navi/
+token
+*.token
+navi-token*
+__pycache__/
+*.pyc
