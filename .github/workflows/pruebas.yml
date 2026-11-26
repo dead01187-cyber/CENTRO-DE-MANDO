@@ -17,6 +17,8 @@ jobs:
           node-version: 22
       - name: Revisión de sintaxis de todos los .js
         run: for f in *.js; do node --check "$f"; done
+      - name: Revisión de sintaxis del puente de Navi (Python y shell)
+        run: python3 -m py_compile puente/puente.py puente/recetas/*.py && bash -n puente/instalar.sh && bash -n puente/desinstalar.sh
       - name: Pruebas unitarias
         run: npm test
   punta-a-punta:

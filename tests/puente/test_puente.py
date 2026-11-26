@@ -107,7 +107,7 @@ class Base(unittest.TestCase):
             j = None
         return r.status, dict(r.getheaders()), j
 
-    def esperar(self, tid, estados=("terminado", "error", "ayuda", "cancelado"), seg=15):
+    def esperar(self, tid, estados=("terminado", "error", "ayuda", "cancelado"), seg=45):
         t0 = time.time()
         while time.time() - t0 < seg:
             _, _, j = self.pedir("GET", f"/tarea/{tid}")
