@@ -86,6 +86,9 @@
     // ---- Fase 7: Navi maneja Brave con Browser Use por un puente local (solo recetas fijas) ----
     nv: R("Navi", "Maneja tu Brave con Browser Use (puente local): baja fotos y datos de listings de Homes.com", "OPS", "navi.html", ["lee_web"],
       [{ id: "receta", desc: "Correr una receta del puente de Browser Use (entrada: receta y params); solo recetas de la lista del puente", aprobacion: false }]),
+    // ---- Fase A del puente: servicios que corren solos en la Mac aunque Brave esté cerrado ----
+    sp: R("Puente", "Servicios que trabajan solos en tu Mac aunque Brave esté cerrado (Mac despierta, salud de las llaves de Lofty)", "OPS", "sp.html", ["lee_crm"],
+      [{ id: "revisar", desc: "Revisar el puente y sus servicios", aprobacion: false, boton: "run" }]),
     // ---- Supervisor principal ----
     sv: R("Capi", "Coordina a los agentes y te habla", "capi", "sv.html", []),
   };

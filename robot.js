@@ -89,6 +89,7 @@
   ROBOTS.qa = { ...ROBOTS.te, nombre: "Qai", rol: "", color: "#0f766e", claro: "#99f6e4", oscuro: "#134e4a" };
   ROBOTS.pu = { ...ROBOTS.wb, nombre: "Punti", rol: "", color: "#ca8a04", claro: "#fef08a", oscuro: "#713f12" };
   ROBOTS.an = { ...ROBOTS.ra, nombre: "Ana", rol: "", color: "#db2777", claro: "#fbcfe8", oscuro: "#831843" };
+  ROBOTS.sp = { ...ROBOTS.ra, nombre: "Puente", rol: "Servicios que trabajan solos en tu Mac", color: "#0d9488", claro: "#99f6e4", oscuro: "#134e4a" };
   ROBOTS.nv = { ...ROBOTS.ra, nombre: "Navi", rol: "Maneja tu Brave con Browser Use (recetas fijas)", color: "#7c3aed", claro: "#ddd6fe", oscuro: "#4c1d95" };
   // Clones de la línea de Acti: mismo robot, otro color
   ROBOTS.bv2 = { ...ROBOTS.bv, nombre: "Veri 2", rol: "Busca en BeenVerified los leads de Acti", color: "#c026d3", claro: "#f5d0fe", oscuro: "#701a75" };
@@ -129,9 +130,10 @@
     "chart-column": '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
     "users": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
     "database": '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+    "server": '<rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/>',
     "compass": '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>',
   };
-  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database", "tb":"layout-dashboard", "cb":"key-round", "t2":"message-square", "ry":"zap", "rc":"message-square-reply", "nv":"compass"};
+  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database", "tb":"layout-dashboard", "cb":"key-round", "t2":"message-square", "ry":"zap", "rc":"message-square-reply", "nv":"compass", "sp":"server"};
 
   // Ícono de cada agente: línea fina del color de su sección (antes era pixel art; los mapas se quedan solo como color)
   function robotSVG(mod) {

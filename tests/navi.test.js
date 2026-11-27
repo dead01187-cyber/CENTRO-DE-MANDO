@@ -69,7 +69,7 @@ test("Navi está en el registro (OPS) con su acción del bus, y en el Mando", ()
   assert.match(mando, /<iframe id="f-nv" src="navi\.html"><\/iframe>/);
   assert.match(mando, /<button data-m="nv">Navi<\/button>/);
   assert.match(mjs, /const MODS = \[[^\]]*"nv"/);
-  assert.match(mjs, /const COLOR = \{ nv: "#/);
+  assert.match(mjs, /const COLOR = \{[^}]*\bnv: "#/);
   assert.match(rjs, /ROBOTS\.nv = /); assert.match(rjs, /"nv":"compass"/);
   const html = fs.readFileSync(path.join(raiz, "navi.html"), "utf8");
   assert.match(html, /data-mod="nv"/); assert.match(html, /tema\.css/); assert.match(html, /trabajador\.js/);

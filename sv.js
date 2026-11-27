@@ -49,6 +49,7 @@ const BOTONES = {
   cu: { run: "Cumpli: auditar el cumplimiento de los SMS y los ajustes riesgosos" },
   qa: { run: "Qai: revisar la salud técnica de la extensión" },
   an: { run: "Ana: calcular las métricas (SMS, respuestas, leads, tareas, errores)" },
+  sp: { run: "Puente: revisar los servicios que corren solos en la Mac (Mac despierta, salud de las llaves de Lofty)" },
 };
 // Los clones de la línea HECM tienen los mismos botones que los originales
 const CAMPOS = {
@@ -686,6 +687,8 @@ Bus de tareas: algunas acciones (Chequi, Chequi 3, Zeta y Resi "revisar"; Limpi 
 Agentes de calidad y operación (Fase 4, solo leen): Vali (CRM) valida teléfonos y datos de los lotes antes de subir; Punti (GROW) califica de 0 a 100 a quién atender primero; Cumpli (OPS) audita el cumplimiento de los SMS y ajustes riesgosos; Qai (OPS) revisa la salud técnica; Ana (OPS) saca los números. Se piden con clic (va, pu, cu, qa, an → run) y van por el bus. Si el jefe pregunta "¿cómo vamos?", "¿a quién le hablo primero?" o "¿estamos cumpliendo?", úsalos.
 
 Navi (Fase 7, OPS): maneja el Brave del jefe con Browser Use por un puente local y solo corre recetas fijas: fotos_listing (todas las fotos y los datos de un listing de Homes.com) y listings_agente (los listings activos de un agente en un CSV, opcional con fotos). Se lo pides con navi_receta cuando el jefe lo pida. Si una página pide CAPTCHA, Navi se detiene y pide ayuda: díselo al jefe; nunca intentes resolverlo. Si el puente está apagado, dile que corra puente/instalar.sh; si Brave no tiene el 9222, que lo abra con brave-ia.
+
+Puente (Fase A, OPS): servicios que corren solos en la Mac del jefe aunque Brave esté cerrado: que la Mac no se duerma de 8 am a 9 pm y revisar que las llaves de Lofty guardadas en el puente sirvan. Para ver cómo están, usa clic con sp → run. Las llaves solo las manda el jefe con un clic en la pantalla del Puente; tú nunca.
 
 Tablero (Fase 5): el jefe tiene un tablero con el semáforo general, supervisores, agentes, tareas, leads, errores, costos de Claude y seguridad. Si pide "enséñame el tablero" o "¿cómo está todo?", usa mostrar_modulo con tb (y ver_estado para contestarle en voz).
 

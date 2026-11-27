@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="sp">
+<head>
+<meta charset="utf-8">
+<title>Puente · servicios en tu Mac</title>
+<link rel="stylesheet" href="fase4.css">
+<style>
+  :root { --c: #0d9488; }
+  input[type=password] { padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; width: 100%; }
+  .srv { display: grid; gap: 4px; }
+  .srv .cab { display: flex; gap: 8px; align-items: center; }
+  .srv .cab b { flex: 1; }
+  .chip { font-size: 10px; font-weight: 700; border-radius: 99px; padding: 2px 8px; background: #f1f5f9; color: #475569; }
+  .chip.trabajando { background: #e0f2fe; color: #075985; } .chip.feliz { background: #dcfce7; color: #166534; }
+  .chip.error, .chip.ayuda { background: #fee2e2; color: #991b1b; } .chip.apagado { background: #f1f5f9; color: #94a3b8; }
+  .srv pre { margin: 4px 0 0; max-height: 160px; overflow: auto; background: #0f172a; color: #e2e8f0; border-radius: 6px; padding: 6px 8px; font: 11px/1.4 ui-monospace, Menlo, monospace; white-space: pre-wrap; }
+  .llave { display: flex; gap: 8px; align-items: center; } .llave .q { flex: 1; } .llave small { display: block; color: var(--m); }
+  .sw { display: flex; gap: 4px; align-items: center; font-size: 12px; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card hint">Servicios que trabajan <b>solos en tu Mac</b> (en el puente de <code>puente/</code>), <b>aunque Brave esté cerrado</b>. Por ahora: que la Mac no se duerma de 8 am a 9 pm y revisar que las llaves de Lofty sirvan (solo lee). Después vendrán Rayo y el Cerebro. Las llaves se guardan en el <b>Llavero de macOS</b>, nunca en el código.</div>
+
+  <div class="card" style="display:grid;gap:8px">
+    <label class="f" style="display:grid;gap:3px;font-size:12px;color:var(--m)">Clave del puente (la misma de Navi) <input type="password" id="token" placeholder="La muestra puente/instalar.sh (o: cat ~/.navi/token)" autocomplete="off"></label>
+    <div class="row"><button id="run" class="primary">Revisar ahora</button></div>
+  </div>
+
+  <div id="status">Listo.</div>
+  <div class="nums" id="nums"></div>
+
+  <h3>Servicios</h3>
+  <div id="servicios" style="display:grid;gap:8px"></div>
+
+  <h3>Llaves en el puente</h3>
+  <div class="card hint">Para que los servicios trabajen sin Brave, el puente necesita su propia copia de la llave de Lofty. Se manda <b>solo cuando tú le das clic</b> y se guarda en el Llavero de macOS. El puente nunca la regresa: solo enseña sus últimos 4 caracteres.</div>
+  <div id="llaves" class="card" style="display:grid;gap:8px"></div>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
+<script src="navi-core.js"></script><script src="sp-core.js"></script><script src="sp.js"></script>
+</body>
+</html>

@@ -5,9 +5,9 @@
 // =====================================================================
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "t2", "ry", "cb", "rs", "rc", "li", "al", "ra", "te", "va", "pu", "cu", "qa", "an", "nv", "tb", "sv"];
+const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "t2", "ry", "cb", "rs", "rc", "li", "al", "ra", "te", "va", "pu", "cu", "qa", "an", "nv", "sp", "tb", "sv"];
 const NOMBRE = { ...Object.fromEntries(REGISTRO.ids(false).map((m) => [m, REGISTRO.nombre(m)])), tb: "Tablero" }; // Fase 2: del registro central · Fase 5: tablero
-const COLOR = { nv: "#a78bfa", ry: "#f59e0b", t2: "#34d399", cb: "#38bdf8", rc: "#7dd3fc", ra: "#ef4444", te: "#f97316", al: "#60a5fa", pr: "#eab308", li: "#fb7185", rs: "#2dd4bf", cp: "#22d3ee", ch3: "#fbbf24", bv3: "#fb923c", ow3: "#facc15", wb3: "#d97706", hr: "#f59e0b", tx: "#34d399", wb: "#facc15", zb: "#22d3ee", rd: "#a78bfa", gm: "#f9a8d4", ti: "#60a5fa", tm: "#818cf8", bv2: "#e879f9", ow2: "#a3e635", ac: "#fb923c", pw: "#2dd4bf", ch: "#f472b6", bv: "#818cf8", ow: "#4ade80", lf: "#38bdf8", sv: "#fbbf24", crm: "#a5b4fc" };
+const COLOR = { sp: "#2dd4bf", nv: "#a78bfa", ry: "#f59e0b", t2: "#34d399", cb: "#38bdf8", rc: "#7dd3fc", ra: "#ef4444", te: "#f97316", al: "#60a5fa", pr: "#eab308", li: "#fb7185", rs: "#2dd4bf", cp: "#22d3ee", ch3: "#fbbf24", bv3: "#fb923c", ow3: "#facc15", wb3: "#d97706", hr: "#f59e0b", tx: "#34d399", wb: "#facc15", zb: "#22d3ee", rd: "#a78bfa", gm: "#f9a8d4", ti: "#60a5fa", tm: "#818cf8", bv2: "#e879f9", ow2: "#a3e635", ac: "#fb923c", pw: "#2dd4bf", ch: "#f472b6", bv: "#818cf8", ow: "#4ade80", lf: "#38bdf8", sv: "#fbbf24", crm: "#a5b4fc" };
 const CHIP = { idle: "Listo", trabajando: "Trabajando", feliz: "¡Terminé!", error: "Error", ayuda: "Necesito ayuda", pausa: "Pausa", pensando: "Pensando" };
 
 // ---------- Candado: un solo Capi a la vez (panel lateral o Mando) ----------
@@ -468,13 +468,15 @@ async function contar() {
   $("e-rs").querySelector(".cuenta").innerHTML = `<b>${n.rsAbiertos || 0}</b> por atender · <b>${n.rsInteresados || 0}</b> interesados`;
   $("e-rc").querySelector(".cuenta").innerHTML = `<b>${n.rcAbiertos || 0}</b> por atender · <b>${n.rcInteresados || 0}</b> interesados`;
   // Fase 4: robots de calidad y operación (lo que dejó cada uno en su última revisión)
-  const { vaRes = {}, puRes = {}, cuRes = {}, qaRes = {}, anRes = {}, nvRes = {}, nvPuente = {}, nvActual = null } = await chrome.storage.local.get(["vaRes", "puRes", "cuRes", "qaRes", "anRes", "nvRes", "nvPuente", "nvActual"]);
+  const { vaRes = {}, puRes = {}, cuRes = {}, qaRes = {}, anRes = {}, nvRes = {}, nvPuente = {}, nvActual = null, spRes = {} } = await chrome.storage.local.get(["vaRes", "puRes", "cuRes", "qaRes", "anRes", "nvRes", "nvPuente", "nvActual", "spRes"]);
   const cta = (id, txt) => { const e = $("e-" + id); if (e) e.querySelector(".cuenta").textContent = txt; };
   cta("va", vaRes.t ? `${vaRes.malos || 0} no sirven · ${vaRes.dudosos || 0} revisar` : "sin revisar");
   cta("pu", puRes.t ? `${puRes.altos || 0} prioridad alta de ${puRes.total || 0}` : "sin calificar");
   cta("cu", cuRes.t ? `${cuRes.altas || 0} graves · ${cuRes.medias || 0} medios` : "sin auditar");
   cta("qa", qaRes.t ? `${qaRes.fallas || 0} fallas · ${qaRes.avisos || 0} avisos` : "sin revisar");
   cta("an", anRes.t ? `${anRes.sms || 0} SMS · ${anRes.respuesta || 0}% contestó` : "sin calcular");
+  // Fase A: servicios del puente (corren solos en la Mac)
+  cta("sp", spRes.t ? spRes.cuenta || "—" : "sin revisar");
   // Fase 7: Navi (puente de Browser Use)
   cta("nv", nvActual ? `trabajando: ${nvActual.receta}` : nvPuente.t && !nvPuente.ok ? (/apagado/.test(nvPuente.texto || "") ? "puente apagado" : /Brave/.test(nvPuente.texto || "") ? "abre Brave (brave-ia)" : "revisar puente")
     : nvRes.t ? (nvRes.estado === "terminado" ? (nvRes.receta === "fotos_listing" ? `${nvRes.fotos || 0} fotos bajadas` : `${nvRes.total || 0} listings`) : nvRes.estado === "ayuda" ? "pide ayuda (CAPTCHA)" : nvRes.estado) : "sin tareas");
