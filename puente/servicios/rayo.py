@@ -490,13 +490,17 @@ class Rayo(Servicio):
                 del self.vigilar[k]
 
     # ---------- lo que pide la pantalla de Rayo ----------
-    def poner_config(self, config=None, modo=None):
+    def poner_config(self, config=None, modo=None, ultimo=None, reiniciar=False):
+        """reiniciar = Rayo se acaba de prender en el puente. ultimo = hasta dónde ya revisó la extensión."""
         with self.mu:
             if config is not None:
                 self.config = limpiar_config(config, self.config)
             if modo in ("puente", "sombra"):
-                if self.sombra != (modo == "sombra"):
-                    self.ultimo = 0  # al cambiar de modo empieza con los últimos 15 min
+                if reiniciar or self.sombra != (modo == "sombra"):
+                    if modo == "puente":  # las tarjetas de prueba de la sombra no se aprueban ni se contactan
+                        self.tarjetas = {k: v for k, v in self.tarjetas.items() if not v.get("sombra")}
+                    # sigue desde donde se quedó la extensión (o los últimos 15 min): no "redescubre" leads ya atendidos
+                    self.ultimo = float(ultimo) if isinstance(ultimo, (int, float)) and ultimo > 0 else 0
                 self.sombra = modo == "sombra"
         self.guardar()
 
@@ -512,8 +516,9 @@ class Rayo(Servicio):
     def estado_publico(self):
         with self.mu:
             tarjetas = sorted(self.tarjetas.values(), key=lambda x: -x.get("creado", 0))[:200]
-            return {"sombra": self.sombra, "config": self.config, "ultimo": self.ultimo, "tarjetas": tarjetas, "cola": list(self.cola),
-                    "silenciados": dict(self.silenciados), **self.datos}
+            # (los contadores van primero: "cola" de abajo es la LISTA, no el número)
+            return {**self.datos, "sombra": self.sombra, "config": self.config, "ultimo": self.ultimo, "tarjetas": tarjetas, "cola": list(self.cola),
+                    "silenciados": dict(self.silenciados)}
 
     def registro_desde(self, desde):
         with self.mu:

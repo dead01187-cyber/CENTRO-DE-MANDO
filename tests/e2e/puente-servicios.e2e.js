@@ -32,7 +32,7 @@ test("Puente: muestra los servicios, manda las llaves con un clic, avisa si una 
     const sp = await amb.pagina("sp.html");
     // los 2 servicios con su estado; sin llaves la salud de Lofty espera
     await sp.waitForSelector('[data-servicio="lofty_salud"]', { timeout: 15000 });
-    assert.deepEqual(await sp.$$eval("[data-servicio]", (xs) => xs.map((x) => x.dataset.servicio)), ["despierto", "lofty_salud"]);
+    assert.deepEqual(await sp.$$eval("[data-servicio]", (xs) => xs.map((x) => x.dataset.servicio)), ["despierto", "lofty_salud", "rayo"]);
     assert.match(await sp.textContent('[data-servicio="lofty_salud"]'), /Todavía no hay llaves de Lofty/);
     assert.match(await sp.textContent('[data-llave="txKey"]'), /Todavía no está en el puente/);
 

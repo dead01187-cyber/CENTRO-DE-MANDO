@@ -12,6 +12,10 @@
 //   Anna a veces mete al lead a su pool unos minutos después: Rayo vigila 30 min los que ganó y la silencia.
 // · Todo pasa por el Cerebro (24 h entre todos, una persona le escribió) y la política de SMS
 //   (bajas, horario 8–21 h California, solo CA). Nada sale de noche: se queda "programado".
+// · Fase C: "Rayo corre en" Extensión (como siempre) / Sombra (la extensión trabaja y el puente solo
+//   anota lo que haría; se comparan) / Puente (el puente trabaja aunque Brave esté cerrado; aquí solo se
+//   ve, se aprueba y se configura). Si el puente se apaga en modo Puente, se avisa: con un clic vuelves
+//   a "Extensión".
 // =====================================================================
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -33,6 +37,7 @@ const DEF = {
   emailCuerpo: "Hi {nombre},\n\nThanks for reaching out about your home in {ciudad}. I'm Mark with Rubio Real Estate. I'd be glad to prepare a free, no-obligation estimate of what your home could sell for in today's market and walk you through your options.\n\nWhat's a good time for a quick call?\n\nBest,\nMark\nRubio Real Estate",
 };
 let cfg = { ...DEF }, tarjetas = {}, ocupado = false, timer = null;
+let donde = "extension", timerPuente = null; // Fase C: dónde corre Rayo
 
 // ---------- API de Lofty con la cuenta elegida ----------
 async function api(path, opts = {}) {
@@ -61,10 +66,14 @@ async function cargar() {
   for (const k of ["smsSeller", "smsBuyer", "emailCuerpo"]) { const v = String(cfg[k] || "").replace(/Christopher Rubio-Novack/g, "Mark").replace(/\bChristopher\b/g, "Mark"); if (v !== cfg[k]) { cfg[k] = v; cambio = true; } }
   if (cambio) await chrome.storage.local.set({ ryConfig: cfg });
   CAMPOS.forEach((k) => ($(k).value = cfg[k])); CHECKS.forEach((k) => ($(k).checked = !!cfg[k]));
+  const { ryDonde = "extension" } = await chrome.storage.local.get("ryDonde");
+  donde = ["extension", "sombra", "puente"].includes(ryDonde) ? ryDonde : "extension";
+  $("donde").value = donde;
 }
 async function guardarCfg() {
   CAMPOS.forEach((k) => (cfg[k] = $(k).value.trim() || DEF[k])); CHECKS.forEach((k) => (cfg[k] = $(k).checked));
   await chrome.storage.local.set({ ryConfig: cfg });
+  if (donde !== "extension") await enviarConfig(); // Fase C: el puente usa la misma configuración
 }
 [...CAMPOS, ...CHECKS].forEach((k) => ($(k).onchange = async () => { await guardarCfg(); pintar(); programar(); }));
 const guardarTarjetas = async () => {
@@ -106,6 +115,7 @@ async function duplicado(t) {
 
 // ---------- 1) Buscar leads nuevos ----------
 async function buscar() {
+  if (donde === "puente") return verPuente(); // Fase C: busca el puente; aquí solo se ve
   if (ocupado || !cfg.activo) return;
   ocupado = true;
   try {
@@ -251,13 +261,22 @@ function pintar() {
     if (t.estado === "por aprobar") {
       const fila = document.createElement("div"); fila.className = "row";
       const si = document.createElement("button"); si.className = "primary"; si.textContent = "Aprobar y contactar"; si.onclick = () => aprobar([t.leadId], "jefe");
-      const no = document.createElement("button"); no.textContent = "Descartar"; no.onclick = async () => { t.estado = "descartado"; t.motivo = "lo descartaste"; await guardarTarjetas(); pintar(); };
+      const no = document.createElement("button"); no.textContent = "Descartar"; no.onclick = async () => {
+        if (donde === "puente") { if (window.PuenteCliente) await PuenteCliente.pedir("/rayo/descartar", { method: "POST", body: { id: t.leadId } }); return verPuente(); }
+        t.estado = "descartado"; t.motivo = "lo descartaste"; await guardarTarjetas(); pintar(); };
       fila.append(si, no); li.querySelector(".addr").appendChild(fila);
     }
     ul.appendChild(li);
   }
 }
 async function aprobar(ids, por) {
+  if (donde === "puente") { // Fase C: aprueba en el puente (botón o Capi)
+    const r = window.PuenteCliente ? await PuenteCliente.pedir("/rayo/aprobar", { method: "POST", body: { ids: ids.map(String), por } }) : null;
+    if (!r) { decir("Rayo: el puente no contestó; no pude aprobar. Revisa el puente o cambia 'Rayo corre en' a Extensión.", "error"); return 0; }
+    if (r.aprobados) decir(`Rayo (puente): ${r.aprobados} lead(s) aprobados (${por}); los contacta ya.`);
+    setTimeout(verPuente, 1500);
+    return r.aprobados;
+  }
   let n = 0;
   for (const id of ids) { const t = tarjetas[id]; if (t && t.estado === "por aprobar") { t.estado = "aprobado"; nota(t, `aprobado por ${por}`); n++; } }
   await guardarTarjetas(); pintar();
@@ -265,7 +284,10 @@ async function aprobar(ids, por) {
   return n;
 }
 $("aprobarTodas").onclick = () => aprobar(Object.values(tarjetas).filter((x) => x.estado === "por aprobar").map((x) => x.leadId), "jefe");
-$("revisar").onclick = () => buscar();
+$("revisar").onclick = async () => {
+  if (donde === "puente" && window.PuenteCliente) { await PuenteCliente.pedir("/servicios/rayo/ahora", { method: "POST", body: {} }); setTimeout(verPuente, 2000); return; }
+  buscar();
+};
 
 // Capi aprueba por voz: escribe { ids, por: "Capi (voz del jefe)" } en ryAprobar; Rayo lo toma de aquí.
 chrome.storage.onChanged.addListener((ch, area) => {
@@ -274,6 +296,154 @@ chrome.storage.onChanged.addListener((ch, area) => {
   if (ch.ryTarjetas && !ocupado) { tarjetas = ch.ryTarjetas.newValue || {}; pintar(); }
 });
 
-function programar() { clearInterval(timer); if (cfg.activo) timer = setInterval(buscar, 60e3); }
-window.Rayo = { buscar, aprobar, evaluar, tarjetas: () => tarjetas }; // para pruebas
-(async () => { await cargar(); pintar(); programar(); if (cfg.activo) setTimeout(buscar, 3000); })();
+function programar() {
+  clearInterval(timer); clearInterval(timerPuente); timer = timerPuente = null;
+  if (donde === "puente") { timerPuente = setInterval(verPuente, 10e3); verPuente(); }
+  else {
+    if (cfg.activo) timer = setInterval(buscar, 60e3);
+    if (donde === "sombra") { timerPuente = setInterval(verPuente, 30e3); setTimeout(verPuente, 4000); }
+  }
+  pintarDonde();
+}
+window.Rayo = { buscar, aprobar, evaluar, tarjetas: () => tarjetas, donde: () => donde, verPuente }; // para pruebas
+(async () => { await cargar(); pintar(); programar(); if (cfg.activo && donde !== "puente") setTimeout(buscar, 3000); })();
+
+// =====================================================================
+// Fase C: Rayo en el puente
+// =====================================================================
+const PC = () => window.PuenteCliente || null;
+const TXT_DONDE = {
+  extension: "Rayo trabaja aquí, en la extensión: solo mientras Brave y el Centro de Mando están abiertos.",
+  sombra: "Prueba: Rayo trabaja aquí como siempre y el puente revisa los mismos leads y anota lo que HARÍA, sin mandar nada. Abajo ves si deciden igual. Cuando coincidan, cámbialo a Puente.",
+  puente: "Rayo trabaja en el puente de tu Mac, aunque Brave esté cerrado. Aquí ves sus leads y los apruebas (o Capi por voz); la configuración de abajo se le manda al puente.",
+};
+function pintarDonde() {
+  $("dondeTxt").textContent = TXT_DONDE[donde];
+  $("sombraCaja").hidden = donde !== "sombra";
+  $("activo").disabled = donde === "puente";
+}
+
+async function politica() { try { const c = await SMS.config(); return { desde: c.desde, hasta: c.hasta }; } catch (e) { return undefined; } }
+async function enviarConfig(modo = donde) {
+  if (!PC()) return null;
+  const { activo, ...resto } = cfg;
+  const { ryUltimo = 0 } = await chrome.storage.local.get("ryUltimo"); // el puente sigue desde aquí (no redescubre leads)
+  return PC().pedir("/rayo/modo", { method: "POST", body: { modo, ultimo: ryUltimo, config: { ...resto, politica: await politica() } } });
+}
+
+async function cambiarDonde(nuevo) {
+  const antes = donde;
+  if (nuevo === antes) return;
+  const regresar = (msg) => { $("donde").value = antes; decir(msg, "error"); };
+  if (nuevo === "puente") {
+    const pend = Object.values(tarjetas).filter((x) => ["por aprobar", "aprobado", "programado"].includes(x.estado));
+    if (antes === "extension" || antes === "sombra") {
+      if (pend.length) return regresar(`Antes de pasar Rayo al puente, aprueba o descarta los ${pend.length} lead(s) que tiene pendientes aquí.`);
+      if (!confirm("Rayo va a trabajar en el puente de tu Mac (aunque Brave esté cerrado) y dejará de trabajar aquí. ¿Seguro?")) { $("donde").value = antes; return; }
+    }
+  }
+  if (nuevo === "extension") {
+    // Se avisa al puente que pare. Si no contesta (apagado), igual se regresa aquí: es la salida de emergencia.
+    const r = PC() ? await PC().pedir("/rayo/modo", { method: "POST", body: { modo: "extension" } }) : null;
+    const e = antes === "puente" && r && PC() ? await PC().pedir("/rayo/estado") : null;
+    const { ryUltimo = 0 } = await chrome.storage.local.get("ryUltimo");
+    if (antes === "puente") {
+      // que la extensión no vuelva a "descubrir" los leads que ya atendió el puente
+      const nuevoUltimo = e && e.ultimo ? Math.max(ryUltimo, e.ultimo) : Date.now();
+      await chrome.storage.local.set({ ryUltimo: nuevoUltimo });
+      if (!r) decir("Rayo regresó a la extensión con el puente apagado: los leads que llegaron mientras el puente estaba caído revísalos a mano en Lofty.", "error");
+    }
+  } else {
+    const r = await enviarConfig(nuevo);
+    if (!r) return regresar("El puente no contesta, así que Rayo sigue en la extensión. Revisa el robot Puente (clave e instalar.sh).");
+  }
+  donde = nuevo;
+  await chrome.storage.local.set({ ryDonde: donde });
+  decir(`Rayo ahora corre en: ${({ extension: "la extensión", sombra: "sombra (prueba)", puente: "el puente" })[donde]}.`);
+  programar(); pintar();
+}
+$("donde").onchange = () => cambiarDonde($("donde").value);
+
+let verPuenteOcupado = false;
+async function verPuente() {
+  if (!PC() || verPuenteOcupado) return null;
+  verPuenteOcupado = true;
+  try {
+    const e = await PC().pedir("/rayo/estado");
+    if (!e) { if (donde === "puente") await avisoPuenteCaido(); return null; }
+    if (donde === "puente") {
+      if (e.modo !== "puente") await enviarConfig("puente"); // el puente se reinstaló o lo apagaron: se le recuerda
+      tarjetas = RAYO_SOMBRA.mapa(e.tarjetas);
+      await chrome.storage.local.set({ ryTarjetas: tarjetas, ryRevisado: Date.now() }); // espejo: Capi y el Mando lo leen de aquí
+      await traerDelPuente(e);
+      pintar();
+      await bitacoraPuente(e.log || []);
+      window.robot && robot.set(e.estado === "feliz" ? "idle" : e.estado === "apagado" ? "error" : e.estado, e.texto);
+    } else if (donde === "sombra") {
+      if (e.modo !== "sombra") await enviarConfig("sombra");
+      pintarSombra(e);
+    }
+    return e;
+  } finally { verPuenteOcupado = false; }
+}
+
+async function avisoPuenteCaido() {
+  const txt = "El puente está apagado: Rayo NO está trabajando. Prende el puente (puente/instalar.sh) o cambia 'Rayo corre en' a Extensión.";
+  ver(txt); window.robot && robot.set("error", txt);
+  const { ryAvisoT = 0 } = await chrome.storage.local.get("ryAvisoT");
+  if (Date.now() - ryAvisoT > 10 * 60e3) { await chrome.storage.local.set({ ryAvisoT: Date.now() }); window.svLog && svLog(txt, "error"); }
+}
+
+// Lo que hizo el puente también tiene que verse en la extensión: fila de Marki, Anna silenciada, registro de SMS y Cerebro
+async function traerDelPuente(e) {
+  if ((e.cola || []).length) {
+    const { alCola = [] } = await chrome.storage.local.get("alCola");
+    const ya = new Set(alCola.map((x) => String(x.leadId)));
+    const nuevos = e.cola.filter((x) => !ya.has(String(x.leadId)));
+    if (nuevos.length) await chrome.storage.local.set({ alCola: [...alCola, ...nuevos] });
+    await PC().pedir("/rayo/cola/tomar", { method: "POST", body: { ids: e.cola.map((x) => String(x.leadId)) } });
+  }
+  if (e.silenciados && Object.keys(e.silenciados).length) {
+    const { annaSilenciados = {} } = await chrome.storage.local.get("annaSilenciados");
+    let n = 0; for (const [k, v] of Object.entries(e.silenciados)) if (!annaSilenciados[k]) { annaSilenciados[k] = v; n++; }
+    if (n) await chrome.storage.local.set({ annaSilenciados });
+  }
+  const { ryRegistroDesde = 0 } = await chrome.storage.local.get("ryRegistroDesde");
+  const r = await PC().pedir(`/rayo/registro?desde=${Math.floor(ryRegistroDesde)}`);
+  if (r && (r.registro || []).length) {
+    const conCandado = (fn) => (navigator.locks ? navigator.locks.request("politica-sms", fn) : fn());
+    await conCandado(async () => {
+      const { smsRegistro = [] } = await chrome.storage.local.get("smsRegistro");
+      const ya = new Set(smsRegistro.map((x) => x.id).filter(Boolean));
+      const nuevos = r.registro.filter((x) => !ya.has(x.id)).map((x) => ({ ...x, puente: true }));
+      if (nuevos.length) await chrome.storage.local.set({ smsRegistro: [...smsRegistro, ...nuevos].slice(-5000) });
+    });
+    await chrome.storage.local.set({ ryRegistroDesde: Math.max(...r.registro.map((x) => x.t)) + 1 });
+  }
+  await PC().sincronizar(true); // contactos que Rayo anotó en el árbitro → Cerebro local (para el Marcador)
+}
+
+// Las líneas nuevas del log del puente van a la bitácora del Mando
+async function bitacoraPuente(log) {
+  if (!log.length) return;
+  const { ryLogVisto = "" } = await chrome.storage.local.get("ryLogVisto");
+  const i = log.lastIndexOf(ryLogVisto);
+  const nuevas = i >= 0 ? log.slice(i + 1) : log.slice(-3);
+  for (const l of nuevas) window.svLog && svLog("Rayo (puente): " + l.replace(/^\d\d:\d\d:\d\d\s+/, ""));
+  await chrome.storage.local.set({ ryLogVisto: log[log.length - 1] });
+}
+
+function pintarSombra(e) {
+  const c = RAYO_SOMBRA.comparar(tarjetas, RAYO_SOMBRA.mapa(e.tarjetas));
+  $("sombraRes").textContent = c.comparables
+    ? `${c.pct}% iguales: ${c.iguales} iguales · ${c.distintos} distintos · ${c.pendientes} pendientes${c.soloExt || c.soloPuente ? ` · ${c.soloExt} solo aquí · ${c.soloPuente} solo en el puente` : ""}`
+    : `Todavía no hay leads para comparar (${c.pendientes} pendientes${c.soloExt || c.soloPuente ? `, ${c.soloExt} solo aquí, ${c.soloPuente} solo en el puente` : ""}).`;
+  const ul = $("sombraLista"); ul.textContent = "";
+  for (const f of c.filas.filter((x) => x.tipo !== "pendiente").slice(0, 40)) {
+    const li = document.createElement("li");
+    li.innerHTML = `<div class="addr"><b>${esc(f.nombre)}</b> <span class="tag ${f.tipo === "igual" ? "ok" : f.tipo === "distinto" ? "bad" : "wait"}">${esc(f.tipo)}</span>
+      <small>Extensión: ${esc(f.extension)}${f.motivoExt ? ` (${esc(f.motivoExt)})` : ""} · Puente: ${esc(f.puente)}${f.motivoPuente ? ` (${esc(f.motivoPuente)})` : ""}</small></div>`;
+    ul.appendChild(li);
+  }
+  chrome.storage.local.set({ ryComparacion: { t: Date.now(), iguales: c.iguales, distintos: c.distintos, pendientes: c.pendientes, pct: c.pct } });
+}

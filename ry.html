@@ -42,6 +42,23 @@
 </head>
 <body>
 <main>
+  <div class="card" id="dondeCaja">
+    <label class="f">Rayo corre en
+      <select id="donde">
+        <option value="extension">Extensión (como siempre: solo con Brave y el Mando abiertos)</option>
+        <option value="sombra">Sombra (prueba: la extensión trabaja y el puente solo anota lo que haría)</option>
+        <option value="puente">Puente (trabaja en tu Mac aunque Brave esté cerrado)</option>
+      </select>
+    </label>
+    <div class="hint" id="dondeTxt" style="margin-top:4px"></div>
+  </div>
+
+  <div class="card" id="sombraCaja" hidden>
+    <b>Comparación de la sombra</b> <span class="hint">(lo que hizo la extensión vs lo que haría el puente)</span>
+    <div id="sombraRes" style="margin:4px 0"></div>
+    <ul id="sombraLista" style="max-height:24vh"></ul>
+  </div>
+
   <div class="card">
     <div class="row" style="justify-content:space-between">
       <label class="chk"><input type="checkbox" id="activo"> <b>Vigilar leads nuevos cada 60 s</b></label>
@@ -82,6 +99,6 @@
   </details>
 </main>
 <script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script><script src="puente-cliente.js"></script><script src="politica-sms.js"></script><script src="cerebro-core.js"></script><script src="cerebro.js"></script>
-<script src="ry.js"></script>
+<script src="ry-sombra.js"></script><script src="ry.js"></script>
 </body>
 </html>

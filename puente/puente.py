@@ -398,8 +398,11 @@ class Puente:
         self.carpetas = set()  # carpetas creadas por el puente (las únicas que se pueden abrir en Finder)
         # Fase A: llavero y servicios en segundo plano
         self.llavero = llaves_mod.abrir(self.home, self.config)
-        self.arbitro = arbitro_mod.Arbitro(self.home)
+        reloj = reloj_de_pruebas()
+        self.arbitro = arbitro_mod.Arbitro(self.home, reloj=reloj) if reloj else arbitro_mod.Arbitro(self.home)
         self.servicios = servicios_mod.Gestor(servicios_mod.Contexto(self.home, self.config, self.llavero, arbitro=self.arbitro), servicios_mod.todas())
+        if reloj:
+            self.servicios.servicios["rayo"].ms = reloj
 
     def token_ok(self, valor):
         return bool(valor) and hmac.compare_digest(str(valor).encode(), self.token.encode())
@@ -416,14 +419,14 @@ class Puente:
         r = self.servicios.servicios["rayo"]
         return ("sombra" if r.sombra else "puente") if self.servicios.activos["rayo"] else "extension"
 
-    def poner_rayo(self, modo, config=None):
+    def poner_rayo(self, modo, config=None, ultimo=None):
         r = self.servicios.servicios["rayo"]
         if modo == "extension":
             if config is not None:
                 r.poner_config(config=config)
             self.servicios.prender("rayo", False)
         else:
-            r.poner_config(config=config, modo=modo)
+            r.poner_config(config=config, modo=modo, ultimo=ultimo, reiniciar=not self.servicios.activos["rayo"])
             self.servicios.prender("rayo", True)
         return {"modo": self.rayo_modo()}
 
@@ -573,6 +576,15 @@ class Puente:
             subprocess.Popen(["/usr/bin/open", carpeta])
             return None
         return "solo se puede abrir en macOS"
+
+
+def reloj_de_pruebas():
+    """SOLO PARA PRUEBAS: NAVI_RELOJ_MS fija la hora de Rayo y del árbitro (sigue avanzando desde ahí)."""
+    v = os.environ.get("NAVI_RELOJ_MS")
+    if not v:
+        return None
+    base, arranque = float(v), time.time()
+    return lambda: base + (time.time() - arranque) * 1000
 
 
 def explicar_error(codigo, ultimas):
@@ -764,7 +776,8 @@ def hacer_manejador(puente):
                     j = self._cuerpo()
                     if j.get("modo") not in ("extension", "sombra", "puente"):
                         return self._json(400, {"error": "modo debe ser extension, sombra o puente"})
-                    return self._json(200, puente.poner_rayo(j["modo"], j.get("config")))
+                    ult = j.get("ultimo")
+                    return self._json(200, puente.poner_rayo(j["modo"], j.get("config"), ult if isinstance(ult, (int, float)) and not isinstance(ult, bool) else None))
                 if ruta == "/rayo/aprobar":
                     j = self._cuerpo()
                     ids = [str(x)[:20] for x in (j.get("ids") or [])][:200]

@@ -193,6 +193,7 @@ class EndpointsRayo(Base):
         self.assertEqual(j["modo"], "sombra")
         e = self.pedir("GET", "/rayo/estado")[2]
         self.assertTrue(e["sombra"])
+        self.assertIsInstance(e["cola"], list, "la fila de Marki es una lista (no el contador)")
         self.assertEqual(e["config"]["smsSeller"], "Hola {nombre}")
         self.assertEqual(self.pedir("POST", "/rayo/modo", {"modo": "puente"})[2]["modo"], "puente")
         r = self.puente.servicios.servicios["rayo"]
