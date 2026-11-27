@@ -34,6 +34,11 @@
 #   GET  /bajas                 todas las bajas permanentes
 #   POST /bajas/(marcar|quitar|revisar)
 #   POST /turno                 {cuenta, minimo_ms} → {esperar_ms}: turno del número de SMS
+#   Fase C (Rayo en el puente; la pantalla de Rayo lo maneja):
+#   GET  /rayo/estado           modo, config, tarjetas, fila de Marki y silenciados
+#   GET  /rayo/registro?desde=  SMS que mandó o bloqueó (para el registro de la extensión)
+#   POST /rayo/modo             {modo: "extension"|"sombra"|"puente", config}
+#   POST /rayo/aprobar          {ids, por}     POST /rayo/descartar {id}     POST /rayo/cola/tomar {ids}
 # =====================================================================
 import ast
 import collections
@@ -394,7 +399,7 @@ class Puente:
         # Fase A: llavero y servicios en segundo plano
         self.llavero = llaves_mod.abrir(self.home, self.config)
         self.arbitro = arbitro_mod.Arbitro(self.home)
-        self.servicios = servicios_mod.Gestor(servicios_mod.Contexto(self.home, self.config, self.llavero), servicios_mod.todas())
+        self.servicios = servicios_mod.Gestor(servicios_mod.Contexto(self.home, self.config, self.llavero, arbitro=self.arbitro), servicios_mod.todas())
 
     def token_ok(self, valor):
         return bool(valor) and hmac.compare_digest(str(valor).encode(), self.token.encode())
@@ -405,6 +410,22 @@ class Puente:
                 "browser_use": bool(buscar_browser_use(self.config)), "recetas": sorted(self.recetas),
                 "origenes_configurados": len(self.origenes), "llavero": self.llavero.tipo,
                 "servicios": {s["nombre"]: s["estado"] for s in self.servicios.lista()}, "cerebro": self.arbitro.resumen(), **self.tareas.resumen()}
+
+    # ---------- Fase C: Rayo ----------
+    def rayo_modo(self):
+        r = self.servicios.servicios["rayo"]
+        return ("sombra" if r.sombra else "puente") if self.servicios.activos["rayo"] else "extension"
+
+    def poner_rayo(self, modo, config=None):
+        r = self.servicios.servicios["rayo"]
+        if modo == "extension":
+            if config is not None:
+                r.poner_config(config=config)
+            self.servicios.prender("rayo", False)
+        else:
+            r.poner_config(config=config, modo=modo)
+            self.servicios.prender("rayo", True)
+        return {"modo": self.rayo_modo()}
 
     def guardar_historial(self, t):
         try:
@@ -670,6 +691,16 @@ def hacer_manejador(puente):
                 return self._json(200, {"instancia": puente.arbitro.instancia, "contactos": puente.arbitro.contactos_desde(desde)})
             if ruta == "/bajas":
                 return self._json(200, {"instancia": puente.arbitro.instancia, "bajas": puente.arbitro.bajas})
+            if ruta == "/rayo/estado":
+                r = puente.servicios.servicios["rayo"]
+                return self._json(200, {"modo": puente.rayo_modo(), **r.estado_publico(), "texto": r.texto, "estado": r.estado, "log": list(r.log)[-40:]})
+            if ruta == "/rayo/registro":
+                q = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                try:
+                    desde = float((q.get("desde") or ["0"])[0])
+                except ValueError:
+                    return self._json(400, {"error": "desde debe ser un número"})
+                return self._json(200, {"registro": puente.servicios.servicios["rayo"].registro_desde(desde)})
             if ruta == "/servicios":
                 return self._json(200, {"servicios": puente.servicios.lista()})
             m = re.fullmatch(r"/servicios/([a-z_]{1,30})", ruta)
@@ -729,6 +760,22 @@ def hacer_manejador(puente):
                     if m.group(1) == "quitar":
                         return self._json(200, {"ok": True, "quitadas": puente.arbitro.quitar_baja(j)})
                     return self._json(200, {"baja": puente.arbitro.baja_de(j)})
+                if ruta == "/rayo/modo":
+                    j = self._cuerpo()
+                    if j.get("modo") not in ("extension", "sombra", "puente"):
+                        return self._json(400, {"error": "modo debe ser extension, sombra o puente"})
+                    return self._json(200, puente.poner_rayo(j["modo"], j.get("config")))
+                if ruta == "/rayo/aprobar":
+                    j = self._cuerpo()
+                    ids = [str(x)[:20] for x in (j.get("ids") or [])][:200]
+                    n = puente.servicios.servicios["rayo"].aprobar(ids, str(j.get("por") or "jefe")[:40])
+                    if n:
+                        puente.servicios.ahora("rayo")
+                    return self._json(200, {"aprobados": n})
+                if ruta == "/rayo/descartar":
+                    return self._json(200, {"ok": puente.servicios.servicios["rayo"].descartar(str(self._cuerpo().get("id") or "")[:20])})
+                if ruta == "/rayo/cola/tomar":
+                    return self._json(200, {"tomados": puente.servicios.servicios["rayo"].tomar_cola((self._cuerpo().get("ids") or [])[:200])})
                 if ruta == "/turno":
                     j = self._cuerpo()
                     return self._json(200, {"esperar_ms": puente.arbitro.turno(j.get("cuenta"), j.get("minimo_ms") or 0)})

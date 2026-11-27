@@ -28,8 +28,8 @@ def ahora_ca():
 
 class Contexto:
     """Lo que un servicio puede usar: carpeta ~/.navi, config, llavero y el reloj (cambiable en pruebas)."""
-    def __init__(self, home, config, llavero, reloj=ahora_ca):
-        self.home, self.config, self.llavero, self.reloj = Path(home), config, llavero, reloj
+    def __init__(self, home, config, llavero, reloj=ahora_ca, arbitro=None):
+        self.home, self.config, self.llavero, self.reloj, self.arbitro = Path(home), config, llavero, reloj, arbitro
 
     @property
     def lofty_api(self):
@@ -171,4 +171,5 @@ def todas():
     """Lista fija de servicios del puente."""
     from .despierto import Despierto
     from .lofty_salud import LoftySalud
-    return [Despierto, LoftySalud]
+    from .rayo import Rayo
+    return [Despierto, LoftySalud, Rayo]
