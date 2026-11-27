@@ -60,7 +60,7 @@ PY
 
 # --- copia del puente (fuera del Escritorio) ---
 mkdir -p "$NAVI/puente/recetas" "$NAVI/puente/servicios"
-cp "$AQUI/puente.py" "$AQUI/llavero.py" "$NAVI/puente/"
+cp "$AQUI/puente.py" "$AQUI/llavero.py" "$AQUI/reglas.py" "$AQUI/arbitro.py" "$NAVI/puente/"
 rm -f "$NAVI/puente/recetas/"*.py "$NAVI/puente/servicios/"*.py
 cp "$AQUI/recetas/"*.py "$NAVI/puente/recetas/"
 cp "$AQUI/servicios/"*.py "$NAVI/puente/servicios/"

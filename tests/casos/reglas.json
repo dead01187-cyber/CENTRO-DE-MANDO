@@ -1,0 +1,609 @@
+{
+ "nota": "Generado por tests/casos/generar-reglas.js con el JavaScript actual. No editar a mano.",
+ "cerebro": [
+  {
+   "nombre": "sin nada: puede",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [],
+    "textos": [],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": true,
+    "codigo": "ok",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "robot le mandó SMS hace 2 h: 24h",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [
+     {
+      "t": 1795798800000,
+      "leadId": "7",
+      "canal": "sms",
+      "robot": "Texi"
+     }
+    ],
+    "textos": [
+     {
+      "t": 1795798830000,
+      "direccion": "out",
+      "tipo": "Manual",
+      "agentId": 1
+     }
+    ],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": false,
+    "codigo": "24h",
+    "motivo": "ya recibió un SMS hace 120 min (alguien); máximo 1 cada 24 h"
+   }
+  },
+  {
+   "nombre": "robot hace 25 h: puede",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [
+     {
+      "t": 1795716000000,
+      "leadId": "7",
+      "canal": "sms",
+      "robot": "Texi"
+     }
+    ],
+    "textos": [
+     {
+      "t": 1795716000000,
+      "direccion": "out",
+      "tipo": "Manual",
+      "agentId": 1
+     }
+    ],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": true,
+    "codigo": "ok",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "persona escribió hace 3 h: persona",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [],
+    "textos": [
+     {
+      "t": 1795795200000,
+      "direccion": "out",
+      "tipo": "Manual",
+      "agentId": 42
+     }
+    ],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": false,
+    "codigo": "persona",
+    "motivo": "una persona le escribió hace 180 min (agente 42); no lo toco en 24 h"
+   }
+  },
+  {
+   "nombre": "persona hace 3 h también bloquea llamadas",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "llamada",
+    "contactos": [],
+    "textos": [
+     {
+      "t": 1795795200000,
+      "direccion": "out",
+      "tipo": "Manual",
+      "agentId": 42
+     }
+    ],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": false,
+    "codigo": "persona",
+    "motivo": "una persona le escribió hace 180 min (agente 42); no lo toco en 24 h"
+   }
+  },
+  {
+   "nombre": "SMS Manual de robot (±5 min) no es persona",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [
+     {
+      "t": 1795698000000,
+      "leadId": "7",
+      "canal": "sms",
+      "robot": "Texi"
+     }
+    ],
+    "textos": [
+     {
+      "t": 1795698240000,
+      "direccion": "out",
+      "tipo": "Manual",
+      "agentId": 1
+     }
+    ],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": true,
+    "codigo": "ok",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "Anna escribió hace 1 h: 24h (Anna)",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [],
+    "textos": [
+     {
+      "t": 1795802400000,
+      "direccion": "out",
+      "tipo": "AI",
+      "agentId": 1
+     }
+    ],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": false,
+    "codigo": "24h",
+    "motivo": "ya recibió un SMS hace 60 min (Anna); máximo 1 cada 24 h"
+   }
+  },
+  {
+   "nombre": "en pool de Anna sin silenciar: anna",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [],
+    "textos": [],
+    "anna": {
+     "enPool": true,
+     "silenciado": false
+    },
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": false,
+    "codigo": "anna",
+    "motivo": "está con Anna (AI Sales Agent de Lofty); no lo toco"
+   }
+  },
+  {
+   "nombre": "en pool pero silenciada: puede",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [],
+    "textos": [],
+    "anna": {
+     "enPool": true,
+     "silenciado": true
+    },
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": true,
+    "codigo": "ok",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "en pool sin respetar Anna (Rayo): puede",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [],
+    "textos": [],
+    "anna": {
+     "enPool": true,
+     "silenciado": false
+    },
+    "respetaAnna": false,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": true,
+    "codigo": "ok",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "Resi contesta a quien nos escribió: respuesta",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [
+     {
+      "t": 1795798800000,
+      "leadId": "7",
+      "canal": "sms",
+      "robot": "Resi"
+     }
+    ],
+    "textos": [
+     {
+      "t": 1795798800000,
+      "direccion": "out",
+      "tipo": "Manual",
+      "agentId": 1
+     },
+     {
+      "t": 1795802400000,
+      "direccion": "in",
+      "tipo": "",
+      "agentId": null
+     }
+    ],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": true
+   },
+   "salida": {
+    "ok": true,
+    "codigo": "respuesta",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "respuesta pero no escribió después: 24h",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [
+     {
+      "t": 1795802400000,
+      "leadId": "7",
+      "canal": "sms",
+      "robot": "Resi"
+     }
+    ],
+    "textos": [
+     {
+      "t": 1795798800000,
+      "direccion": "in",
+      "tipo": "",
+      "agentId": null
+     },
+     {
+      "t": 1795802400000,
+      "direccion": "out",
+      "tipo": "Manual",
+      "agentId": 1
+     }
+    ],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": true
+   },
+   "salida": {
+    "ok": false,
+    "codigo": "24h",
+    "motivo": "ya recibió un SMS hace 60 min (Resi); máximo 1 cada 24 h"
+   }
+  },
+  {
+   "nombre": "contacto de otro lead no cuenta",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [
+     {
+      "t": 1795802400000,
+      "leadId": "999",
+      "canal": "sms",
+      "robot": "Texi"
+     }
+    ],
+    "textos": [],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": true,
+    "codigo": "ok",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "email con SMS reciente: puede (24h es solo SMS)",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "email",
+    "contactos": [
+     {
+      "t": 1795802400000,
+      "leadId": "7",
+      "canal": "sms",
+      "robot": "Texi"
+     }
+    ],
+    "textos": [
+     {
+      "t": 1795802400000,
+      "direccion": "out",
+      "tipo": "Manual",
+      "agentId": 1
+     }
+    ],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": true,
+    "codigo": "ok",
+    "motivo": ""
+   }
+  },
+  {
+   "nombre": "robot 59 min sin texto en Lofty todavía: 24h",
+   "entrada": {
+    "ahora": 1795806000000,
+    "leadId": "7",
+    "canal": "sms",
+    "contactos": [
+     {
+      "t": 1795802460000,
+      "leadId": "7",
+      "canal": "sms",
+      "robot": "Rayo"
+     }
+    ],
+    "textos": [],
+    "anna": {},
+    "respetaAnna": true,
+    "esRespuesta": false
+   },
+   "salida": {
+    "ok": false,
+    "codigo": "24h",
+    "motivo": "ya recibió un SMS hace 59 min (Rayo); máximo 1 cada 24 h"
+   }
+  }
+ ],
+ "d10": [
+  {
+   "entrada": "9495551234",
+   "salida": "9495551234"
+  },
+  {
+   "entrada": "(949) 555-1234",
+   "salida": "9495551234"
+  },
+  {
+   "entrada": "+1 949 555 1234",
+   "salida": "9495551234"
+  },
+  {
+   "entrada": "19495551234",
+   "salida": "9495551234"
+  },
+  {
+   "entrada": "555-1234",
+   "salida": ""
+  },
+  {
+   "entrada": "",
+   "salida": ""
+  },
+  {
+   "entrada": null,
+   "salida": ""
+  },
+  {
+   "entrada": "29495551234",
+   "salida": ""
+  }
+ ],
+ "esCA": [
+  {
+   "entrada": "9495551234",
+   "salida": true
+  },
+  {
+   "entrada": "2125551234",
+   "salida": false
+  },
+  {
+   "entrada": "3105551234",
+   "salida": true
+  },
+  {
+   "entrada": "8005551234",
+   "salida": false
+  },
+  {
+   "entrada": "abc",
+   "salida": false
+  },
+  {
+   "entrada": "16195551234",
+   "salida": true
+  }
+ ],
+ "enHorario": [
+  {
+   "entrada": {
+    "ms": 1795795140000,
+    "cfg": {
+     "desde": 8,
+     "hasta": 21
+    }
+   },
+   "salida": false
+  },
+  {
+   "entrada": {
+    "ms": 1795795200000,
+    "cfg": {
+     "desde": 8,
+     "hasta": 21
+    }
+   },
+   "salida": true
+  },
+  {
+   "entrada": {
+    "ms": 1795841940000,
+    "cfg": {
+     "desde": 8,
+     "hasta": 21
+    }
+   },
+   "salida": true
+  },
+  {
+   "entrada": {
+    "ms": 1795842000000,
+    "cfg": {
+     "desde": 8,
+     "hasta": 21
+    }
+   },
+   "salida": false
+  },
+  {
+   "entrada": {
+    "ms": 1782917940000,
+    "cfg": {
+     "desde": 8,
+     "hasta": 21
+    }
+   },
+   "salida": false
+  },
+  {
+   "entrada": {
+    "ms": 1782918000000,
+    "cfg": {
+     "desde": 8,
+     "hasta": 21
+    }
+   },
+   "salida": true
+  },
+  {
+   "entrada": {
+    "ms": 1772987400000,
+    "cfg": {
+     "desde": 8,
+     "hasta": 21
+    }
+   },
+   "salida": true
+  }
+ ],
+ "baja": [
+  {
+   "entrada": "STOP",
+   "salida": true
+  },
+  {
+   "entrada": "stop please",
+   "salida": true
+  },
+  {
+   "entrada": "Unsubscribe me",
+   "salida": true
+  },
+  {
+   "entrada": "remove me from your list",
+   "salida": true
+  },
+  {
+   "entrada": "no me escribas",
+   "salida": true
+  },
+  {
+   "entrada": "Baja",
+   "salida": true
+  },
+  {
+   "entrada": "quit",
+   "salida": true
+  },
+  {
+   "entrada": "  Cancelar! ",
+   "salida": true
+  },
+  {
+   "entrada": "yes call me",
+   "salida": false
+  },
+  {
+   "entrada": "I stopped by",
+   "salida": false
+  },
+  {
+   "entrada": "don't text me",
+   "salida": true
+  },
+  {
+   "entrada": "stop all",
+   "salida": true
+  },
+  {
+   "entrada": "please stop",
+   "salida": true
+  },
+  {
+   "entrada": "borrame",
+   "salida": true
+  },
+  {
+   "entrada": "cuánto vale",
+   "salida": false
+  }
+ ]
+}

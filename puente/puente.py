@@ -25,6 +25,15 @@
 #   GET  /servicios             servicios con su interruptor, estado, texto y log
 #   GET  /servicios/<nombre>    uno con su log completo
 #   POST /servicios/<nombre>/(prender|apagar|ahora)
+#   Fase B (árbitro: una sola verdad para los robots de la extensión y los del puente):
+#   GET  /cerebro/resumen       cuántos contactos y bajas conoce, e "instancia" (si cambia, la extensión re-sube lo suyo)
+#   GET  /cerebro/contactos?desde=<ms>
+#   POST /cerebro/anotar        {contacto} o {contactos: [...]}
+#   POST /cerebro/revisar       {leadId, canal, robot, textos, anna, respetaAnna, esRespuesta} → {ok, codigo, motivo}
+#   POST /cerebro/importar      {contactos, bajas, turnos}  (lo que ya tenía la extensión)
+#   GET  /bajas                 todas las bajas permanentes
+#   POST /bajas/(marcar|quitar|revisar)
+#   POST /turno                 {cuenta, minimo_ms} → {esperar_ms}: turno del número de SMS
 # =====================================================================
 import ast
 import collections
@@ -48,6 +57,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import llavero as llaves_mod  # noqa: E402
+import arbitro as arbitro_mod  # noqa: E402
 import servicios as servicios_mod  # noqa: E402
 
 VERSION = "1.1.0"
@@ -56,7 +66,8 @@ PUERTO = int(os.environ.get("NAVI_PUERTO", "8765"))
 AQUI = Path(__file__).resolve().parent
 RECETAS_DIR = Path(os.environ.get("NAVI_RECETAS") or (AQUI / "recetas"))
 HOME_NAVI = Path(os.environ.get("NAVI_HOME") or (Path.home() / ".navi"))
-MAX_CUERPO = 16 * 1024          # una petición nunca necesita más que esto
+MAX_CUERPO = 64 * 1024          # una petición normal nunca necesita más que esto
+MAX_IMPORTAR = 4 * 1024 * 1024  # /cerebro/importar: el historial de la extensión (hasta 8000 contactos)
 MAX_LOG = 2000                  # líneas de log que se guardan por tarea
 MAX_TAREAS = 50                 # tareas viejas que se recuerdan
 ESTADOS_VIVOS = ("en_cola", "trabajando")
@@ -382,6 +393,7 @@ class Puente:
         self.carpetas = set()  # carpetas creadas por el puente (las únicas que se pueden abrir en Finder)
         # Fase A: llavero y servicios en segundo plano
         self.llavero = llaves_mod.abrir(self.home, self.config)
+        self.arbitro = arbitro_mod.Arbitro(self.home)
         self.servicios = servicios_mod.Gestor(servicios_mod.Contexto(self.home, self.config, self.llavero), servicios_mod.todas())
 
     def token_ok(self, valor):
@@ -392,7 +404,7 @@ class Puente:
         return {"ok": True, "version": VERSION, "brave": bool(navegador), "navegador": navegador, "cdp_url": self.cdp_url,
                 "browser_use": bool(buscar_browser_use(self.config)), "recetas": sorted(self.recetas),
                 "origenes_configurados": len(self.origenes), "llavero": self.llavero.tipo,
-                "servicios": {s["nombre"]: s["estado"] for s in self.servicios.lista()}, **self.tareas.resumen()}
+                "servicios": {s["nombre"]: s["estado"] for s in self.servicios.lista()}, "cerebro": self.arbitro.resumen(), **self.tareas.resumen()}
 
     def guardar_historial(self, t):
         try:
@@ -607,9 +619,9 @@ def hacer_manejador(puente):
                 return False
             return True
 
-        def _cuerpo(self):
+        def _cuerpo(self, maximo=MAX_CUERPO):
             n = int(self.headers.get("Content-Length") or 0)
-            if n > MAX_CUERPO:
+            if n > maximo:
                 raise ParamError("la petición es demasiado grande")
             datos = self.rfile.read(n) if n else b"{}"
             try:
@@ -647,6 +659,17 @@ def hacer_manejador(puente):
                 return self._json(200, v) if v else self._json(404, {"error": "no existe esa tarea"})
             if ruta == "/llaves":
                 return self._json(200, {"llavero": puente.llavero.tipo, "llaves": llaves_mod.estado(puente.llavero)})
+            if ruta == "/cerebro/resumen":
+                return self._json(200, puente.arbitro.resumen())
+            if ruta == "/cerebro/contactos":
+                q = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                try:
+                    desde = float((q.get("desde") or ["0"])[0])
+                except ValueError:
+                    return self._json(400, {"error": "desde debe ser un número"})
+                return self._json(200, {"instancia": puente.arbitro.instancia, "contactos": puente.arbitro.contactos_desde(desde)})
+            if ruta == "/bajas":
+                return self._json(200, {"instancia": puente.arbitro.instancia, "bajas": puente.arbitro.bajas})
             if ruta == "/servicios":
                 return self._json(200, {"servicios": puente.servicios.lista()})
             m = re.fullmatch(r"/servicios/([a-z_]{1,30})", ruta)
@@ -689,7 +712,27 @@ def hacer_manejador(puente):
                     n, accion = m.groups()
                     v = puente.servicios.ahora(n) if accion == "ahora" else puente.servicios.prender(n, accion == "prender")
                     return self._json(200, v) if v else self._json(404, {"error": "no existe ese servicio"})
-            except (ParamError, llaves_mod.LlaveError) as e:
+                if ruta == "/cerebro/importar":
+                    return self._json(200, puente.arbitro.importar(self._cuerpo(MAX_IMPORTAR)))
+                if ruta == "/cerebro/anotar":
+                    j = self._cuerpo()
+                    lista = j.get("contactos") if isinstance(j.get("contactos"), list) else [j.get("contacto") or j]
+                    nuevos = sum(1 for c in lista[:200] if puente.arbitro.anotar(c))
+                    return self._json(200, {"ok": True, "nuevos": nuevos})
+                if ruta == "/cerebro/revisar":
+                    return self._json(200, puente.arbitro.revisar(self._cuerpo()))
+                m = re.fullmatch(r"/bajas/(marcar|quitar|revisar)", ruta)
+                if m:
+                    j = self._cuerpo()
+                    if m.group(1) == "marcar":
+                        return self._json(200, {"ok": True, "nuevas": puente.arbitro.marcar_baja(j)})
+                    if m.group(1) == "quitar":
+                        return self._json(200, {"ok": True, "quitadas": puente.arbitro.quitar_baja(j)})
+                    return self._json(200, {"baja": puente.arbitro.baja_de(j)})
+                if ruta == "/turno":
+                    j = self._cuerpo()
+                    return self._json(200, {"esperar_ms": puente.arbitro.turno(j.get("cuenta"), j.get("minimo_ms") or 0)})
+            except (ParamError, llaves_mod.LlaveError, arbitro_mod.ArbitroError) as e:
                 return self._json(400, {"error": str(e)})
             self._json(404, {"error": "no existe"})
 
