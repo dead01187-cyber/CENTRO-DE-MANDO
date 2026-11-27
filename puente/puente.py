@@ -18,6 +18,13 @@
 #   GET  /tarea/<id>            estado (en_cola / trabajando / terminado / error / ayuda / cancelado), log y resultado
 #   POST /tarea/<id>/cancelar
 #   POST /tarea/<id>/abrir      abre en Finder la carpeta del resultado (solo carpetas que creó el puente)
+#   Fase A (servicios que trabajan solos aunque Brave esté cerrado):
+#   GET  /llaves                qué llaves tiene el puente (NUNCA su valor; solo "puesta" y los últimos 4)
+#   POST /llaves                {nombre, valor} guarda una llave en el Llavero de macOS
+#   POST /llaves/borrar         {nombre}
+#   GET  /servicios             servicios con su interruptor, estado, texto y log
+#   GET  /servicios/<nombre>    uno con su log completo
+#   POST /servicios/<nombre>/(prender|apagar|ahora)
 # =====================================================================
 import ast
 import collections
@@ -39,7 +46,11 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-VERSION = "1.0.0"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import llavero as llaves_mod  # noqa: E402
+import servicios as servicios_mod  # noqa: E402
+
+VERSION = "1.1.0"
 HOST = "127.0.0.1"
 PUERTO = int(os.environ.get("NAVI_PUERTO", "8765"))
 AQUI = Path(__file__).resolve().parent
@@ -369,6 +380,9 @@ class Puente:
         self.cdp_url = self.config.get("cdp_url") or os.environ.get("BU_CDP_URL") or "http://127.0.0.1:9222"
         self.tareas = Tareas(self)
         self.carpetas = set()  # carpetas creadas por el puente (las únicas que se pueden abrir en Finder)
+        # Fase A: llavero y servicios en segundo plano
+        self.llavero = llaves_mod.abrir(self.home, self.config)
+        self.servicios = servicios_mod.Gestor(servicios_mod.Contexto(self.home, self.config, self.llavero), servicios_mod.todas())
 
     def token_ok(self, valor):
         return bool(valor) and hmac.compare_digest(str(valor).encode(), self.token.encode())
@@ -377,7 +391,8 @@ class Puente:
         navegador = brave_responde(self.cdp_url)
         return {"ok": True, "version": VERSION, "brave": bool(navegador), "navegador": navegador, "cdp_url": self.cdp_url,
                 "browser_use": bool(buscar_browser_use(self.config)), "recetas": sorted(self.recetas),
-                "origenes_configurados": len(self.origenes), **self.tareas.resumen()}
+                "origenes_configurados": len(self.origenes), "llavero": self.llavero.tipo,
+                "servicios": {s["nombre"]: s["estado"] for s in self.servicios.lista()}, **self.tareas.resumen()}
 
     def guardar_historial(self, t):
         try:
@@ -630,6 +645,14 @@ def hacer_manejador(puente):
             if m:
                 v = puente.tareas.ver(m.group(1))
                 return self._json(200, v) if v else self._json(404, {"error": "no existe esa tarea"})
+            if ruta == "/llaves":
+                return self._json(200, {"llavero": puente.llavero.tipo, "llaves": llaves_mod.estado(puente.llavero)})
+            if ruta == "/servicios":
+                return self._json(200, {"servicios": puente.servicios.lista()})
+            m = re.fullmatch(r"/servicios/([a-z_]{1,30})", ruta)
+            if m:
+                v = puente.servicios.uno(m.group(1))
+                return self._json(200, v) if v else self._json(404, {"error": "no existe ese servicio"})
             self._json(404, {"error": "no existe"})
 
         def do_POST(self):
@@ -652,7 +675,21 @@ def hacer_manejador(puente):
                         return self._json(404, {"error": "no existe esa tarea"}) if r is None else self._json(200, {"estado": r})
                     err = puente.abrir(m.group(1))
                     return self._json(400, {"error": err}) if err else self._json(200, {"ok": True})
-            except ParamError as e:
+                if ruta == "/llaves":
+                    j = self._cuerpo()
+                    puente.llavero.guardar(j.get("nombre"), j.get("valor"))
+                    puente.servicios.ahora("lofty_salud")  # que revise la llave nueva ya
+                    return self._json(200, {"ok": True, "llaves": llaves_mod.estado(puente.llavero)})
+                if ruta == "/llaves/borrar":
+                    j = self._cuerpo()
+                    puente.llavero.borrar(j.get("nombre"))
+                    return self._json(200, {"ok": True, "llaves": llaves_mod.estado(puente.llavero)})
+                m = re.fullmatch(r"/servicios/([a-z_]{1,30})/(prender|apagar|ahora)", ruta)
+                if m:
+                    n, accion = m.groups()
+                    v = puente.servicios.ahora(n) if accion == "ahora" else puente.servicios.prender(n, accion == "prender")
+                    return self._json(200, v) if v else self._json(404, {"error": "no existe ese servicio"})
+            except (ParamError, llaves_mod.LlaveError) as e:
                 return self._json(400, {"error": str(e)})
             self._json(404, {"error": "no existe"})
 
@@ -673,6 +710,7 @@ def servidor(puente, puerto=PUERTO):
 def main():
     puente = Puente()
     srv = servidor(puente)
+    puente.servicios.arrancar()
     if not puente.origenes:
         print("Aviso: ~/.navi/config.json no tiene el ID de la extensión; la extensión no podrá hablar con el puente.", file=sys.stderr)
     print(f"Puente de Navi {VERSION} escuchando en http://{HOST}:{srv.server_address[1]} · recetas: {', '.join(sorted(puente.recetas))}", flush=True)

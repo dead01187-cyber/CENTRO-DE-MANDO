@@ -4,7 +4,7 @@
 #   1. Crea ~/.navi (solo tú puedes entrar) y ~/.navi/logs.
 #   2. Genera la clave del puente (~/.navi/token, permisos 600) y te la muestra UNA vez.
 #   3. Guarda el ID de la extensión en ~/.navi/config.json (para el CORS).
-#   4. Copia el puente y sus recetas a ~/.navi/puente (macOS no deja que un servicio lea el Escritorio).
+#   4. Copia el puente, sus recetas, el llavero y los servicios a ~/.navi/puente (macOS no deja que un servicio lea el Escritorio).
 #   5. Copia el servicio a ~/Library/LaunchAgents y lo carga (o lo reinicia si ya estaba).
 # Vuelve a correrlo cada vez que actualices la extensión, para copiar las recetas nuevas.
 # Uso:  bash puente/instalar.sh [ID-de-la-extensión]
@@ -59,10 +59,11 @@ os.chmod(ruta, 0o600)
 PY
 
 # --- copia del puente (fuera del Escritorio) ---
-mkdir -p "$NAVI/puente/recetas"
-cp "$AQUI/puente.py" "$NAVI/puente/puente.py"
-rm -f "$NAVI/puente/recetas/"*.py
+mkdir -p "$NAVI/puente/recetas" "$NAVI/puente/servicios"
+cp "$AQUI/puente.py" "$AQUI/llavero.py" "$NAVI/puente/"
+rm -f "$NAVI/puente/recetas/"*.py "$NAVI/puente/servicios/"*.py
 cp "$AQUI/recetas/"*.py "$NAVI/puente/recetas/"
+cp "$AQUI/servicios/"*.py "$NAVI/puente/servicios/"
 
 # --- servicio de launchd ---
 RUTA_PATH="$(dirname "${BU:-/usr/bin/true}"):$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
