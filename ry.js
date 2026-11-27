@@ -204,7 +204,14 @@ async function contactar(t) {
 // Ritmo humano: un SMS cada 6–12 s por número (mismo candado que Texi y Compri)
 async function turno(cuenta) {
   const ULT = cuenta === "tx" ? "smsUltimoTx" : "smsUltimo_" + cuenta;
-  const correr = async () => { const { [ULT]: u = 0 } = await chrome.storage.local.get(ULT); const w = u + 6000 + Math.random() * 6000 - Date.now(); if (w > 0) await sleep(w); await chrome.storage.local.set({ [ULT]: Date.now() }); };
+  const correr = async () => {
+    const { [ULT]: u = 0 } = await chrome.storage.local.get(ULT);
+    let w = u + 6000 + Math.random() * 6000 - Date.now();
+    const p = window.SMS && SMS.turnoCompartido ? await SMS.turnoCompartido(cuenta, Math.max(0, w)) : null; // Fase B: turno entre todos (puente)
+    if (p != null) w = Math.max(w, p);
+    if (w > 0) await sleep(w);
+    await chrome.storage.local.set({ [ULT]: Date.now() });
+  };
   return navigator.locks ? navigator.locks.request("sms-numero-" + cuenta, correr) : correr();
 }
 

@@ -290,7 +290,10 @@ async function turnoNumero(num, parado) {
     const { [ULT]: smsUltimoTx = 0, smsRegistro = [] } = await chrome.storage.local.get([ULT, "smsRegistro"]);
     const hoyCA = diaCA();
     if (smsRegistro.some((e) => e && e.estado === "enviado" && e.tel === num && ["Texi", "Compri", "Texi 2"].includes(e.fuente) && diaCA(e.t) === hoyCA)) return "yaHoy";
-    const espera = smsUltimoTx + 6000 + Math.random() * 6000 - Date.now();
+    let espera = smsUltimoTx + 6000 + Math.random() * 6000 - Date.now();
+    // Fase B: si el puente está prendido, él aparta el lugar entre TODOS los robots que usan este número
+    const p = window.SMS && SMS.turnoCompartido ? await SMS.turnoCompartido(A.cuenta, Math.max(0, espera)) : null;
+    if (p != null) espera = Math.max(espera, p);
     for (let t = 0; t < espera; t += 500) { if (parado()) return "parado"; await sleep(Math.min(500, espera - t)); }
     await chrome.storage.local.set({ [ULT]: Date.now() });
     return "ok";

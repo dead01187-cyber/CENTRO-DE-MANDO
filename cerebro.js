@@ -15,6 +15,9 @@
 //   annaMute          { leadId: { muted, t } }  (estado de silencio, se refresca cada hora)
 //   annaSilenciados   { leadId: { t, robot, motivo } }  (los que silenciamos nosotros)
 // Anna se consulta con la llave principal (loftyKey); si no hay, con la de Texi (txKey).
+// Fase B: si el puente está prendido (puente-cliente.js), él es el ÁRBITRO: se le avisa de cada
+// contacto y también se le pregunta antes de contactar (manda lo más estricto). Si está apagado,
+// todo sigue igual que antes, con la copia local.
 // =====================================================================
 (function (g) {
   const C = g.CEREBRO_CORE;
@@ -39,13 +42,17 @@
   }
 
   // ---------- Registro de contactos ----------
+  const PC = () => g.PuenteCliente || null;
+  const nuevaId = () => (PC() ? PC().nuevaId() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
   async function anotar({ leadId, canal = "sms", robot = "", tel = "" }) {
     if (leadId == null || leadId === "") return;
+    const c = { id: nuevaId(), t: Date.now(), leadId: String(leadId), canal, robot: String(robot || ""), tel: String(tel || "") };
     await conCandado("cerebro", async () => {
       const { cerebroContactos = [] } = await chrome.storage.local.get("cerebroContactos");
-      cerebroContactos.push({ t: Date.now(), leadId: String(leadId), canal, robot: String(robot || ""), tel: String(tel || "") });
+      cerebroContactos.push(c);
       await chrome.storage.local.set({ cerebroContactos: cerebroContactos.slice(-MAX) });
     });
+    if (PC()) await PC().anotar(c); // Fase B: el árbitro también lo sabe
   }
   const contactos = async () => (await chrome.storage.local.get("cerebroContactos")).cerebroContactos || [];
 
@@ -112,9 +119,14 @@
   // ---------- La pregunta antes de contactar ----------
   async function puedo({ leadId, canal = "sms", robot = "", llave = "txKey", clave = "", respetaAnna = true, esRespuesta = false }) {
     try {
+      if (PC()) await PC().sincronizar(); // trae lo que anotaron los robots del puente (cada 30 s como mucho)
       const [cs, tx, an] = await Promise.all([contactos(), textos(leadId, llave, clave), respetaAnna ? anna(leadId) : Promise.resolve({})]);
       const r = C.revisar({ leadId, canal, contactos: cs, textos: tx, anna: an, respetaAnna, esRespuesta });
-      return { ...r, textos: tx };
+      if (!r.ok) return { ...r, textos: tx };
+      // Fase B: el árbitro del puente también tiene que estar de acuerdo (si no contesta, vale lo local)
+      const p = PC() ? await PC().revisar({ leadId: String(leadId), canal, robot, textos: tx, anna: an, respetaAnna, esRespuesta }) : null;
+      if (p && p.ok === false) return { ok: false, codigo: p.codigo, motivo: `${p.motivo} (según el puente)`, fuente: "puente", textos: tx };
+      return { ...r, textos: tx, fuente: p ? "puente" : "local" };
     } catch (e) {
       return { ok: false, codigo: "error", motivo: "no pude revisar en Lofty si ya lo contactaron (" + (e.message || e) + "); por seguridad no lo toco", sinKey: !!e.sinKey, status: e.status };
     }

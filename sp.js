@@ -29,6 +29,11 @@ async function revisar() {
   try {
     const { servicios = [] } = await api("/servicios");
     pintarServicios(servicios);
+    // Fase B: el árbitro (Cerebro compartido) y sincronizar lo de la extensión con él
+    if (window.PuenteCliente) await PuenteCliente.sincronizar(true);
+    const cer = await api("/cerebro/resumen").catch(() => null);
+    if (cer) $("nums").innerHTML += `<div class="card"><div class="count">${cer.contactos_24h}</div><small>contactos en 24 h (todos los robots)</small></div>` +
+      `<div class="card"><div class="count">${cer.bajas_tels + cer.bajas_leads}</div><small>bajas permanentes</small></div>`;
     for (const c of S.cambios(antes, servicios)) bitacora(c.texto, c.nivel);
     antes = S.mapa(servicios);
     const r = S.resumen(servicios);

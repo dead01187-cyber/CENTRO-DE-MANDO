@@ -482,7 +482,14 @@ async function vigilar() {
 // ---------- Fase Anna 2: respuestas automáticas (si apagas "aprobar cada respuesta") ----------
 const AUTO_OK = new Set(["interesado", "caliente", "pregunta", "otro", "seguimiento", "no", "mas_tarde"]);
 async function turnoNumero() { // ritmo humano: mismo candado que Texi y Compri (salen del mismo número)
-  const correr = async () => { const { smsUltimoTx: u = 0 } = await chrome.storage.local.get("smsUltimoTx"); const w = u + 6000 + Math.random() * 6000 - Date.now(); if (w > 0) await sleep(w); await chrome.storage.local.set({ smsUltimoTx: Date.now() }); };
+  const correr = async () => {
+    const { smsUltimoTx: u = 0 } = await chrome.storage.local.get("smsUltimoTx");
+    let w = u + 6000 + Math.random() * 6000 - Date.now();
+    const p = window.SMS && SMS.turnoCompartido ? await SMS.turnoCompartido("tx", Math.max(0, w)) : null; // Fase B: turno entre todos (puente)
+    if (p != null) w = Math.max(w, p);
+    if (w > 0) await sleep(w);
+    await chrome.storage.local.set({ smsUltimoTx: Date.now() });
+  };
   return navigator.locks ? navigator.locks.request("sms-numero-tx", correr) : correr();
 }
 async function enviarAuto(id) {

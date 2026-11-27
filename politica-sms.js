@@ -10,6 +10,9 @@
 //   4. Solo números de California (lada de CA): así el horario es el correcto.
 //   5. Falla cerrada: si cualquier revisión falla, NO se manda.
 // Todo SMS mandado (o bloqueado) queda en el registro "smsRegistro".
+// Fase B: si el puente está prendido (puente-cliente.js), las bajas y los contactos también se le
+// avisan a él (el árbitro de todos los robots), se le pregunta por bajas que la extensión no conozca y
+// él reparte el turno del número de SMS. Si está apagado, todo sigue con la copia local.
 // =====================================================================
 (function (g) {
   const LADAS_CA = new Set("209 213 279 310 323 341 350 369 408 415 424 442 510 530 559 562 619 626 628 650 657 661 669 707 714 747 760 805 818 820 831 840 858 909 916 925 949 951".split(" "));
@@ -26,6 +29,7 @@
   }
   // Candado entre pestañas de la extensión (mismo origen) para que dos robots no se pisen
   const conCandado = (fn) => (typeof navigator !== "undefined" && navigator.locks ? navigator.locks.request("politica-sms", fn) : fn());
+  const PC = () => g.PuenteCliente || null;
 
   async function config() {
     const { smsPolitica = {} } = await chrome.storage.local.get("smsPolitica");
@@ -46,6 +50,7 @@
   const claveLead = (cuenta, leadId) => `${cuenta || "tx"}:${leadId}`;
   async function marcarBaja({ tel, tels, leadId, cuenta, motivo, fuente }) {
     const lista = [].concat(tel || [], tels || []).map(d10).filter(Boolean);
+    if (PC()) await PC().marcarBaja({ tels: lista, leadId: leadId == null ? "" : String(leadId), cuenta: cuenta || "tx", motivo: String(motivo || "baja"), fuente: String(fuente || "") });
     return conCandado(async () => {
       const { smsBajas = { tels: {}, leads: {} } } = await chrome.storage.local.get("smsBajas");
       smsBajas.tels = smsBajas.tels || {}; smsBajas.leads = smsBajas.leads || {};
@@ -59,6 +64,7 @@
   }
   // Quitar una baja: SOLO a mano y con confirmación del jefe (por ejemplo, el lead escribió START).
   async function quitarBaja({ tel, leadId, cuenta }) {
+    if (PC()) await PC().quitarBaja({ tel: d10(tel), leadId: leadId == null ? "" : String(leadId), cuenta: cuenta || "tx" });
     return conCandado(async () => {
       const { smsBajas = { tels: {}, leads: {} } } = await chrome.storage.local.get("smsBajas");
       const d = d10(tel); let n = 0;
@@ -74,7 +80,8 @@
     const d = d10(tel);
     if (d && smsBajas.tels && smsBajas.tels[d]) return smsBajas.tels[d];
     if (leadId != null && smsBajas.leads && smsBajas.leads[claveLead(cuenta, leadId)]) return smsBajas.leads[claveLead(cuenta, leadId)];
-    return null;
+    // Fase B: una baja que marcó otro robot (por ejemplo, uno del puente) y aún no llega a la extensión
+    return PC() ? await PC().bajaDe({ tel: d, leadId: leadId == null ? "" : String(leadId), cuenta: cuenta || "tx" }) : null;
   }
 
   // ---------- Registro de comunicaciones ----------
@@ -93,9 +100,17 @@
   }
 
   async function guardarContacto(ev) {
+    const c = { id: PC() ? PC().nuevaId() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, t: Date.now(), leadId: String(ev.leadId), canal: "sms", robot: String(ev.fuente || ""), tel: String(ev.tel || "") };
     const { cerebroContactos = [] } = await chrome.storage.local.get("cerebroContactos");
-    cerebroContactos.push({ t: Date.now(), leadId: String(ev.leadId), canal: "sms", robot: String(ev.fuente || ""), tel: String(ev.tel || "") });
+    cerebroContactos.push(c);
     await chrome.storage.local.set({ cerebroContactos: cerebroContactos.slice(-8000) });
+    if (PC()) PC().anotar(c); // Fase B: el árbitro también lo sabe (sin esperar)
+  }
+
+  // Fase B: turno del número compartido. minimoMs = lo que el robot ya iba a esperar con su reloj local.
+  // Regresa cuánto esperar según el puente (que aparta el lugar entre TODOS los robots) o null si no hay puente.
+  async function turnoCompartido(cuenta, minimoMs = 0) {
+    try { return PC() ? await PC().turno(cuenta || "tx", minimoMs) : null; } catch (e) { return null; }
   }
 
   // ---------- La pregunta antes de cada SMS ----------
@@ -133,6 +148,6 @@
   // Palabras de baja (inglés y español) para quien quiera revisarlas
   const RE_BAJA = /\b(stop|stop ?all|unsubscribe|remove me|take me off|opt[ -]?out|revoke|do ?n[o']?t (text|contact|message)|no (more )?(texts|messages)|no me (escrib\w*|mand\w*|contact\w*)|d[eé]jame de (escribir|mandar)|b[oó]rrame|baja|darme de baja|cancelar suscripci[oó]n)\b|^\s*(stop|quit|end|cancel|alto|para|pare|cancelar|basta)\s*[.!]*\s*$/i;
 
-  g.SMS = { d10, esCA, diaCA, horaCA, enHorario, config, marcarBaja, quitarBaja, bajaDe, anotar, puedeMandar, devolverLugar, RE_BAJA, DEF };
+  g.SMS = { d10, esCA, diaCA, horaCA, enHorario, config, marcarBaja, quitarBaja, bajaDe, anotar, puedeMandar, devolverLugar, turnoCompartido, RE_BAJA, DEF };
   if (typeof module !== "undefined") module.exports = g.SMS;
 })(globalThis);
