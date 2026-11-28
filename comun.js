@@ -105,8 +105,8 @@
 
   // Los números que muestran el panel y el Centro de Mando
   async function conteos() {
-    const { addresses = {}, zone = "", bvState = {}, lote = [], bvPendientes = [], loftyListos = 0, svEventos = [], chActivo, loftyKey, chDestino, lote_wb = [], txHoy = {}, cbHoy = {}, t2Hoy = {}, ryTarjetas = {}, hrCasos = {}, hrPasos = {}, cpResumen = {}, rsResumen = {}, rcResumen = {}, liResumen = {}, alResumen = {}, carpiRes = {}, wibiRes = {}, radarRes = {}, termiRes = {} } =
-      await chrome.storage.local.get(["addresses", "zone", "bvState", "lote", "bvPendientes", "loftyListos", "svEventos", "chActivo", "loftyKey", "chDestino", "lote_wb", "txHoy", "cbHoy", "t2Hoy", "ryTarjetas", "hrCasos", "hrPasos", "cpResumen", "rsResumen", "rcResumen", "liResumen", "alResumen", "carpiRes", "wibiRes", "radarRes", "termiRes"]);
+    const { addresses = {}, zone = "", bvState = {}, lote = [], bvPendientes = [], loftyListos = 0, svEventos = [], chActivo, loftyKey, chDestino, lote_wb = [], txHoy = {}, cbHoy = {}, t2Hoy = {}, mlHoy = {}, ryTarjetas = {}, hrCasos = {}, hrPasos = {}, cpResumen = {}, rsResumen = {}, rcResumen = {}, liResumen = {}, alResumen = {}, carpiRes = {}, wibiRes = {}, radarRes = {}, termiRes = {} } =
+      await chrome.storage.local.get(["addresses", "zone", "bvState", "lote", "bvPendientes", "loftyListos", "svEventos", "chActivo", "loftyKey", "chDestino", "lote_wb", "txHoy", "cbHoy", "t2Hoy", "mlHoy", "ryTarjetas", "hrCasos", "hrPasos", "cpResumen", "rsResumen", "rcResumen", "liResumen", "alResumen", "carpiRes", "wibiRes", "radarRes", "termiRes"]);
     const cfg = { chActivo, loftyKey };
     const zs = zonasDe(zone), done = bvState.done || {};
     const todos = Object.entries(addresses).filter(([, a]) => sirve(a));
@@ -160,6 +160,7 @@
       txHoy: txHoy.dia === new Date().toLocaleDateString("en-CA") ? txHoy.n || 0 : 0, // Texi: SMS mandados hoy
       cbHoy: cbHoy.dia === new Date().toLocaleDateString("en-CA") ? cbHoy.n || 0 : 0, // Compri: SMS mandados hoy
       t2Hoy: t2Hoy.dia === new Date().toLocaleDateString("en-CA") ? t2Hoy.n || 0 : 0, // Texi 2: SMS mandados hoy
+      mlHoy: mlHoy.dia === new Date().toLocaleDateString("en-CA") ? mlHoy.n || 0 : 0, // Maili: correos mandados hoy
       ryPend: Object.values(ryTarjetas).filter((x) => x.estado === "por aprobar").length, ryHechos: Object.values(ryTarjetas).filter((x) => x.estado === "hecho").length, // Rayo
       enviados: svEventos.filter((e) => new Date(e.t).toDateString() === hoy && /Enviados a Lofty/i.test(e.texto))
         .reduce((s, e) => s + (parseInt((e.texto.match(/(\d+)/) || [])[1], 10) || 0), 0),

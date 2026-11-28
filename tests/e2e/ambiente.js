@@ -9,10 +9,10 @@ const EXT = path.resolve(__dirname, "../..");
 const aUTC = (horaCA) => { const d = new Date(horaCA + ":00Z"); const off = new Date(d.toLocaleString("en-US", { timeZone: "America/Los_Angeles" })) - new Date(d.toLocaleString("en-US", { timeZone: "UTC" })); return new Date(d.getTime() - off); };
 
 // permitir: prefijos de URL que sí se dejan pasar (Fase 7: el puente local de Navi en 127.0.0.1:8765)
-async function abrir({ leads = [], fallar = {}, storage = {}, horaCA = "2026-01-15T10:00", textos = {}, pool = [], claude = null, citas = {}, permitir = [] } = {}) {
+async function abrir({ leads = [], fallar = {}, storage = {}, horaCA = "2026-01-15T10:00", textos = {}, pool = [], claude = null, citas = {}, correos = {}, permitir = [] } = {}) {
   const perfil = fs.mkdtempSync(path.join(os.tmpdir(), "geo-prueba-"));
   const ctx = await chromium.launchPersistentContext(perfil, { headless: true, channel: "chromium", args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`] });
-  const lofty = loftyFalso({ leads, fallar, textos, pool, citas });
+  const lofty = loftyFalso({ leads, fallar, textos, pool, citas, correos });
   await ctx.route("**/*", (r) => { const u = r.request().url(); return u.startsWith("chrome-extension://") || permitir.some((p) => u.startsWith(p)) ? r.continue() : r.abort(); });
   await ctx.route("https://api.lofty.com/**", lofty.atender);
   // Claude falso (opcional): claude(cuerpoDeLaPeticion) → texto que "contesta" Claude

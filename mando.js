@@ -5,9 +5,9 @@
 // =====================================================================
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "t2", "ry", "cb", "rs", "rc", "li", "al", "ra", "te", "va", "pu", "cu", "qa", "an", "nv", "sp", "tb", "sv"];
+const MODS = ["pr", "hr", "ch3", "bv3", "ow3", "wb3", "pw", "ch", "cp", "bv", "ow", "lf", "ac", "bv2", "ow2", "zb", "rd", "ti", "wb", "tx", "t2", "ml", "ry", "cb", "rs", "rc", "li", "al", "ra", "te", "va", "pu", "cu", "qa", "an", "nv", "sp", "tb", "sv"];
 const NOMBRE = { ...Object.fromEntries(REGISTRO.ids(false).map((m) => [m, REGISTRO.nombre(m)])), tb: "Tablero" }; // Fase 2: del registro central · Fase 5: tablero
-const COLOR = { sp: "#2dd4bf", nv: "#a78bfa", ry: "#f59e0b", t2: "#34d399", cb: "#38bdf8", rc: "#7dd3fc", ra: "#ef4444", te: "#f97316", al: "#60a5fa", pr: "#eab308", li: "#fb7185", rs: "#2dd4bf", cp: "#22d3ee", ch3: "#fbbf24", bv3: "#fb923c", ow3: "#facc15", wb3: "#d97706", hr: "#f59e0b", tx: "#34d399", wb: "#facc15", zb: "#22d3ee", rd: "#a78bfa", gm: "#f9a8d4", ti: "#60a5fa", tm: "#818cf8", bv2: "#e879f9", ow2: "#a3e635", ac: "#fb923c", pw: "#2dd4bf", ch: "#f472b6", bv: "#818cf8", ow: "#4ade80", lf: "#38bdf8", sv: "#fbbf24", crm: "#a5b4fc" };
+const COLOR = { ml: "#fb7185", sp: "#2dd4bf", nv: "#a78bfa", ry: "#f59e0b", t2: "#34d399", cb: "#38bdf8", rc: "#7dd3fc", ra: "#ef4444", te: "#f97316", al: "#60a5fa", pr: "#eab308", li: "#fb7185", rs: "#2dd4bf", cp: "#22d3ee", ch3: "#fbbf24", bv3: "#fb923c", ow3: "#facc15", wb3: "#d97706", hr: "#f59e0b", tx: "#34d399", wb: "#facc15", zb: "#22d3ee", rd: "#a78bfa", gm: "#f9a8d4", ti: "#60a5fa", tm: "#818cf8", bv2: "#e879f9", ow2: "#a3e635", ac: "#fb923c", pw: "#2dd4bf", ch: "#f472b6", bv: "#818cf8", ow: "#4ade80", lf: "#38bdf8", sv: "#fbbf24", crm: "#a5b4fc" };
 const CHIP = { idle: "Listo", trabajando: "Trabajando", feliz: "¡Terminé!", error: "Error", ayuda: "Necesito ayuda", pausa: "Pausa", pensando: "Pensando" };
 
 // ---------- Candado: un solo Capi a la vez (panel lateral o Mando) ----------
@@ -225,7 +225,7 @@ const cL = $("lazos"), xL = cL.getContext("2d");
 let centros = {}, cajas = {}, lazos = [], particulas = [];
 let sucio = true, estrellasLimpias = false; // ¿hay que redibujar las líneas?
 const ACENTO = "#0a84ff"; // azul del sistema de Apple para lo que está activo (antes coral de n8n)
-const TUBERIA = [["ac", "bv2"], ["bv2", "ow2"], ["ow2", "lf"], ["pw", "ch"], ["ch", "bv"], ["cp", "wb"], ["wb", "lf"], ["bv", "ow"], ["ow", "lf"], ["lf", "crm"], ["zb", "rd"], ["rd", "gm"], ["gm", "ti"], ["ti", "tm"], ["crm", "tx"], ["tx", "rs"], ["crm", "cb"], ["cb", "rc"], ["crm", "t2"], ["crm", "ry"], ["ry", "al"], ["crm", "li"], ["crm", "al"], ["ra", "te"], ["pr", "hr"], ["hr", "ch3"], ["ch3", "bv3"], ["ch3", "wb3"], ["bv3", "ow3"], ["ow3", "lf"], ["wb3", "lf"]];
+const TUBERIA = [["ac", "bv2"], ["bv2", "ow2"], ["ow2", "lf"], ["pw", "ch"], ["ch", "bv"], ["cp", "wb"], ["wb", "lf"], ["bv", "ow"], ["ow", "lf"], ["lf", "crm"], ["zb", "rd"], ["rd", "gm"], ["gm", "ti"], ["ti", "tm"], ["crm", "tx"], ["tx", "rs"], ["crm", "cb"], ["cb", "rc"], ["crm", "t2"], ["crm", "ml"], ["crm", "ry"], ["ry", "al"], ["crm", "li"], ["crm", "al"], ["ra", "te"], ["pr", "hr"], ["hr", "ch3"], ["ch3", "bv3"], ["ch3", "wb3"], ["bv3", "ow3"], ["ow3", "lf"], ["wb3", "lf"]];
 const MANDO = [["sv", "ac"], ["sv", "zb"], ["sv", "cp"], ["sv", "pw"], ["sv", "pr"], ["sv", "ra"]];
 
 function medir() {
@@ -479,6 +479,7 @@ async function contar() {
   $("e-tx").querySelector(".cuenta").innerHTML = `<b>${n.txHoy}</b> SMS hoy`;
   $("e-cb").querySelector(".cuenta").innerHTML = `<b>${n.cbHoy || 0}</b> SMS hoy`;
   $("e-t2").querySelector(".cuenta").innerHTML = `<b>${n.t2Hoy || 0}</b> SMS hoy`;
+  $("e-ml").querySelector(".cuenta").innerHTML = `<b>${n.mlHoy || 0}</b> correos hoy`;
   $("e-ry").querySelector(".cuenta").innerHTML = `<b>${n.ryPend || 0}</b> por aprobar · <b>${n.ryHechos || 0}</b> contactados`;
   $("e-al").querySelector(".cuenta").innerHTML = `<b>${n.alHechos || 0}</b> leads hoy · <b>${n.alSms || 0}</b> SMS · <b>${n.alLlamadas || 0}</b> llamadas`;
   $("e-ra").querySelector(".cuenta").innerHTML = `<b>${n.raDatos || 0}</b> de ${n.raZips || 0} ZIP con datos`;
@@ -526,6 +527,7 @@ async function contar() {
     if (n.txHoy > prev.txHoy) disparar("crm", "tx", Math.min(8, n.txHoy - prev.txHoy), true);
     if ((n.cbHoy || 0) > (prev.cbHoy || 0)) disparar("crm", "cb", Math.min(8, n.cbHoy - (prev.cbHoy || 0)), true);
     if ((n.t2Hoy || 0) > (prev.t2Hoy || 0)) disparar("crm", "t2", Math.min(8, n.t2Hoy - (prev.t2Hoy || 0)), true);
+    if ((n.mlHoy || 0) > (prev.mlHoy || 0)) disparar("crm", "ml", Math.min(8, n.mlHoy - (prev.mlHoy || 0)), true);
     if (n.enviados > prev.enviados) disparar("lf", "crm", Math.min(12, n.enviados - prev.enviados), true);
   }
   prev = n;
@@ -581,7 +583,7 @@ chrome.storage.onChanged.addListener((ch, area) => {
   if (area !== "local") return;
   if (ch.smsPolitica) pintarHorario();
   if (ch.zone || ch.chActivo || ch.loftyKey || ch.chDestino || ch.chDestino_hr) prev = null; // cambiar un ajuste no es mandar nada: sin pulsos
-  if (ch.prCasos || ch.prResumen || ch.hrVistos || ch.hrCasos || ch.hrPasos || ch.cpResumen || ch.rsResumen || ch.rcResumen || ch.liResumen || ch.alResumen || ch.carpiRes || ch.wibiRes || ch.radarRes || ch.termiRes || ch.ch3Res || ch.chDestino_hr || ch.lote_hr || ch.lote_wb_hr || ch.bvPendientes_hr || ch.txHoy || ch.cbHoy || ch.t2Hoy || ch.ryTarjetas || ch.zbLeads || ch.lote_wb || ch.chDestino || ch.addresses || ch.acTrabajos || ch.lote_ac || ch.bvPendientes_ac || ch.zone || ch.chActivo || ch.loftyKey || ch.bvState || ch.lote || ch.bvPendientes || ch.loftyListos || ch.svEventos || ch.vaRes || ch.puRes || ch.cuRes || ch.qaRes || ch.anRes) contarPronto();
+  if (ch.prCasos || ch.prResumen || ch.hrVistos || ch.hrCasos || ch.hrPasos || ch.cpResumen || ch.rsResumen || ch.rcResumen || ch.liResumen || ch.alResumen || ch.carpiRes || ch.wibiRes || ch.radarRes || ch.termiRes || ch.ch3Res || ch.chDestino_hr || ch.lote_hr || ch.lote_wb_hr || ch.bvPendientes_hr || ch.txHoy || ch.cbHoy || ch.t2Hoy || ch.mlHoy || ch.ryTarjetas || ch.zbLeads || ch.lote_wb || ch.chDestino || ch.addresses || ch.acTrabajos || ch.lote_ac || ch.bvPendientes_ac || ch.zone || ch.chActivo || ch.loftyKey || ch.bvState || ch.lote || ch.bvPendientes || ch.loftyListos || ch.svEventos || ch.vaRes || ch.puRes || ch.cuRes || ch.qaRes || ch.anRes) contarPronto();
 });
 addEventListener("resize", () => { tamEstrellas(); medir(); });
 $("escena").addEventListener("scroll", () => medir(), { passive: true });

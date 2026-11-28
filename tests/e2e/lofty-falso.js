@@ -3,7 +3,7 @@
 // memoria: nada sale a internet y no se manda ningún SMS real. Guarda cada
 // llamada para que la prueba revise qué hizo la extensión.
 // =====================================================================
-module.exports = function loftyFalso({ leads = [], fallar = {}, textos = {}, pool = [], citas = {} } = {}) {
+module.exports = function loftyFalso({ leads = [], fallar = {}, textos = {}, pool = [], citas = {}, correos = {} } = {}) {
   // textos: { leadId: [{ direction, textType, textTime, agentId, textContent }] }  ·  pool: leadIds que trabaja Anna
   const estado = { leads: JSON.parse(JSON.stringify(leads)), llamadas: [], sms: [], creados: [], notas: [], cambios: [], emails: [],
     textos: JSON.parse(JSON.stringify(textos)), pool: pool.map(String), muteados: new Set() };
@@ -28,6 +28,7 @@ module.exports = function loftyFalso({ leads = [], fallar = {}, textos = {}, poo
     if (metodo === "POST" && ruta === "/leads") { const leadId = 900 + estado.creados.length; estado.creados.push(body); return json(route, { leadId }); }
     if (metodo === "POST" && ruta === "/notes") { estado.notas.push(body); return json(route, { code: 0 }); }
     if (metodo === "POST" && ruta === "/message/sms/send") { estado.sms.push(body); return json(route, { code: 0 }); }
+    if (metodo === "GET" && ruta === "/communication/email") return json(route, { emails: correos[url.searchParams.get("leadId")] || [] });
     if (metodo === "GET" && ruta === "/communication/text") return json(route, { texts: estado.textos[url.searchParams.get("leadId")] || [] });
     if (metodo === "GET" && ruta === "/communication/agent") // SMS que entraron (para Resi): todos los inbound con su leadId
       return json(route, { communications: Object.entries(estado.textos).flatMap(([leadId, ts]) => ts.filter((t) => /^in/i.test(t.direction)).map((t) => ({ ...t, leadId: Number(leadId) }))) });
