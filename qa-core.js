@@ -35,6 +35,7 @@
     add(faltan.length ? "aviso" : "ok", "API keys", faltan.length ? `faltan: ${faltan.join(", ")}` : "las 3 principales están puestas");
     // 5) Política de SMS
     const pol = { desde: 8, hasta: 21, tope: 0, ...(st.smsPolitica || {}) };
+    if (pol.sinHorario === true) add("aviso", "Horario de SMS", "APAGADO por el jefe: se puede mandar a cualquier hora (riesgo legal TCPA)");
     add(pol.desde < 8 || pol.hasta > 21 ? "falla" : "ok", "Política de SMS", `de ${pol.desde}:00 a ${pol.hasta}:00 (California), ${pol.tope > 0 ? `tope ${pol.tope}/día` : "sin tope diario"}; ${Object.keys((st.smsBajas || {}).tels || {}).length} números con baja permanente`);
     // 6) Errores recientes por robot
     const errs = (st.svEventos || []).filter((e) => e.nivel === "error" && ahora - e.t < 3600e3);

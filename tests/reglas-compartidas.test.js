@@ -19,3 +19,13 @@ test("Política de SMS: d10, solo California, horario y palabras de baja", () =>
   for (const c of CASOS.enHorario) assert.equal(SMS.enHorario(c.entrada.cfg, c.entrada.ms), c.salida, JSON.stringify(c));
   for (const c of CASOS.baja) assert.equal(SMS.RE_BAJA.test(c.entrada), c.salida, JSON.stringify(c));
 });
+
+test("horario apagado por el jefe: config lo lee y enHorario deja pasar a cualquier hora", async () => {
+  const simularChrome = require("./simular-chrome");
+  simularChrome({ smsPolitica: { sinHorario: true } });
+  const c = await SMS.config();
+  assert.equal(c.sinHorario, true); assert.equal(c.desde, 8);
+  assert.equal(SMS.enHorario(c, Date.parse("2026-11-28T10:00:00Z")), true, "2 am en California");
+  simularChrome({});
+  assert.equal((await SMS.config()).sinHorario, false, "por defecto el horario está prendido");
+});

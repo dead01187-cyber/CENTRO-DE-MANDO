@@ -542,6 +542,28 @@
     }
    },
    "salida": true
+  },
+  {
+   "entrada": {
+    "ms": 1795777200000,
+    "cfg": {
+     "desde": 8,
+     "hasta": 21,
+     "sinHorario": true
+    }
+   },
+   "salida": true
+  },
+  {
+   "entrada": {
+    "ms": 1795847400000,
+    "cfg": {
+     "desde": 8,
+     "hasta": 21,
+     "sinHorario": true
+    }
+   },
+   "salida": true
   }
  ],
  "baja": [

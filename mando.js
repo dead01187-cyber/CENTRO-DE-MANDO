@@ -162,6 +162,25 @@ $("b-tablero").onclick = () => mostrar("tb"); // Fase 5
 chrome.storage.local.set({ mandoTema: "n8n" }); // si estaba guardado "neon", se reemplaza
 ponerTema();
 
+// ---------- Horario de los SMS (8:00–21:00 California): prender / apagar ----------
+async function pintarHorario() {
+  const { smsPolitica = {} } = await chrome.storage.local.get("smsPolitica");
+  const apagado = smsPolitica.sinHorario === true, b = $("b-horario");
+  b.textContent = apagado ? "Horario SMS: APAGADO" : "Horario SMS: 8–21";
+  b.classList.toggle("horario-apagado", apagado);
+  b.title = apagado ? "APAGADO: los robots pueden mandar SMS a cualquier hora. Clic para volver a solo de 8:00 a 21:00 (California)." : "Los SMS solo salen de 8:00 a 21:00 hora de California. Clic para apagar el horario.";
+}
+$("b-horario").onclick = async () => {
+  const { smsPolitica = {} } = await chrome.storage.local.get("smsPolitica");
+  const apagado = smsPolitica.sinHorario === true;
+  if (!apagado && !confirm("¿Apagar el horario de los SMS?\n\nLos robots (Texi, Compri, Resi, Rayo, Marki) podrán mandar SMS y la fila de llamadas de Marki trabajará a CUALQUIER hora, también de noche.\n\nOjo: la ley federal TCPA solo permite mensajes de venta de 8 am a 9 pm en la hora del lead. Cada mensaje fuera de ese horario puede costar de $500 a $1,500 si te demandan.\n\n¿Seguro?")) return;
+  await chrome.storage.local.set({ smsPolitica: { ...smsPolitica, sinHorario: !apagado } });
+  // a la bitácora, a nombre de Cumpli (cumplimiento); esta página no tiene svLog
+  const texto = !apagado ? "Horario de SMS APAGADO por el jefe: los robots pueden mandar SMS a cualquier hora." : "Horario de SMS prendido otra vez: solo de 8:00 a 21:00 hora de California.";
+  try { chrome.runtime.sendMessage({ type: "svLog", ev: { t: Date.now(), mod: "cu", nivel: !apagado ? "error" : "info", texto } }); } catch (e) {}
+  pintarHorario();
+};
+pintarHorario();
 function pintarSonido() { $("b-sonido").textContent = sonido ? "Sonido: sí" : "Sonido: no"; if (window.Sonidos) Sonidos.activo = sonido; $("volSonido").hidden = !sonido; }
 $("b-sonido").onclick = () => { sonido = !sonido; chrome.storage.local.set({ mandoSonido: sonido }); pintarSonido(); if (sonido) sonar("abrir"); }; // muestra cómo suena
 $("volSonido").oninput = (e) => { const v = Number(e.target.value) / 100; if (window.Sonidos) Sonidos.volumen = v; chrome.storage.local.set({ mandoVolumen: v }); };
@@ -560,6 +579,7 @@ setInterval(() => ($("reloj").textContent = new Date().toLocaleTimeString("es-MX
 // ---------- Arranque ----------
 chrome.storage.onChanged.addListener((ch, area) => {
   if (area !== "local") return;
+  if (ch.smsPolitica) pintarHorario();
   if (ch.zone || ch.chActivo || ch.loftyKey || ch.chDestino || ch.chDestino_hr) prev = null; // cambiar un ajuste no es mandar nada: sin pulsos
   if (ch.prCasos || ch.prResumen || ch.hrVistos || ch.hrCasos || ch.hrPasos || ch.cpResumen || ch.rsResumen || ch.rcResumen || ch.liResumen || ch.alResumen || ch.carpiRes || ch.wibiRes || ch.radarRes || ch.termiRes || ch.ch3Res || ch.chDestino_hr || ch.lote_hr || ch.lote_wb_hr || ch.bvPendientes_hr || ch.txHoy || ch.cbHoy || ch.t2Hoy || ch.ryTarjetas || ch.zbLeads || ch.lote_wb || ch.chDestino || ch.addresses || ch.acTrabajos || ch.lote_ac || ch.bvPendientes_ac || ch.zone || ch.chActivo || ch.loftyKey || ch.bvState || ch.lote || ch.bvPendientes || ch.loftyListos || ch.svEventos || ch.vaRes || ch.puRes || ch.cuRes || ch.qaRes || ch.anRes) contarPronto();
 });

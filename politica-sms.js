@@ -6,6 +6,8 @@
 //      bloqueado PARA SIEMPRE (por teléfono y por lead). Un mensaje nuevo
 //      del lead NO lo desbloquea. Solo se quita a mano desde Resi.
 //   2. Horario: solo de 8:00 a 21:00, hora de California (America/Los_Angeles).
+//      v1.92.3: el jefe lo puede APAGAR con el botón "Horario SMS" del Centro de Mando (smsPolitica.sinHorario).
+//      Apagado = se manda a cualquier hora (riesgo legal TCPA: el botón pide confirmar y queda en rojo).
 //   3. Tope diario: YA NO HAY (v1.73.0). Solo aplica si se pone smsPolitica.tope > 0.
 //   4. Solo números de California (lada de CA): así el horario es el correcto.
 //   5. Falla cerrada: si cualquier revisión falla, NO se manda.
@@ -37,10 +39,12 @@
     c.desde = Math.min(21, Math.max(8, Number(c.desde) || DEF.desde)); // nunca antes de 8 ni después de 21
     c.hasta = Math.min(21, Math.max(c.desde, Number(c.hasta) || DEF.hasta));
     c.tope = Math.max(0, Math.floor(Number(c.tope) || 0));
+    c.sinHorario = smsPolitica.sinHorario === true; // el jefe apagó el horario (botón del Centro de Mando)
     return c;
   }
 
   function enHorario(cfg, ms = Date.now()) {
+    if (cfg && cfg.sinHorario === true) return true; // horario apagado por el jefe
     const h = horaCA(ms);
     return h >= cfg.desde && h < cfg.hasta;
   }

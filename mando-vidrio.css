@@ -290,3 +290,6 @@ body.bitacora-oculta .lateral-izq .bitacora #log { display: none; }
 body.bitacora-oculta .lateral-izq .bitacora { flex: 1 1 auto; align-items: center; padding: 10px 6px; cursor: pointer; }
 body.bitacora-oculta .lateral-izq .bit-cab { flex-direction: column-reverse; gap: 12px; }
 body.bitacora-oculta .lateral-izq .bit-titulo { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; opacity: .8; }
+
+/* v1.92.3: botón "Horario SMS" en rojo cuando el horario está apagado */
+.chipbtn.horario-apagado, body.n8n .chipbtn.horario-apagado { background: rgba(239,68,68,.22) !important; border-color: rgba(239,68,68,.7) !important; color: #fecaca !important; font-weight: 700; }

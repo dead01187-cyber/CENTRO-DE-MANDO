@@ -35,8 +35,10 @@ const cerebro = [
 const d10 = ["9495551234", "(949) 555-1234", "+1 949 555 1234", "19495551234", "555-1234", "", null, "29495551234"].map((e) => ({ entrada: e, salida: SMS.d10(e) }));
 const esCA = ["9495551234", "2125551234", "3105551234", "8005551234", "abc", "16195551234"].map((e) => ({ entrada: e, salida: SMS.esCA(e) }));
 const cfg = { desde: 8, hasta: 21 };
-const enHorario = [["2026-11-27T15:59:00Z"], ["2026-11-27T16:00:00Z"], ["2026-11-28T04:59:00Z"], ["2026-11-28T05:00:00Z"], ["2026-07-01T14:59:00Z"], ["2026-07-01T15:00:00Z"], ["2026-03-08T16:30:00Z"]]
-  .map(([iso]) => ({ entrada: { ms: Date.parse(iso), cfg }, salida: SMS.enHorario(cfg, Date.parse(iso)) }));
+const apagado = { desde: 8, hasta: 21, sinHorario: true }; // el jefe apagó el horario
+const enHorario = [["2026-11-27T15:59:00Z"], ["2026-11-27T16:00:00Z"], ["2026-11-28T04:59:00Z"], ["2026-11-28T05:00:00Z"], ["2026-07-01T14:59:00Z"], ["2026-07-01T15:00:00Z"], ["2026-03-08T16:30:00Z"],
+  ["2026-11-27T11:00:00Z", apagado], ["2026-11-28T06:30:00Z", apagado]]
+  .map(([iso, c = cfg]) => ({ entrada: { ms: Date.parse(iso), cfg: c }, salida: SMS.enHorario(c, Date.parse(iso)) }));
 const baja = ["STOP", "stop please", "Unsubscribe me", "remove me from your list", "no me escribas", "Baja", "quit", "  Cancelar! ", "yes call me", "I stopped by", "don't text me", "stop all", "please stop", "borrame", "cuánto vale"]
   .map((e) => ({ entrada: e, salida: SMS.RE_BAJA.test(e) }));
 

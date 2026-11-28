@@ -97,6 +97,8 @@ def hora_ca(ms):
 
 
 def en_horario(cfg, ms):
+    if cfg.get("sinHorario") is True:  # el jefe apagó el horario (botón del Centro de Mando)
+        return True
     h = hora_ca(ms)
     return cfg.get("desde", 8) <= h < cfg.get("hasta", 21)
 

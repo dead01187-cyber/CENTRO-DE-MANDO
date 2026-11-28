@@ -48,6 +48,7 @@
     const al = st.alCfg || {};
     if (al.deleteNonCA) add("media", "Marki borra números", "“Borrar del lead los números que no son de California” está prendido en Marki.");
     if (al.doSms && !al.caOnly) add("media", "Marki: SMS a cualquier lada", "Marki tiene SMS prendido y “Solo números de California” apagado (la política de SMS igual los bloquea).");
+    if (pol.sinHorario === true) add("alta", "Horario de SMS APAGADO", "El jefe apagó el horario 8:00–21:00 (botón 'Horario SMS' del Centro de Mando): los robots pueden mandar SMS de noche. Riesgo legal (TCPA).");
     if (pol.desde < 8 || pol.hasta > 21) add("alta", "Horario de SMS fuera de 8–21", `La política dice ${pol.desde}–${pol.hasta} (politica-sms.js lo limita a 8–21).`);
     if (pol.tope > 500) add("baja", "Tope diario alto", `El tope de SMS es ${pol.tope} al día.`);
     const vivas = Object.values(st.tareas || {}).filter((t) => t.estado === "aprobacion");

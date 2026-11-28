@@ -323,7 +323,7 @@ function pintarDonde() {
   $("activo").disabled = donde === "puente";
 }
 
-async function politica() { try { const c = await SMS.config(); return { desde: c.desde, hasta: c.hasta }; } catch (e) { return undefined; } }
+async function politica() { try { const c = await SMS.config(); return { desde: c.desde, hasta: c.hasta, sinHorario: c.sinHorario === true }; } catch (e) { return undefined; } }
 async function enviarConfig(modo = donde) {
   if (!PC()) return null;
   const { activo, ...resto } = cfg;

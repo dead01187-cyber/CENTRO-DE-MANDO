@@ -143,7 +143,7 @@ def limpiar_config(c, actual):
     pol = c.get("politica")
     if isinstance(pol, dict):
         d = min(21, max(8, int(_num(pol.get("desde"), 8))))
-        out["politica"] = {"desde": d, "hasta": min(21, max(d, int(_num(pol.get("hasta"), 21))))}
+        out["politica"] = {"desde": d, "hasta": min(21, max(d, int(_num(pol.get("hasta"), 21)))), "sinHorario": pol.get("sinHorario") is True}
     return out
 
 
