@@ -51,6 +51,10 @@ test("puede: 1 correo cada 7 días entre robots y personas; los automáticos de 
   assert.equal(M.puede({ ahora: AHORA, leadId: L, correos: [persona] }).codigo, "persona");
   // el mismo correo pero mandado por Maili (anotado en el Cerebro a ±5 min) no es "persona": es "reciente"
   assert.equal(M.puede({ ahora: AHORA, leadId: L, correos: [persona], contactos: [{ t: persona.t + 60e3, leadId: L, canal: "email", robot: "Maili" }] }).codigo, "reciente");
+  // "Opened" (el lead abrió un correo) NO es un envío: no bloquea
+  const abierto = M.deLofty({ direction: "Outbound", emailType: null, eventType: "Opened", emailEventTime: "2026-01-15 10:00:00 GMT", emailSubject: "Market report" });
+  assert.equal(M.puede({ ahora: AHORA, leadId: L, correos: [abierto] }).ok, true);
+  assert.ok(M.esApertura(abierto)); assert.ok(!M.esEnvio(abierto));
   const viejo = { ...persona, t: AHORA - 3 * DIA };
   assert.equal(M.puede({ ahora: AHORA, leadId: L, correos: [viejo] }).codigo, "reciente");
   // Remi sí puede contestar si el lead escribió después

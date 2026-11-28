@@ -67,6 +67,8 @@
     ry: R("Rayo", "Llega antes que Anna a los leads nuevos: SMS, email y cola de Marki (con tu OK o automático)", "GROW", "ry.html", ["lee_crm", "escribe_crm", "envia_sms"]),
     t2: R("Texi 2", "Manda SMS a leads Seller desde OTRA cuenta de Lofty (su propio número)", "GROW", "t2.html", ["lee_crm", "escribe_crm", "envia_sms"]),
     ml: R("Maili", "Manda correos desde Lofty a los leads que escojas (cuenta de Texi 2), con tu OK", "GROW", "ml.html", ["lee_crm", "envia_correo"]),
+    rm: R("Remi", "Revisa quién respondió, abrió o se dio de baja de los correos de Maili (solo lee; nota opcional en Lofty)", "GROW", "rm.html", ["lee_crm", "escribe_crm"],
+      [{ id: "revisar", desc: "Revisar en Lofty quién respondió o abrió los correos de Maili (no manda nada)", aprobacion: false, boton: "run" }]),
     cb: R("Compri", "Manda SMS a los leads Buyer que escojas (misma cuenta de Lofty que Texi)", "GROW", "cb.html", ["lee_crm", "escribe_crm", "envia_sms"]),
     rs: R("Resi", "Lee las respuestas a los SMS y da seguimiento", "GROW", "rs.html", ["lee_crm", "escribe_crm", "envia_sms"],
       [{ id: "revisar", desc: "Revisar las respuestas a los SMS (no manda nada; deja notas en Lofty si están prendidas)", aprobacion: false, boton: "run" }]),

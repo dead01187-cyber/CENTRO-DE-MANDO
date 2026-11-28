@@ -79,3 +79,33 @@ test("Maili aparece en el Centro de Mando con su contador", async () => {
     assert.deepEqual(amb.errores, []);
   } finally { await amb.cerrar(); }
 });
+
+test("Remi: dice quién respondió, abrió o se dio de baja; guarda la baja para Maili y deja notas en inglés si se prende", async () => {
+  const T = AHORA - 3 * 864e5, hora = (min) => new Date(T + min * 60e3).toISOString().replace("T", " ").replace(/\.\d+Z$/, " GMT");
+  const A = "Your home in Irvine", e = (min, eventType, extra = {}) => ({ direction: "Outbound", emailType: null, eventType, emailSubject: A, emailEventTime: hora(min), ...extra });
+  const amb = await abrir({ leads: [lead(721), lead(722), lead(723), lead(724, { unsubscription: true })],
+    correos: { 721: [e(0, "Sent", { emailType: "Manual" }), e(40, "Opened"), e(90, "Received", { direction: "Inbound", emailSubject: "Re: " + A })],
+               722: [e(0, "Sent", { emailType: "Manual" }), e(30, "Opened"), e(200, "Opened")], 723: [e(0, "Sent", { emailType: "Manual" })], 724: [e(0, "Sent", { emailType: "Manual" })] },
+    storage: { ...BASE, rmConfig: { dias: 30, notas: true }, mlEnviados: Object.fromEntries([721, 722, 723, 724].map((id) => [id, { t: T, asunto: A, correo: `lead${id}@correo.com` }])) } });
+  try {
+    const rm = await amb.pagina("rm.html");
+    await rm.click("#run");
+    await rm.waitForFunction(() => /^(Listo|Detenido|Me detengo)/.test(document.getElementById("status").textContent.trim()), null, { timeout: 30000 });
+    assert.match(await rm.textContent("#status"), /revisé 4 correo\(s\) de Maili — 1 respondieron, 1 abrieron, 1 sin abrir, 1 baja\(s\) · 1 respuesta\(s\) NUEVA\(S\) · 3 nota\(s\) en Lofty/);
+    const st = await amb.leer(["rmLista", "emailBajas", "rmRes"]);
+    assert.deepEqual(st.rmLista.map((x) => [x.id, x.estado]), [["721", "respondio"], ["722", "abrio"], ["723", "sin_abrir"], ["724", "baja"]]);
+    assert.ok(st.emailBajas.leads["t2:724"]); assert.ok(st.emailBajas.correos["lead724@correo.com"]);
+    assert.equal(amb.lofty.estado.emails.length, 0, "Remi no manda nada"); assert.equal(amb.lofty.estado.sms.length, 0);
+    const notas = amb.lofty.estado.notas;
+    assert.deepEqual(notas.map((n) => n.leadId).sort(), [721, 722, 724]);
+    assert.match(notas.find((n) => n.leadId === 721).content, /^Remi: the lead REPLIED by email/);
+    // segunda revisión: no repite notas
+    await rm.click("#run");
+    await rm.waitForFunction(() => /^Listo/.test(document.getElementById("status").textContent.trim()) && !/NUEVA/.test(document.getElementById("status").textContent), null, { timeout: 30000 });
+    assert.equal(amb.lofty.estado.notas.length, 3);
+    // el Mando enseña el contador de Remi
+    const m = await amb.pagina("mando.html");
+    await m.waitForFunction(() => /1 respondieron · 1 abrieron/.test(document.querySelector("#e-rm .cuenta").textContent), null, { timeout: 10000 });
+    assert.deepEqual(amb.errores, []);
+  } finally { await amb.cerrar(); }
+});

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" data-mod="rm">
+<head>
+<meta charset="utf-8">
+<title>Remi · Seguimiento de correos</title>
+<style>
+  :root { --c: #be185d; --bg: #f8fafc; --b: #e2e8f0; --t: #0f172a; --m: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 -apple-system, system-ui, sans-serif; color: var(--t); background: var(--bg); }
+  main { padding: 12px 14px; display: grid; gap: 10px; }
+  .card { background: #fff; border: 1px solid var(--b); border-radius: 8px; padding: 8px 10px; }
+  label.f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  input[type=text], input[type=password], input[type=number], select, textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--b); border-radius: 8px; font: inherit; font-weight: 400; background: #fff; }
+  textarea { min-height: 90px; resize: vertical; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  button { border: 1px solid var(--b); background: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; flex: 1; }
+  button.stop { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  .mini { padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+  #status { color: var(--m); min-height: 34px; }
+  .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .nums .card { padding: 6px 4px; } .nums small { display: block; color: var(--m); font-size: 10.5px; }
+  .count { font-size: 20px; font-weight: 700; color: var(--c); }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--b); border-radius: 8px; max-height: 42vh; overflow: auto; }
+  li { padding: 7px 10px; border-bottom: 1px solid var(--b); display: flex; gap: 8px; align-items: flex-start; }
+  li:last-child { border-bottom: 0; } li .addr { flex: 1; min-width: 0; } li small { color: var(--m); display: block; }
+  .sms { font-size: 11.5px; color: #334155; background: #f1f5f9; border-radius: 8px; padding: 6px 9px; margin-top: 4px; white-space: pre-wrap; }
+  .sms b { color: #0f172a !important; display: block; margin-bottom: 3px; }
+  .vistas button.on { background: var(--c); border-color: var(--c); color: #fff; font-weight: 600; }
+  .tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .tag.ok { background: #14532d !important; color: #bbf7d0 !important; } .tag.bad { background: #7f1d1d !important; color: #fecaca !important; } .tag.wait { background: #713f12 !important; color: #fef08a !important; }
+  .empty { padding: 14px; color: var(--m); text-align: center; display: block; }
+  .hint { color: var(--m); font-size: 11px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+  #confirma { border: 2px solid var(--c); background: #ecfdf5; }
+  #confirma[hidden] { display: none; }
+  #largo.mal { color: #b91c1c; font-weight: 600; }
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body>
+<main>
+  <div class="card hint">Remi revisa en Lofty qué pasó con los <b>correos que mandó Maili</b>: quién <b>respondió</b>, quién lo <b>abrió</b> y quién se <b>dio de baja</b>. Solo lee: no manda nada. Lofty no deja leer el texto de la respuesta desde aquí; Remi te dice quién contestó y te abre su ficha.</div>
+  <div class="card"><b>Cuenta de Lofty:</b> la de <b>Texi 2</b> <span id="cuentaTxt" class="hint"></span></div>
+  <details class="card" id="ajustes">
+    <summary>Ajustes de Remi</summary>
+    <div class="grid" style="margin-top:8px">
+      <label class="f">Revisar los correos de los últimos (días)<input type="number" id="dias" min="1" max="90" value="30"></label>
+      <label class="chk"><input type="checkbox" id="notas"> <span>Dejar una nota en Lofty (en inglés) cuando un lead responde, se da de baja o abre 2 veces o más</span></label>
+    </div>
+  </details>
+  <div class="row"><button id="run" class="primary" style="flex:1">Revisar los correos de Maili</button><button id="stop" class="mini">Parar</button></div>
+  <div class="card" id="status">Listo.</div>
+  <div class="nums">
+    <div class="card"><div class="count" id="nResp">0</div><small>respondieron</small></div>
+    <div class="card"><div class="count" id="nAbrio">0</div><small>abrieron</small></div>
+    <div class="card"><div class="count" id="nSin">0</div><small>sin abrir</small></div>
+    <div class="card"><div class="count" id="nBaja">0</div><small>bajas</small></div>
+  </div>
+  <div class="row vistas"><button data-v="todos" class="mini">Todos</button><button data-v="respondio" class="mini">Respondieron</button><button data-v="abrio" class="mini">Abrieron</button><button data-v="sin_abrir" class="mini">Sin abrir</button><button data-v="baja" class="mini">Bajas</button></div>
+  <ul id="lista"></ul>
+  <div class="hint" id="ultima"></div>
+</main>
+<script src="log.js"></script><script src="comun.js"></script><script src="registro.js"></script><script src="robot.js"></script><script src="trabajador.js"></script>
+<script src="maili-core.js"></script><script src="remi-core.js"></script>
+<script src="rm.js"></script>
+</body>
+</html>

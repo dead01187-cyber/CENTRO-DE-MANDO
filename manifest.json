@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Agente Geo Farming",
-  "version": "1.93.0",
+  "version": "1.94.0",
   "description": "Todo en uno: saca domicilios de Propwire, los busca en BeenVerified, lee owner y teléfonos, los limpia y exporta el CSV para Lofty. Saca de Properant las hipotecas inversas en ejecución (Prope). Revisa los leads de zBuyer contra Lofty y deja borradores de reclamo, y manda su captura a Teams. Con Capi, un supervisor de Claude que coordina a los robots y te habla.",
   "permissions": [
     "storage",

@@ -67,6 +67,7 @@
   ROBOTS.ry = { ...ROBOTS.tx, nombre: "Rayo", rol: "Llega antes que Anna a los leads nuevos", color: "#f59e0b", claro: "#fde68a", oscuro: "#78350f" };
   ROBOTS.t2 = { ...ROBOTS.tx, nombre: "Texi 2", rol: "Manda SMS a leads Seller desde otra cuenta de Lofty", color: "#10b981", claro: "#a7f3d0", oscuro: "#064e3b" };
   ROBOTS.ml = { ...ROBOTS.tx, nombre: "Maili", rol: "Manda correos desde Lofty a los leads que escojas", color: "#e11d48", claro: "#fecdd3", oscuro: "#881337" };
+  ROBOTS.rm = { ...ROBOTS.tx, nombre: "Remi", rol: "Revisa quién respondió o abrió los correos de Maili", color: "#be185d", claro: "#fbcfe8", oscuro: "#831843" };
   ROBOTS.cb = { ...ROBOTS.tx, nombre: "Compri", rol: "Manda SMS a los leads Buyer que escojas", color: "#0ea5e9", claro: "#bae6fd", oscuro: "#0c4a6e" };
   ROBOTS.rs = { nombre: "Resi", rol: "Lee las respuestas a los SMS y da seguimiento", color: "#0d9488", claro: "#99f6e4", oscuro: "#134e4a",
     mapa: ["...A....A.....", "...X....X.....", "..XXXXXXXXXX..", "..XLLLLLLLLX..", "..XLWDLLWDLX..", "..XLDDLLDDLX..",
@@ -133,9 +134,10 @@
     "database": '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
     "server": '<rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/>',
     "at-sign": '<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>',
+    "mail-open": '<path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"/><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"/>',
     "compass": '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>',
   };
-  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database", "tb":"layout-dashboard", "cb":"key-round", "t2":"message-square", "ry":"zap", "rc":"message-square-reply", "nv":"compass", "sp":"server", "ml":"at-sign"};
+  const ICONO = {"sv":"sparkles", "pw":"map-pin", "ch":"list-checks", "ch3":"list-checks", "bv":"search", "bv2":"search", "bv3":"search", "ow":"user-round", "ow2":"user-round", "ow3":"user-round", "lf":"cloud-upload", "ac":"refresh-cw", "zb":"mail", "rd":"file-pen", "ti":"send", "wb":"scan-search", "wb3":"scan-search", "cp":"folder", "pr":"landmark", "hr":"house", "tx":"message-square", "rs":"message-square-reply", "al":"phone", "li":"eraser", "ra":"radar", "te":"thermometer", "va":"badge-check", "pu":"gauge", "cu":"shield-check", "qa":"activity", "an":"chart-column", "gm":"mail", "tm":"users", "crm":"database", "tb":"layout-dashboard", "cb":"key-round", "t2":"message-square", "ry":"zap", "rc":"message-square-reply", "nv":"compass", "sp":"server", "ml":"at-sign", "rm":"mail-open"};
 
   // Ícono de cada agente: línea fina del color de su sección (antes era pixel art; los mapas se quedan solo como color)
   function robotSVG(mod) {

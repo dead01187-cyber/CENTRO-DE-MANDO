@@ -1,4 +1,4 @@
-# Maili — correos desde Lofty (v1.93.0)
+# Maili y Remi — correos desde Lofty (v1.94.0)
 
 Maili es la pareja de Texi, pero por **correo**. Manda desde Lofty con la cuenta de **Texi 2** (la misma API key
 que ya pusiste en la pestaña de Texi 2; no hay llaves nuevas ni nada en el código).
@@ -23,15 +23,38 @@ que ya pusiste en la pestaña de Texi 2; no hay llaves nuevas ni nada en el cód
 - Si la plantilla tiene llaves raras (el error de “Hi Sam}”), no deja mandar.
 - Cada correo queda anotado en el Cerebro (canal `email`, robot `Maili`) y en `emailRegistro`.
 
-## Lo que falta confirmar en tu Lofty real
-- Que `/v1.0/communication/email?leadId=` exista en la API de tu cuenta. Si responde 404, Maili sigue trabajando
-  solo con el registro del Cerebro y lo avisa en la bitácora.
-- **Prueba recomendada:** crea un lead con TU correo, mándale un correo con Maili y contéstalo. Con eso vemos
-  de dónde puede leer **Remi** las respuestas (Lofty o Gmail).
+## Remi — qué pasó con los correos
+Remi es la pareja de Maili (como Resi con Texi). Le das **Revisar los correos de Maili** y, por cada lead al que
+Maili le escribió en los últimos 30 días, le pregunta a Lofty y te dice:
 
-## Pendiente: Remi
-Remi leerá las respuestas a los correos de Maili (como Resi con los SMS): bajas, interesados y borradores de
-respuesta con tu OK. Se construye después de la prueba de arriba.
+| Estado | Qué significa |
+|---|---|
+| **respondió** | Entró un correo del lead después del de Maili. Remi te abre su ficha en Lofty para leerlo. |
+| **abrió** | Abrió el correo (y cuántas veces / clics). Buen momento para llamarle. |
+| **sin abrir** | Todavía no lo abre. |
+| **baja** | Se dio de baja en Lofty. Remi lo guarda y Maili ya no le escribe nunca. |
+
+- Remi **solo lee**: no manda correos ni SMS.
+- Opcional (apagado): dejar una nota en Lofty, **en inglés**, cuando responde, se da de baja o abre 2 veces o más.
+  No repite la nota.
+- Capi puede pedirle a Remi que revise (no necesita aprobación porque no manda nada).
+
+### Límite que encontré en tu Lofty real
+La API de Lofty **no entrega el texto** de las respuestas de correo; solo los eventos (enviado, abierto, recibido)
+con su asunto y hora. Por eso Remi no redacta contestaciones como Resi: te dice *quién* contestó.
+Si más adelante quieres que Remi lea el texto y proponga un borrador, se puede conectar al buzón (Gmail) donde
+llegan esas respuestas; dime a qué correo llegan.
+
+También vi que Lofty guarda las aperturas ("Opened") como si fueran correos de salida. Maili ya las ignora para
+no bloquear de más.
+
+## Prueba de 5 minutos (recomendada antes de usarlo en serio)
+1. En la cuenta de Texi 2 crea un lead con **tu propio correo** y un tag, por ejemplo `prueba-maili`.
+2. En Maili: llena el pie, escribe el tag `prueba-maili`, **Buscar**, **Revisar y mandar**.
+3. Abre el correo en tu buzón y contéstalo.
+4. En Remi: **Revisar**. Debe salir como *abrió* o *respondió*. Si sale *sin abrir* aunque sí lo abriste, avísame
+   (significaría que tu cuenta de Lofty no registra esos eventos y hay que ir por Gmail).
 
 ## Archivos
-`maili-core.js` (reglas puras), `ml.html`, `ml.js`, y pruebas en `tests/maili.test.js` y `tests/e2e/maili.e2e.js`.
+Maili: `maili-core.js` (reglas puras), `ml.html`, `ml.js`. Remi: `remi-core.js`, `rm.html`, `rm.js`.
+Pruebas: `tests/maili.test.js`, `tests/remi.test.js` y `tests/e2e/maili.e2e.js`.

@@ -246,5 +246,6 @@ async function mandar() {
 
 $("buscar").onclick = buscar;
 chrome.storage.onChanged.addListener((ch, area) => { if (area === "local" && ch[LLAVE]) $("cuentaTxt").textContent = ch[LLAVE].newValue ? "· conectada" : "· falta la API key (ponla en la pestaña de Texi 2)"; });
+// Si Remi anota una baja mientras Maili tiene la lista abierta, se respeta al mandar (revisarAntes lee emailBajas)
 window.Maili = { buscar, mandar, lista: () => lista }; // para pruebas
 cargar();

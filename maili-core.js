@@ -7,7 +7,8 @@
 //   · armar(p, lead, cfg)       asunto y cuerpo ya rellenados + pie legal (remitente, dirección y cómo darse de baja).
 //   · puede({...})              regla del Cerebro para correos: máximo 1 correo por lead cada N días (7) entre los
 //                               robots y las personas; nada si una persona le escribió por correo en las últimas 24 h.
-//                               Los correos automáticos de Lofty (emailType "Auto": reportes de mercado, drips) no cuentan.
+//                               Los correos automáticos de Lofty (emailType "Auto": reportes de mercado, drips) no cuentan,
+//                               ni los eventos "Opened"/"Clicked" (son aperturas del lead, no envíos).
 //   · esBaja(texto)             ¿la respuesta pide ya no recibir correos?
 // =====================================================================
 (function (g) {
@@ -71,11 +72,14 @@
   const deLofty = (e) => ({ t: tiempo(e.emailEventTime || e.emailTime || e.communicationTime || e.createTime), direccion: /^\s*in/i.test(String(e.direction || "")) ? "in" : "out",
     tipo: e.emailType || e.communicationType || "", evento: e.eventType || "", asunto: e.emailSubject || e.subject || "", agentId: e.agentId || null });
 
+  const esEnvio = (e) => !e.evento || /^sent/i.test(String(e.evento));
+  const esApertura = (e) => /^(opened|clicked)/i.test(String(e.evento || ""));
   // contactos: registro del Cerebro [{ t, leadId, canal, robot }] · correos: historial de Lofty ya convertido con deLofty
   function puede({ ahora = Date.now(), leadId, contactos = [], correos = [], dias = 7, esRespuesta = false }) {
     const mios = contactos.filter((c) => String(c.leadId) === String(leadId) && c.canal === "email");
     const deRobot = (e) => mios.some((c) => Math.abs(c.t - e.t) <= EMPAREJE);
-    const manuales = correos.filter((e) => e.direccion === "out" && String(e.tipo).toLowerCase() !== "auto" && e.t);
+    // Solo cuentan los ENVÍOS: Lofty también guarda "Opened"/"Clicked" (el lead abrió el correo) como salida sin tipo
+    const manuales = correos.filter((e) => e.direccion === "out" && esEnvio(e) && String(e.tipo).toLowerCase() !== "auto" && e.t);
     const persona = manuales.find((e) => ahora - e.t < DIA && !deRobot(e));
     if (persona) return { ok: false, codigo: "persona", motivo: `una persona le mandó un correo hace ${Math.round((ahora - persona.t) / 3600e3)} h (“${String(persona.asunto).slice(0, 40)}”); no lo toco en 24 h` };
     const ultimoIn = Math.max(0, ...correos.filter((e) => e.direccion === "in").map((e) => e.t));
@@ -92,6 +96,6 @@
   // Pausa entre correos (ritmo humano): 20 a 45 s
   const pausaMs = (azar = Math.random()) => Math.round(20000 + azar * 25000);
 
-  g.MAILI_CORE = { correoValido, correoDe, sinCorreo, datosDe, rellenar, revisarPlantilla, pie, aHtml, armar, deLofty, puede, esBaja, pausaMs, RE_BAJA, CAMPOS };
+  g.MAILI_CORE = { correoValido, correoDe, sinCorreo, datosDe, rellenar, revisarPlantilla, pie, aHtml, armar, deLofty, esEnvio, esApertura, puede, esBaja, pausaMs, RE_BAJA, CAMPOS };
   if (typeof module !== "undefined") module.exports = g.MAILI_CORE;
 })(globalThis);
