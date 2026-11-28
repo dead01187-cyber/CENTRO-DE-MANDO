@@ -53,7 +53,7 @@ test("Qai: almacenamiento, tareas atoradas, llaves, errores de código", () => {
   const ahora = Date.now();
   const st = { tareas: { a: { robot: "ch", accion: "revisar", estado: "corriendo", latido: ahora - 10 * 60e3 } }, loftyKey: "x",
     svEventos: [{ t: ahora - 1000, mod: "zb", nivel: "error", texto: "Error de código: x is not defined (zb.js:10)" }], smsPolitica: { desde: 6 } };
-  const r = QA.chequeos(st, { bytes: 9.5 * 1048576, registro: REGISTRO, ahora });
+  const r = QA.chequeos(st, { bytes: 95 * 1048576, registro: REGISTRO, ahora });
   const e = Object.fromEntries(r.chequeos.map((c) => [c.nombre, c.estado]));
   assert.equal(e["Almacenamiento"], "falla"); assert.equal(e["Tareas atoradas"], "falla"); assert.equal(e["API keys"], "aviso");
   assert.equal(e["Errores de código"], "falla"); assert.equal(e["Política de SMS"], "falla"); assert.equal(e["Registro de agentes"], "ok");

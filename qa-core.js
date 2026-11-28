@@ -5,7 +5,7 @@
 // Cada chequeo: { estado: "ok" | "aviso" | "falla", nombre, detalle }
 // =====================================================================
 (function (g) {
-  const CUOTA = 10 * 1024 * 1024; // chrome.storage.local sin "unlimitedStorage"
+  const CUOTA = 100 * 1024 * 1024; // con "unlimitedStorage" ya no hay tope de 10 MB; arriba de 100 MB la extensión se pone lenta
 
   // st = toda la storage (chrome.storage.local.get(null)); bytes = getBytesInUse(null); registro = REGISTRO
   function chequeos(st, { bytes = 0, registro = null, ahora = Date.now() } = {}) {
@@ -13,7 +13,7 @@
     const add = (estado, nombre, detalle) => c.push({ estado, nombre, detalle });
     // 1) Almacenamiento
     const pct = Math.round((bytes / CUOTA) * 100);
-    add(pct >= 85 ? "falla" : pct >= 60 ? "aviso" : "ok", "Almacenamiento", `${(bytes / 1048576).toFixed(1)} MB de 10 MB (${pct}%)${pct >= 60 ? ". Al llenarse, los agentes dejan de poder guardar." : ""}`);
+    add(pct >= 85 ? "falla" : pct >= 60 ? "aviso" : "ok", "Almacenamiento", `${(bytes / 1048576).toFixed(1)} MB (${pct}% de los 100 MB recomendados)${pct >= 60 ? ". Conviene limpiar listas viejas: con tanta memoria la extensión se pone lenta." : ""}`);
     const grandes = Object.entries(st).map(([k, v]) => [k, JSON.stringify(v === undefined ? null : v).length]).sort((a, b) => b[1] - a[1]).slice(0, 5);
     add("ok", "Lo que más ocupa", grandes.map(([k, n]) => `${k} ${(n / 1024).toFixed(0)} KB`).join(" · "));
     // 2) Bus de tareas

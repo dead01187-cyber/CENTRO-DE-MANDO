@@ -127,6 +127,7 @@ async function limpiarTexto(texto, nombreArch, deTermi = false) {
       direcciones: paraPW.map((r) => ({ street: r.Address, city: r.City, state: r.State, zip: r.Zip })) };
     const { carpiCarpetas = [] } = await chrome.storage.local.get("carpiCarpetas");
     carpiCarpetas.unshift(reg);
+    carpiCarpetas.forEach((c, i) => { if (i >= 10) delete c.direcciones; }); // solo las 10 carpetas más nuevas guardan sus domicilios (lo demás llenaba la memoria)
     await chrome.storage.local.set({ carpiCarpetas: carpiCarpetas.slice(0, 60), carpiRes: { t: Date.now(), limpios: limpios.length, quitados: quitados.length, carpetas: carpiCarpetas.filter((c) => !c.borrada).length } });
     ultimoLimpio = { texto: aCSV(["Address", "City", "State", "Zip"], paraPW), nombre };
     sesion = { nombre, base, cabeza, limpios, quitados, total: filas.length, cuenta };
