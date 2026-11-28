@@ -3,6 +3,9 @@
 Maili es la pareja de Texi, pero por **correo**. Manda desde Lofty con la cuenta de **Texi 2** (la misma API key
 que ya pusiste en la pestaña de Texi 2; no hay llaves nuevas ni nada en el código).
 
+> **Maili y Remi son exclusivos de The Irvine Realtors.** La plantilla de ejemplo y el pie ya vienen con esa marca,
+> y si un correo o el pie mencionan “Rubio Real Estate”, Maili no deja mandar.
+
 ## Cómo se usa
 1. Abre **Maili** en el Centro de Mando (grupo *Lofty CRM*).
 2. Llena una sola vez el **pie de los correos**: tu nombre/empresa y tu dirección postal. Sin eso Maili no manda

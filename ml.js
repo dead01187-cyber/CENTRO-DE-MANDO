@@ -6,6 +6,7 @@
 //   un correo de un robot o de una persona en los últimos 7 días (maili-core.js), ni si una persona del
 //   equipo le escribió en las últimas 24 h (Cerebro). Justo antes de mandar vuelve a leer el lead en Lofty.
 // · Cada correo lleva al final el pie legal (CAN-SPAM): quién manda, dirección postal y cómo darse de baja.
+// · Maili y Remi son EXCLUSIVOS de The Irvine Realtors: si el correo o el pie mencionan otra marca, no manda.
 // · API de Lofty: POST /v1.0/message/email/send { leadId, subject, content }.
 // · Cada correo se anota en el Cerebro (canal "email", robot "Maili") y en emailRegistro.
 // =====================================================================
@@ -21,8 +22,8 @@ const creadoLofty = (s) => Date.parse(String(s || "").replace(/GMT$/, "Z")) || 0
 const fecha = (ms) => new Date(ms).toLocaleString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 const LLAVE = "t2Key", CUENTA = "t2", NOMBRE = "Maili", DIAS = 7;
 const EJEMPLO = { id: "p1", nombre: "Presentación", asunto: "Your home in {ciudad}",
-  texto: "Hi {nombre},\n\nThis is Mark with Rubio Real Estate. I work with buyers in {ciudad} and wanted to see if you'd like a free, no-obligation estimate of what your home could sell for today.\n\nWhat's a good time for a quick call?\n\nBest,\nMark" };
-const DEF = { etapa: "", tag: "", tipo: "", orden: "viejos", plantilla: "p1", tope: 50, remitente: "", direccion: "" };
+  texto: "Hi {nombre},\n\nThis is Mark with The Irvine Realtors. I work with buyers in {ciudad} and wanted to see if you'd like a free, no-obligation estimate of what your home could sell for today.\n\nWhat's a good time for a quick call?\n\nBest,\nMark" };
+const DEF = { etapa: "", tag: "", tipo: "", orden: "viejos", plantilla: "p1", tope: 50, remitente: "Mark · The Irvine Realtors", direccion: "" };
 let cfg = { ...DEF }, plantillas = [], lista = [], corriendo = false, parar = false, vista = "faltan", sinHistorial = false;
 
 // ---------- API de Lofty (cuenta de Texi 2) ----------

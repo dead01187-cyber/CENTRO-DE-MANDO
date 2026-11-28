@@ -6,7 +6,7 @@ const { abrir } = require("./ambiente");
 const lead = (leadId, extra = {}) => ({ leadId, firstName: "Lead" + leadId, lastName: "Prueba", stage: "Warm", leadTypes: [1], emails: [`lead${leadId}@correo.com`],
   leadPropertyList: [{ streetAddress: `${leadId} Oak St`, city: "Irvine", label: "Home" }], ...extra });
 const BASE = { t2Key: "llave-texi2", mlPlantillas: [{ id: "p1", nombre: "Prueba", asunto: "Your home in {ciudad}", texto: "Hi {nombre}," }],
-  mlConfig: { plantilla: "p1", remitente: "Mark · Rubio Real Estate", direccion: "123 Main St, Irvine, CA 92618", tope: 50 } };
+  mlConfig: { plantilla: "p1", remitente: "Mark · The Irvine Realtors", direccion: "123 Main St, Irvine, CA 92618", tope: 50 } };
 const AHORA = Date.parse("2026-01-15T18:00:00Z"); // 10:00 en California
 async function buscar(ml) {
   await ml.fill("#etapa", "Warm"); await ml.click("#buscar");
@@ -33,7 +33,7 @@ test("Maili: manda solo a quien se puede, con pie legal, y lo anota en el Cerebr
     const env = amb.lofty.estado.emails;
     assert.deepEqual(env.map((e) => e.leadId), [701, 706], "705: una persona le escribió hoy; 706: el automático de Lofty no cuenta");
     assert.equal(env[0].subject, "Your home in Irvine");
-    assert.match(env[0].content, /^Hi Lead701,<br><br>--<br>Mark · Rubio Real Estate<br>123 Main St, Irvine, CA 92618<br>If you'd rather not receive emails/);
+    assert.match(env[0].content, /^Hi Lead701,<br><br>--<br>Mark · The Irvine Realtors<br>123 Main St, Irvine, CA 92618<br>If you'd rather not receive emails/);
     const st = await amb.leer(["cerebroContactos", "mlHoy", "emailRegistro", "mlLista"]);
     assert.deepEqual(st.cerebroContactos.filter((c) => c.canal === "email" && c.robot === "Maili").map((c) => c.leadId).sort(), ["701", "704", "706"]);
     assert.equal(st.mlHoy.n, 2);

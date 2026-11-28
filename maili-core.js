@@ -15,6 +15,7 @@
   const DIA = 864e5, EMPAREJE = 5 * 60e3;
   const RE_CORREO = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[a-z]{2,}$/i;
   const RE_BAJA = /\b(unsubscribe|remove me|take me off|opt[ -]?out|stop (emailing|sending|contacting)|do ?n[o']?t (email|contact|send)|no more emails?|darme de baja|dar de baja|b[oó]rrame|qu[ií]tame|no me (escrib\w*|mand\w*|env[ií]\w*)|cancelar suscripci[oó]n)\b|^\s*(stop|unsubscribe|baja|remove)\s*[.!]*\s*$/i;
+  const MARCA = "The Irvine Realtors", RE_OTRA_MARCA = /rubio\s*real\s*estate/i;
   const CAMPOS = ["nombre", "apellido", "ciudad", "direccion"];
   const tc = (s) => String(s || "").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
   const tiempo = (s) => Date.parse(String(s || "").replace(/GMT$/, "Z")) || 0;
@@ -52,6 +53,8 @@
       const raros = sinCampos.match(/\{[^{}\s]*\}?|\}/g);
       if (raros) errores.push(`En el ${nombre} hay llaves que no reconozco (${[...new Set(raros)].slice(0, 3).join(" ")}). Solo se pueden usar ${CAMPOS.map((c) => `{${c}}`).join(", ")}.`);
     }
+    // Maili es exclusiva de The Irvine Realtors: no se mezcla con la otra marca
+    if (RE_OTRA_MARCA.test(`${asunto}\n${texto}\n${cfg.remitente || ""}`)) errores.push(`Maili es solo de ${MARCA}: quita “Rubio Real Estate” del correo o del pie.`);
     if (asunto.length > 150) errores.push("El asunto es muy largo (máximo 150 caracteres).");
     if (!String(cfg.remitente || "").trim()) errores.push("Falta tu nombre y empresa (remitente): va al pie de cada correo.");
     if (String(cfg.direccion || "").trim().length < 10) errores.push("Falta tu dirección postal: la ley CAN-SPAM pide que vaya en cada correo comercial.");
@@ -96,6 +99,6 @@
   // Pausa entre correos (ritmo humano): 20 a 45 s
   const pausaMs = (azar = Math.random()) => Math.round(20000 + azar * 25000);
 
-  g.MAILI_CORE = { correoValido, correoDe, sinCorreo, datosDe, rellenar, revisarPlantilla, pie, aHtml, armar, deLofty, esEnvio, esApertura, puede, esBaja, pausaMs, RE_BAJA, CAMPOS };
+  g.MAILI_CORE = { correoValido, correoDe, sinCorreo, datosDe, rellenar, revisarPlantilla, pie, aHtml, armar, deLofty, esEnvio, esApertura, puede, esBaja, pausaMs, RE_BAJA, CAMPOS, MARCA };
   if (typeof module !== "undefined") module.exports = g.MAILI_CORE;
 })(globalThis);

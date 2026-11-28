@@ -7,7 +7,7 @@ const M = require("../maili-core.js");
 const REG = require("../registro.js");
 
 const H = 3600e3, DIA = 24 * H, AHORA = Date.parse("2026-01-15T18:00:00Z");
-const CFG = { remitente: "Mark · Rubio Real Estate", direccion: "123 Main St, Irvine, CA 92618" };
+const CFG = { remitente: "Mark · The Irvine Realtors", direccion: "123 Main St, Irvine, CA 92618" };
 
 test("correoDe / sinCorreo: correo válido, cannotEmail y unsubscribe", () => {
   assert.equal(M.correoDe({ emails: ["malo", "ana@correo.com"] }), "ana@correo.com");
@@ -23,6 +23,8 @@ test("revisarPlantilla: llaves sueltas (el error de “Hi Sam}”), vacíos y pi
   assert.match(M.revisarPlantilla({ asunto: "Hola", texto: "Hi {nombre}}," }, CFG).join(" "), /llaves que no reconozco/);
   assert.match(M.revisarPlantilla({ asunto: "Hola", texto: "Hi {name}," }, CFG).join(" "), /\{name\}/);
   assert.match(M.revisarPlantilla({ asunto: "", texto: "" }, CFG).join(" "), /Falta el asunto.*vacío/);
+  assert.match(M.revisarPlantilla({ asunto: "Hola", texto: "This is Mark with Rubio Real Estate." }, CFG).join(" "), /solo de The Irvine Realtors/);
+  assert.match(M.revisarPlantilla({ asunto: "Hola", texto: "Hi" }, { ...CFG, remitente: "Mark · Rubio Real Estate" }).join(" "), /solo de The Irvine Realtors/);
   const sinPie = M.revisarPlantilla({ asunto: "a", texto: "b" }, {}).join(" ");
   assert.match(sinPie, /remitente/); assert.match(sinPie, /CAN-SPAM/);
 });
@@ -31,7 +33,7 @@ test("armar: rellena los campos y SIEMPRE agrega el pie (remitente, dirección y
   const x = M.datosDe({ leadId: 7, firstName: "SAM lee", lastName: "o'neil", emails: ["s@x.com"], leadPropertyList: [{ label: "Home", streetAddress: "1 oak st", city: "irvine" }] });
   const c = M.armar({ asunto: "Your home in {ciudad}", texto: "Hi {nombre},\n<b>{direccion}</b>" }, x, CFG);
   assert.equal(c.asunto, "Your home in Irvine");
-  assert.match(c.texto, /^Hi Sam,\n<b>1 Oak St<\/b>\n\n--\nMark · Rubio Real Estate\n123 Main St, Irvine, CA 92618\nIf you'd rather not receive emails/);
+  assert.match(c.texto, /^Hi Sam,\n<b>1 Oak St<\/b>\n\n--\nMark · The Irvine Realtors\n123 Main St, Irvine, CA 92618\nIf you'd rather not receive emails/);
   assert.match(c.html, /&lt;b&gt;1 Oak St&lt;\/b&gt;<br>/); assert.ok(!c.html.includes("\n"));
   assert.equal(M.armar({ asunto: "{ciudad}", texto: "{nombre}" }, { nombre: "", ciudad: "" }, CFG).asunto, "your area");
 });
