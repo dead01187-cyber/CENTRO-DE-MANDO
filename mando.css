@@ -113,7 +113,6 @@ input { font: inherit; color: var(--t); background: rgba(5,8,20,.7); border: 1px
 input:focus { border-color: var(--sv); box-shadow: 0 0 0 3px rgba(251,191,36,.15); }
 button { font: inherit; cursor: pointer; }
 .campos { display: flex; gap: 6px; margin-bottom: 8px; }
-.campos #mZona { flex: 1; min-width: 0; } .campos #mMeta { width: 70px; }
 .mision button, .hablar button { border: 1px solid var(--borde); background: rgba(255,255,255,.04); color: var(--t); border-radius: 9px; padding: 7px 12px; }
 .corrido { display: flex; gap: 8px; align-items: flex-start; font-size: 11.5px; color: var(--m); margin: 0 0 9px; cursor: pointer; }
 .corrido b { color: var(--t); } .corrido input { accent-color: var(--sv); margin-top: 2px; }

@@ -31,10 +31,10 @@
   </header>
 
   <main>
-    <!-- Bitácora a la izquierda, a todo lo alto (v1.85.0) -->
-    <aside class="lateral lateral-izq">
+    <!-- Bitácora a la izquierda, a todo lo alto; se puede ocultar y desplegar (v1.92.2) -->
+    <aside class="lateral lateral-izq" id="lateralBitacora">
       <div class="tarjeta bitacora">
-        <div class="t">Bitácora en vivo</div>
+        <div class="t bit-cab"><span class="bit-titulo">Bitácora en vivo</span><button id="bitToggle" class="bit-toggle" type="button" title="Ocultar la bitácora" aria-label="Ocultar la bitácora" aria-expanded="true">‹</button></div>
         <div id="log"></div>
       </div>
     </aside>
@@ -217,31 +217,6 @@
       </div>
     </section>
 
-    <aside class="lateral">
-      <div class="tarjeta mision">
-        <div class="t">Misión</div>
-        <div id="misionVacia">
-          <div class="campos">
-            <input id="mZona" placeholder="Zona (ej. Irvine, 92618)">
-            <input id="mMeta" type="number" min="1" value="50" title="Cuántos leads">
-          </div>
-          <label class="corrido"><input type="checkbox" id="mCorrido"> <span><b>Trabajo corrido</b> · Propi → Veri → Owny sin parar hasta acabar la zona, y todo se le entrega a Lofti</span></label>
-          <button id="mIniciar" class="primario">▶ Arrancar misión</button>
-        </div>
-        <div id="misionActiva" hidden>
-          <div class="mtxt" id="mTxt"></div>
-          <div class="barra"><div id="mBarra"></div></div>
-          <div class="mfila"><span id="mNum"></span><span id="mFase"></span></div>
-          <div class="botones"><button id="mPausa">Pausar</button><button id="mCancelar" class="peligro">Cancelar</button><button id="mSubir" class="primario" hidden>Subir a Lofty</button></div>
-        </div>
-      </div>
-
-      <div class="tarjeta hablar">
-        <div class="t">Háblale a Capi</div>
-        <form id="fCapi"><input id="tCapi" placeholder="Ej. ¿cómo vamos?" autocomplete="off"><button>➤</button></form>
-      </div>
-
-    </aside>
   </main>
 
   <!-- Cajón con las pestañas reales (los agentes trabajan aquí adentro) -->

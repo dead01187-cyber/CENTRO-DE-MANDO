@@ -511,7 +511,6 @@ async function contar() {
   }
   prev = n;
   svEvs = svEventos; pintarLog();
-  pintarMision();
 }
 function poner(id, v) {
   const e = $(id); if (e.textContent === String(v)) return;
@@ -538,70 +537,22 @@ function pintarLog() {
   }
 }
 
-// =====================================================================
-// Misión (la corre el motor de Capi; aquí solo se manda y se ve)
-// =====================================================================
-const CORRIDO = 2000; // meta "sin límite": la misión sigue hasta que ya no hay domicilios nuevos
-$("mCorrido").onchange = () => { $("mMeta").disabled = $("mCorrido").checked; };
-chrome.storage.local.get(["zone", "mandoCorrido"]).then(({ zone, mandoCorrido }) => {
-  if (zone && !$("mZona").value) $("mZona").value = zone;
-  if (mandoCorrido) { $("mCorrido").checked = true; $("mMeta").disabled = true; }
-});
-const FASE = { wibi: "Wibi hace skip trace", propwire: "Propi junta domicilios", beenverified: "Veri busca dueños", owners: "Owny lee reportes", revisando: "Revisando avance", esperando: "Esperando tu OK" };
-async function pintarMision() {
-  const { mision, loftyListos: listos0 = 0, loftySubidos = 0 } = await chrome.storage.local.get(["mision", "loftyListos", "loftySubidos"]);
-  // avance = listos por subir + los que Lofti ya subió desde que empezó la misión (igual que cuenta Capi)
-  const loftyListos = listos0 + Math.max(0, loftySubidos - ((mision && mision.subidosBase) || 0));
-  const activa = mision && ["corriendo", "pausada", "esperando_ok"].includes(mision.estado);
-  $("misionVacia").hidden = !!activa; $("misionActiva").hidden = !activa;
-  if (!activa) return;
-  const corrido = mision.meta >= CORRIDO;
-  document.querySelector(".tarjeta.mision").classList.toggle("es-corrido", corrido);
-  $("mTxt").textContent = corrido ? `Trabajo corrido · ${mision.zona}` : `${mision.meta} leads de ${mision.zona}`;
-  $("mBarra").style.width = Math.min(100, (loftyListos / mision.meta) * 100) + "%";
-  $("mNum").textContent = corrido ? `${loftyListos} entregados a Lofti` : `${loftyListos} / ${mision.meta} listos`;
-  $("mFase").textContent = mision.estado === "pausada" ? "En pausa" : mision.estado === "esperando_ok" ? "Esperando tu OK" : (FASE[mision.fase] || "Trabajando");
-  $("mPausa").textContent = mision.estado === "pausada" ? "▶ Seguir" : "Pausar";
-  $("mPausa").hidden = mision.estado === "esperando_ok";
-  $("mSubir").hidden = mision.estado !== "esperando_ok";
+// ---------- Bitácora: ocultar / desplegar (se recuerda) ----------
+// (La misión y el chat con Capi ya no están en esta pantalla: se le piden a Capi en su pestaña, por voz o escrito.)
+function bitacoraOculta(oculta, guardar = true) {
+  document.body.classList.toggle("bitacora-oculta", oculta);
+  const b = $("bitToggle");
+  b.textContent = oculta ? "›" : "‹";
+  b.title = oculta ? "Desplegar la bitácora" : "Ocultar la bitácora";
+  b.setAttribute("aria-label", b.title);
+  b.setAttribute("aria-expanded", String(!oculta));
+  if (guardar) { try { localStorage.setItem("mandoBitacora", oculta ? "oculta" : "visible"); } catch (e) {} }
+  requestAnimationFrame(() => dispatchEvent(new Event("resize"))); // el mapa cambia de ancho: recalcular las líneas
 }
-async function capi(herr, args = {}) {
-  const w = svWin();
-  if (!w || typeof w.ejecutar !== "function") { alert("Capi todavía está cargando. Intenta en un segundo."); return null; }
-  return await w.ejecutar(herr, args);
-}
-$("mIniciar").onclick = async () => {
-  const corrido = $("mCorrido").checked;
-  const zona = $("mZona").value.trim(), meta = corrido ? CORRIDO : parseInt($("mMeta").value, 10);
-  if (!zona || !meta) { $("mZona").focus(); return; }
-  chrome.storage.local.set({ mandoCorrido: corrido });
-  const r = await capi("iniciar_mision", { zona, meta });
-  if (r) { const w = svWin(); w && w.burbuja && w.burbuja("aviso", "Desde el Centro de Mando: " + r); }
-  pintarMision();
-};
-$("mPausa").onclick = async () => {
-  const { mision } = await chrome.storage.local.get("mision");
-  if (!mision) return;
-  await capi(mision.estado === "pausada" ? "seguir_mision" : "pausar_mision"); pintarMision();
-};
-$("mCancelar").onclick = async () => { if (confirm("¿Cancelar la misión?")) { await capi("cancelar_mision"); pintarMision(); } };
-$("mSubir").onclick = async () => {
-  if (!confirm("¿Subir a Lofty los leads listos?")) return;
-  const r = await capi("subir_leads", {});
-  const w = svWin(); r && w && w.burbuja && w.burbuja("aviso", "Subida desde el Centro de Mando: " + r);
-  pintarMision();
-};
-$("mZona").onkeydown = (e) => { if (e.key === "Enter") $("mIniciar").click(); };
-
-// ---------- Hablarle a Capi ----------
-$("fCapi").onsubmit = (e) => {
-  e.preventDefault();
-  const t = $("tCapi").value.trim(); if (!t) return;
-  const w = svWin();
-  if (!w || typeof w.turno !== "function") { alert("Capi todavía está cargando."); return; }
-  $("tCapi").value = "";
-  w.burbuja("yo", t); w.turno(t);
-};
+$("bitToggle").onclick = (e) => { e.stopPropagation(); bitacoraOculta(!document.body.classList.contains("bitacora-oculta")); };
+// oculta, toda la franja sirve para desplegarla
+document.querySelector(".lateral-izq .bitacora").addEventListener("click", () => { if (document.body.classList.contains("bitacora-oculta")) bitacoraOculta(false); });
+try { if (localStorage.getItem("mandoBitacora") === "oculta") bitacoraOculta(true, false); } catch (e) {}
 
 // ---------- Reloj ----------
 setInterval(() => ($("reloj").textContent = new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" })), 1000);
@@ -611,7 +562,6 @@ chrome.storage.onChanged.addListener((ch, area) => {
   if (area !== "local") return;
   if (ch.zone || ch.chActivo || ch.loftyKey || ch.chDestino || ch.chDestino_hr) prev = null; // cambiar un ajuste no es mandar nada: sin pulsos
   if (ch.prCasos || ch.prResumen || ch.hrVistos || ch.hrCasos || ch.hrPasos || ch.cpResumen || ch.rsResumen || ch.rcResumen || ch.liResumen || ch.alResumen || ch.carpiRes || ch.wibiRes || ch.radarRes || ch.termiRes || ch.ch3Res || ch.chDestino_hr || ch.lote_hr || ch.lote_wb_hr || ch.bvPendientes_hr || ch.txHoy || ch.cbHoy || ch.t2Hoy || ch.ryTarjetas || ch.zbLeads || ch.lote_wb || ch.chDestino || ch.addresses || ch.acTrabajos || ch.lote_ac || ch.bvPendientes_ac || ch.zone || ch.chActivo || ch.loftyKey || ch.bvState || ch.lote || ch.bvPendientes || ch.loftyListos || ch.svEventos || ch.vaRes || ch.puRes || ch.cuRes || ch.qaRes || ch.anRes) contarPronto();
-  if (ch.mision || ch.loftySubidos || ch.loftyListos) pintarMision();
 });
 addEventListener("resize", () => { tamEstrellas(); medir(); });
 $("escena").addEventListener("scroll", () => medir(), { passive: true });
