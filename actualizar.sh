@@ -24,7 +24,9 @@ if [ -z "${CENTRO_COPIA:-}" ]; then
   cp "${BASH_SOURCE[0]}" "$COPIA"
   CENTRO_COPIA="$COPIA" exec bash "$COPIA" "$@"
 fi
-trap 'rm -f "$CENTRO_COPIA"; [ -n "${TMP:-}" ] && rm -rf "$TMP"' EXIT
+# Carpeta temporal propia (nombre único; nunca se borra una variable del sistema como TMP)
+CENTRO_TEMP=""
+trap 'rm -f "$CENTRO_COPIA"; if [ -n "$CENTRO_TEMP" ] && [ -d "$CENTRO_TEMP" ]; then rm -rf "$CENTRO_TEMP"; fi' EXIT
 
 SI=0; RAMA="$RAMA_DEFECTO"
 for a in "$@"; do
@@ -44,15 +46,15 @@ for p in unzip find comm cp; do command -v "$p" >/dev/null || { echo "Falta el p
 ANTES="$(grep -m1 '"version"' "$DESTINO/manifest.json" | sed 's/[^0-9.]//g')"
 
 # --- 1. bajar ---
-TMP="$(mktemp -d -t centro-nuevo.XXXXXX)"
+CENTRO_TEMP="$(mktemp -d -t centro-nuevo.XXXXXX)"
 if [ -n "${CENTRO_ZIP:-}" ]; then   # solo para pruebas: un zip local en vez de GitHub
-  cp "$CENTRO_ZIP" "$TMP/nuevo.zip"
+  cp "$CENTRO_ZIP" "$CENTRO_TEMP/nuevo.zip"
 else
   echo "Bajando la rama $RAMA de GitHub…"
-  curl -fsSL -o "$TMP/nuevo.zip" "https://codeload.github.com/$REPO/zip/refs/heads/$RAMA" || { echo "No pude bajar la rama $RAMA (¿existe? ¿hay internet?)."; exit 1; }
+  curl -fsSL -o "$CENTRO_TEMP/nuevo.zip" "https://codeload.github.com/$REPO/zip/refs/heads/$RAMA" || { echo "No pude bajar la rama $RAMA (¿existe? ¿hay internet?)."; exit 1; }
 fi
-unzip -q "$TMP/nuevo.zip" -d "$TMP/x"
-FUENTE="$(find "$TMP/x" -mindepth 1 -maxdepth 1 -type d | head -1)"
+unzip -q "$CENTRO_TEMP/nuevo.zip" -d "$CENTRO_TEMP/x"
+FUENTE="$(find "$CENTRO_TEMP/x" -mindepth 1 -maxdepth 1 -type d | head -1)"
 if [ -z "$FUENTE" ] || ! grep -q '"manifest_version"' "$FUENTE/manifest.json" 2>/dev/null; then
   echo "Lo que bajé no parece la extensión. No toqué nada."; exit 1
 fi
