@@ -6,6 +6,12 @@ Extensión de Brave/Chrome (Manifest V3) con más de 30 robots de prospección i
 1. Abre `brave://extensions` (o `chrome://extensions`) y prende **Modo de desarrollador**.
 2. **Cargar descomprimida** → escoge esta carpeta.
 
+## Actualizar (un solo comando)
+```bash
+bash ~/Desktop/CENTRO-DE-MANDO-claude-peaceful-fermi-mfgt13/actualizar.sh
+```
+Baja la versión nueva, te enseña qué archivos viejos va a borrar y te pide permiso (nunca toca tus `respaldo-*.json`), reinstala el puente si lo tienes y te dice la versión. Después dale **recargar** a la extensión en `brave://extensions`. Para otra rama: `actualizar.sh nombre-de-la-rama`.
+
 Las llaves (Lofty, Anthropic, etc.) se ponen dentro de la extensión; no van en el código.
 
 ## Documentación
