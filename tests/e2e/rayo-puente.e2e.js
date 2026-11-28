@@ -10,6 +10,7 @@ const assert = require("node:assert/strict");
 const { spawn, spawnSync } = require("node:child_process");
 const fs = require("node:fs"), os = require("node:os"), path = require("node:path");
 const { abrir } = require("./ambiente");
+const { apagar } = require("./procesos");
 
 const RAIZ = path.resolve(__dirname, "../..");
 const PY = ["python3", "python"].find((p) => spawnSync(p, ["--version"]).status === 0);
@@ -36,7 +37,7 @@ async function montar({ leads, textos = {}, pool = [], storage = {} }) {
   await api("/llaves", { nombre: "txKey", valor: "llave-texi" }); await api("/llaves", { nombre: "loftyKey", valor: "llave-principal" });
   await amb.sw.evaluate((t) => chrome.storage.local.set({ nvToken: t }), token);
   const estadoLofty = () => { try { return JSON.parse(fs.readFileSync(path.join(tmp, "estado.json"), "utf8")); } catch (e) { return { sms: [], emails: [], muteados: [] }; } };
-  const cerrar = async () => { puente.kill(); lofty.kill(); await amb.cerrar(); fs.rmSync(tmp, { recursive: true, force: true }); };
+  const cerrar = async () => { await apagar(puente); await apagar(lofty); await amb.cerrar(); fs.rmSync(tmp, { recursive: true, force: true }); };
   return { amb, api, estadoLofty, cerrar };
 }
 

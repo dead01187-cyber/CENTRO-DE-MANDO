@@ -8,6 +8,7 @@ const assert = require("node:assert/strict");
 const { spawn, spawnSync } = require("node:child_process");
 const fs = require("node:fs"), os = require("node:os"), path = require("node:path");
 const { abrir } = require("./ambiente");
+const { apagar } = require("./procesos");
 
 const RAIZ = path.resolve(__dirname, "../..");
 const PY = ["python3", "python"].find((p) => spawnSync(p, ["--version"]).status === 0);
@@ -50,7 +51,7 @@ test("Árbitro: Texi salta al lead que ya contactó un robot del puente y al nú
     assert.equal(r.contactos, 2);
     assert.deepEqual(amb.errores, []);
   } finally {
-    puente.kill();
+    await apagar(puente);
     await amb.cerrar();
     fs.rmSync(tmp, { recursive: true, force: true });
   }

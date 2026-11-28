@@ -8,6 +8,7 @@ const { spawn, spawnSync } = require("node:child_process");
 const http = require("node:http");
 const fs = require("node:fs"), os = require("node:os"), path = require("node:path");
 const { abrir } = require("./ambiente");
+const { apagar } = require("./procesos");
 
 const RAIZ = path.resolve(__dirname, "../..");
 const URL_ELM = "https://www.homes.com/property/12352-elmwood-st-garden-grove-ca/sp9g4fw1ndpwt/";
@@ -94,7 +95,7 @@ test("Navi: dice que el puente está apagado; con el puente baja las fotos, escr
     assert.notEqual(mala.estado, "hecha"); assert.match(mala.error, /No existe la receta/);
     assert.deepEqual(amb.errores, []);
   } finally {
-    if (puente) puente.kill();
+    await apagar(puente);
     brave.close();
     await amb.cerrar();
     fs.rmSync(tmp, { recursive: true, force: true });

@@ -9,6 +9,7 @@ const { spawn, spawnSync } = require("node:child_process");
 const http = require("node:http");
 const fs = require("node:fs"), os = require("node:os"), path = require("node:path");
 const { abrir } = require("./ambiente");
+const { apagar } = require("./procesos");
 
 const RAIZ = path.resolve(__dirname, "../..");
 const PY = ["python3", "python"].find((p) => spawnSync(p, ["--version"]).status === 0);
@@ -66,13 +67,13 @@ test("Puente: muestra los servicios, manda las llaves con un clic, avisa si una 
     await m.waitForFunction(() => { const e = document.querySelector("#e-sp .cuenta"); return e && /servicio/.test(e.textContent); }, null, { timeout: 15000 });
 
     // el puente se apaga → aviso claro (los demás robots siguen trabajando)
-    puente.kill(); puente = null;
+    await apagar(puente); puente = null;
     await sp.click("#run");
     await sp.waitForFunction(() => /El puente está apagado\. Corre puente\/instalar\.sh/.test(document.getElementById("status").textContent), null, { timeout: 10000 });
     assert.equal((await amb.leer("spRes")).spRes.cuenta, "puente apagado");
     assert.deepEqual(amb.errores, []);
   } finally {
-    if (puente) puente.kill();
+    await apagar(puente);
     lofty.close();
     await amb.cerrar();
     fs.rmSync(tmp, { recursive: true, force: true });
