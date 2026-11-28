@@ -272,6 +272,12 @@ function choca(x, y1, y2, fuera) {
 function cruza(pts, fuera) {
   return pts.some((p) => Object.entries(cajas).some(([m, c]) => !fuera.includes(m) && p.x > c.x - 6 && p.x < c.x + c.w + 6 && p.y > c.y - 6 && p.y < c.y + c.h + 6));
 }
+// igual que cruza(), pero también revisa los tramos rectos largos (entre dos puntos seguidos)
+function cruzaLinea(pts, fuera) {
+  const fino = [];
+  for (let i = 1; i < pts.length; i++) { const p = pts[i - 1], q = pts[i], n = Math.max(1, Math.ceil(Math.hypot(q.x - p.x, q.y - p.y) / 12)); for (let j = 0; j <= n; j++) fino.push({ x: p.x + (q.x - p.x) * j / n, y: p.y + (q.y - p.y) * j / n }); }
+  return cruza(fino.slice(2, -2), fuera);
+}
 function armarN8n(a, b, tipo) {
   const A = cajas[a], B = cajas[b]; if (!A || !B) return null;
   const mismaFila = Math.abs((A.y + A.h / 2) - (B.y + B.h / 2)) < 20;
@@ -281,6 +287,18 @@ function armarN8n(a, b, tipo) {
     const p0 = { x: der ? A.x + A.w : A.x, y: A.y + A.h / 2 }, p3 = { x: der ? B.x : B.x + B.w, y: B.y + B.h / 2 };
     const k = Math.max(30, Math.abs(p3.x - p0.x) / 2) * (der ? 1 : -1);
     pts = [p0, ...cubica(p0, { x: p0.x + k, y: p0.y }, { x: p3.x - k, y: p3.y }, p3)];
+  } else if (B.x >= A.x + A.w || B.x + B.w <= A.x) {
+    // Otra columna (flujo de izquierda a derecha): sale por un costado y entra por el otro.
+    // Si esa curva pisa otro nodo, prueba en "L": derecho por su fila y luego sube/baja al destino, o al revés.
+    const der = B.x > A.x, abajo = B.y > A.y, ay = A.y + A.h / 2, by = B.y + B.h / 2, ax = A.x + A.w / 2, bx = B.x + B.w / 2;
+    const s0 = { x: der ? A.x + A.w : A.x, y: ay }, s3 = { x: der ? B.x : B.x + B.w, y: by }, k = Math.max(30, Math.abs(s3.x - s0.x) / 2) * (der ? 1 : -1);
+    const ese = [s0, ...cubica(s0, { x: s0.x + k, y: s0.y }, { x: s3.x - k, y: s3.y }, s3, 30)];
+    const h3 = { x: bx, y: abajo ? B.y : B.y + B.h }, rr = Math.min(40, Math.abs(h3.y - ay)), hc = { x: bx - (der ? rr : -rr), y: ay };
+    const ele1 = [s0, hc, ...cubica(hc, { x: bx, y: ay }, { x: bx, y: ay }, h3, 14)]; // por su fila y luego entra por arriba/abajo
+    const v0 = { x: ax, y: abajo ? A.y + A.h : A.y }, r2 = Math.min(40, Math.abs(by - v0.y)), vc = { x: ax, y: by - (abajo ? r2 : -r2) }, vd = { x: ax + (der ? r2 : -r2), y: by };
+    const ele2 = [v0, vc, ...cubica(vc, { x: ax, y: by }, { x: ax, y: by }, vd, 10), s3]; // baja/sube y luego por la fila del destino
+    const libre = (c) => !cruzaLinea(c, [a, b]);
+    pts = [ese, ele1, ele2].find(libre) || ese;
   } else {
     const abajo = B.y > A.y;
     const p0 = { x: A.x + A.w / 2, y: abajo ? A.y + A.h : A.y }, p3 = { x: B.x + B.w / 2, y: abajo ? B.y : B.y + B.h };

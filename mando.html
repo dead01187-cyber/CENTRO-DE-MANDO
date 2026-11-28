@@ -42,61 +42,69 @@
     <section class="escena" id="escena">
       <canvas id="lazos"></canvas>
 
-      <!-- Árbol: Capi arriba; centro Zeta → Redi → Gmail (reclamos a zBuyer); izquierda Acti; Chequi → Wibi (Propwire) o Veri → Owny; → Veri 2 → Owny 2 (actualizar); derecha Propi → Chequi → Veri → Owny (leads nuevos);
-           las dos se juntan en Lofti → Lofty CRM -->
+      <!-- Flujo de izquierda a derecha, siguiendo el camino de un lead:
+           Capi (izquierda) → cada brazo es un carril: conseguir → verificar → Lofti (subir) → Lofty CRM → contactar → responder.
+           Abajo, aparte, los robots de supervisión. -->
       <div class="arbol">
-        <div class="estacion capi" data-m="sv" id="e-sv" style="grid-row:1;grid-column:1 / 6">
+        <div class="estacion capi" data-m="sv" id="e-sv" style="grid-row:2 / 9;grid-column:1">
           <div class="burbuja" id="capiDice" hidden></div>
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Capi <span class="rol">Supervisor</span></div><div class="fila-chip"><span class="chip">Listo</span></div></div>
         </div>
-        <div class="etq-col" data-brazo="actualizar" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:1">Actualizar leads</div>
-        <div class="etq-col" data-brazo="zbuyer" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:2">zBuyer</div>
-        <div class="etq-col" data-brazo="nuevos" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:4">Leads nuevos</div>
-        <div class="etq-col" data-brazo="nuevos" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:3">Propwire</div>
-        <div class="etq-col" data-brazo="hecm" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:5">HECM</div>
-        <div class="etq-col" data-brazo="zonas" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:6">Zonas calientes</div>
-        <div class="estacion" data-m="ra" id="e-ra" style="grid-row:3;grid-column:6">
+        <div class="etq-etapa" style="grid-row:1;grid-column:3">1 · Conseguir</div>
+        <div class="etq-etapa" style="grid-row:1;grid-column:4 / 7">2 · Verificar y preparar</div>
+        <div class="etq-etapa" style="grid-row:1;grid-column:7">3 · Subir</div>
+        <div class="etq-etapa" style="grid-row:1;grid-column:8">Lofty CRM</div>
+        <div class="etq-etapa" style="grid-row:1;grid-column:9">4 · Contactar</div>
+        <div class="etq-etapa" style="grid-row:1;grid-column:10">5 · Responder</div>
+        <div class="etq-col" data-brazo="nuevos" title="Ver la ventana de este brazo" style="grid-row:2;grid-column:2">Leads nuevos</div>
+        <div class="etq-col" data-brazo="nuevos" title="Ver la ventana de este brazo" style="grid-row:3;grid-column:2">Propwire</div>
+        <div class="etq-col" data-brazo="hecm" title="Ver la ventana de este brazo" style="grid-row:4;grid-column:2">HECM</div>
+        <div class="etq-col" data-brazo="actualizar" title="Ver la ventana de este brazo" style="grid-row:6;grid-column:2">Actualizar leads</div>
+        <div class="etq-col" data-brazo="zbuyer" title="Ver la ventana de este brazo" style="grid-row:7;grid-column:2">zBuyer</div>
+        <div class="etq-col" data-brazo="zonas" title="Ver la ventana de este brazo" style="grid-row:8;grid-column:2">Zonas calientes</div>
+        <div class="etq-etapa supervision" style="grid-row:9;grid-column:3 / 10">Supervisión · no tocan a los leads</div>
+        <div class="estacion" data-m="ra" id="e-ra" style="grid-row:8;grid-column:3">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Radar <span class="rol">Señales por ZIP</span></div><div class="cuenta"><b>0</b> ZIP con datos</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="te" id="e-te" style="grid-row:4;grid-column:6">
+        <div class="estacion" data-m="te" id="e-te" style="grid-row:8;grid-column:4">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Termi <span class="rol">Califica las zonas</span></div><div class="cuenta"><b>0</b> calientes</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="ac" id="e-ac" style="grid-row:3;grid-column:1">
+        <div class="estacion" data-m="ac" id="e-ac" style="grid-row:6;grid-column:3">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Acti <span class="rol">Actualiza Lofty</span></div><div class="cuenta"><b>0</b> actualizados</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="bv2" id="e-bv2" style="grid-row:4;grid-column:1">
+        <div class="estacion" data-m="bv2" id="e-bv2" style="grid-row:6;grid-column:4">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Veri 2 <span class="rol">BeenVerified</span></div><div class="cuenta"><b>0</b> por buscar</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="ow2" id="e-ow2" style="grid-row:5;grid-column:1">
+        <div class="estacion" data-m="ow2" id="e-ow2" style="grid-row:6;grid-column:5">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Owny 2 <span class="rol">Owners</span></div><div class="cuenta"><b>0</b> leídos</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="zb" id="e-zb" style="grid-row:3;grid-column:2">
+        <div class="estacion" data-m="zb" id="e-zb" style="grid-row:7;grid-column:3">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Zeta <span class="rol">Gmail vs Lofty</span></div><div class="cuenta"><b>0</b> repetidos</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="rd" id="e-rd" style="grid-row:4;grid-column:2">
+        <div class="estacion" data-m="rd" id="e-rd" style="grid-row:7;grid-column:4">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Redi <span class="rol">Redacta</span></div><div class="cuenta"><b>0</b> borradores</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion nube" id="e-gm" style="grid-row:5;grid-column:2">
+        <div class="estacion nube" id="e-gm" style="grid-row:7;grid-column:5">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Gmail <span class="rol">borradores</span></div><div class="cuenta"><b id="borradores">0</b> para revisar y enviar</div></div>
         </div>
-        <div class="estacion" data-m="ti" id="e-ti" style="grid-row:6;grid-column:2">
+        <div class="estacion" data-m="ti" id="e-ti" style="grid-row:7;grid-column:6">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Timi <span class="rol">Captura a Teams</span></div><div class="cuenta"><b>0</b> mandadas</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion nube" id="e-tm" style="grid-row:7;grid-column:2">
+        <div class="estacion nube" id="e-tm" style="grid-row:8;grid-column:6">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Teams <span class="rol">Replacement Leads</span></div><div class="cuenta"><b id="enTeams">0</b> capturas</div></div>
         </div>
-        <div class="estacion" data-m="wb" id="e-wb" style="grid-row:4;grid-column:3">
+        <div class="estacion" data-m="wb" id="e-wb" style="grid-row:3;grid-column:4">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Wibi <span class="rol">Pasa a Lofti · propwire</span></div><div class="cuenta"><b>0</b> listos</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
@@ -104,122 +112,122 @@
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Carpi <span class="rol">Limpia el CSV</span></div><div class="cuenta"><b>0</b> limpias</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="pr" id="e-pr" style="grid-row:3;grid-column:5">
+        <div class="estacion" data-m="pr" id="e-pr" style="grid-row:4;grid-column:3">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Prope <span class="rol">Properant</span></div><div class="cuenta"><b>0</b> HECM</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="hr" id="e-hr" style="grid-row:4;grid-column:5">
+        <div class="estacion" data-m="hr" id="e-hr" style="grid-row:5;grid-column:3">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Heri <span class="rol">HECM · herederos</span></div><div class="cuenta"><b>0</b> HECM</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="pw" id="e-pw" style="grid-row:3;grid-column:4">
+        <div class="estacion" data-m="pw" id="e-pw" style="grid-row:2;grid-column:3">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Propi <span class="rol">Propwire</span></div><div class="cuenta"><b>0</b> domicilios</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="ch" id="e-ch" style="grid-row:4;grid-column:4">
+        <div class="estacion" data-m="ch" id="e-ch" style="grid-row:2;grid-column:4">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Chequi <span class="rol">Filtro Lofty</span></div><div class="cuenta"><b>0</b> por revisar</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="bv" id="e-bv" style="grid-row:5;grid-column:4">
+        <div class="estacion" data-m="bv" id="e-bv" style="grid-row:2;grid-column:5">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Veri <span class="rol">BeenVerified</span></div><div class="cuenta"><b>0</b> por buscar</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="ow" id="e-ow" style="grid-row:6;grid-column:4">
+        <div class="estacion" data-m="ow" id="e-ow" style="grid-row:2;grid-column:6">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Owny <span class="rol">Owners</span></div><div class="cuenta"><b>0</b> en lote</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="ch3" id="e-ch3" style="grid-row:5;grid-column:5">
+        <div class="estacion" data-m="ch3" id="e-ch3" style="grid-row:4;grid-column:4">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Chequi 3 <span class="rol">Filtro Lofty</span></div><div class="cuenta"><b>0</b> por revisar</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="bv3" id="e-bv3" style="grid-row:6;grid-column:5">
+        <div class="estacion" data-m="bv3" id="e-bv3" style="grid-row:4;grid-column:5">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Veri 3 <span class="rol">BeenVerified</span></div><div class="cuenta"><b>0</b> por buscar</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="ow3" id="e-ow3" style="grid-row:7;grid-column:5">
+        <div class="estacion" data-m="ow3" id="e-ow3" style="grid-row:4;grid-column:6">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Owny 3 <span class="rol">Owners</span></div><div class="cuenta"><b>0</b> en lote</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="wb3" id="e-wb3" style="grid-row:8;grid-column:5">
+        <div class="estacion" data-m="wb3" id="e-wb3" style="grid-row:5;grid-column:6">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Wibi 3 <span class="rol">Skip trace Propwire</span></div><div class="cuenta"><b>0</b> por hacer</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="lf" id="e-lf" style="grid-row:9;grid-column:1 / 6">
+        <div class="estacion" data-m="lf" id="e-lf" style="grid-row:4;grid-column:7">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Lofti <span class="rol">Lofty</span></div><div class="cuenta"><b>0</b> listos</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="al" id="e-al" style="grid-row:10;grid-column:2;justify-self:end">
+        <div class="estacion" data-m="al" id="e-al" style="grid-row:3;grid-column:9">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Marki <span class="rol">Marca y manda SMS</span></div><div class="cuenta"><b>0</b> leads hoy</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion nube" id="e-crm" style="grid-row:10;grid-column:3">
+        <div class="estacion nube" id="e-crm" style="grid-row:4;grid-column:8">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Lofty CRM <span class="rol">destino</span></div><div class="cuenta"><b id="enviados">0</b> subidos · <b id="actualizadosHoy">0</b> actualizados</div></div>
         </div>
-        <div class="estacion" data-m="li" id="e-li" style="grid-row:10;grid-column:4;justify-self:start">
+        <div class="estacion" data-m="li" id="e-li" style="grid-row:6;grid-column:8">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Limpi <span class="rol">Limpia el CRM</span></div><div class="cuenta"><b>0</b> movidos hoy</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="tx" id="e-tx" style="grid-row:11;grid-column:2;justify-self:end">
+        <div class="estacion" data-m="tx" id="e-tx" style="grid-row:4;grid-column:9">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Texi <span class="rol">SMS Sellers</span></div><div class="cuenta"><b>0</b> SMS hoy</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="ry" id="e-ry" style="grid-row:10;grid-column:1;justify-self:end">
+        <div class="estacion" data-m="ry" id="e-ry" style="grid-row:2;grid-column:9">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Rayo <span class="rol">Leads nuevos</span></div><div class="cuenta"><b>0</b> por aprobar</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="t2" id="e-t2" style="grid-row:11;grid-column:1;justify-self:end">
+        <div class="estacion" data-m="t2" id="e-t2" style="grid-row:5;grid-column:9">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Texi 2 <span class="rol">Sellers · 2º número</span></div><div class="cuenta"><b>0</b> SMS hoy</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="ml" id="e-ml" style="grid-row:12;grid-column:1;justify-self:end">
+        <div class="estacion" data-m="ml" id="e-ml" style="grid-row:7;grid-column:9">
           <div class="aro"><div class="robot"></div></div>
-          <div class="info"><div class="nombre">Maili <span class="rol">Correos</span></div><div class="cuenta"><b>0</b> correos hoy</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
+          <div class="info"><div class="nombre">Maili <span class="rol">Correos · Irvine Realtors</span></div><div class="cuenta"><b>0</b> correos hoy</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="rm" id="e-rm" style="grid-row:13;grid-column:1;justify-self:end">
+        <div class="estacion" data-m="rm" id="e-rm" style="grid-row:7;grid-column:10">
           <div class="aro"><div class="robot"></div></div>
-          <div class="info"><div class="nombre">Remi <span class="rol">Resp. correos</span></div><div class="cuenta"><b>0</b> respondieron</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
+          <div class="info"><div class="nombre">Remi <span class="rol">Resp. correos · Irvine Realtors</span></div><div class="cuenta"><b>0</b> respondieron</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="cb" id="e-cb" style="grid-row:11;grid-column:4;justify-self:start">
+        <div class="estacion" data-m="cb" id="e-cb" style="grid-row:6;grid-column:9">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Compri <span class="rol">SMS Buyers</span></div><div class="cuenta"><b>0</b> SMS hoy</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="rs" id="e-rs" style="grid-row:12;grid-column:2;justify-self:end">
+        <div class="estacion" data-m="rs" id="e-rs" style="grid-row:4;grid-column:10">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Resi <span class="rol">Resp. Sellers</span></div><div class="cuenta"><b>0</b> por atender</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="rc" id="e-rc" style="grid-row:12;grid-column:4;justify-self:start">
+        <div class="estacion" data-m="rc" id="e-rc" style="grid-row:6;grid-column:10">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Resi 2 <span class="rol">Resp. Buyers</span></div><div class="cuenta"><b>0</b> por atender</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
         <!-- Fase 4: calidad, cumplimiento y operación (solo leen) -->
-        <div class="estacion" data-m="va" id="e-va" style="grid-row:13;grid-column:1">
+        <div class="estacion" data-m="va" id="e-va" style="grid-row:10;grid-column:3">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Vali <span class="rol">Valida datos</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="pu" id="e-pu" style="grid-row:13;grid-column:2">
+        <div class="estacion" data-m="pu" id="e-pu" style="grid-row:10;grid-column:4">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Punti <span class="rol">Puntaje de leads</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="cu" id="e-cu" style="grid-row:13;grid-column:3">
+        <div class="estacion" data-m="cu" id="e-cu" style="grid-row:10;grid-column:5">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Cumpli <span class="rol">Cumplimiento</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="qa" id="e-qa" style="grid-row:13;grid-column:4">
+        <div class="estacion" data-m="qa" id="e-qa" style="grid-row:10;grid-column:6">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Qai <span class="rol">QA del sistema</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
-        <div class="estacion" data-m="an" id="e-an" style="grid-row:13;grid-column:5">
+        <div class="estacion" data-m="an" id="e-an" style="grid-row:10;grid-column:7">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Ana <span class="rol">Analítica</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
         <!-- Fase A del puente: servicios que corren solos en la Mac -->
-        <div class="estacion" data-m="sp" id="e-sp" style="grid-row:14;grid-column:6">
+        <div class="estacion" data-m="sp" id="e-sp" style="grid-row:10;grid-column:9">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Puente <span class="rol">Servicios en tu Mac</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
         <!-- Fase 7: Navi (Browser Use por el puente local) -->
-        <div class="estacion" data-m="nv" id="e-nv" style="grid-row:13;grid-column:6">
+        <div class="estacion" data-m="nv" id="e-nv" style="grid-row:10;grid-column:8">
           <div class="aro"><div class="robot"></div></div>
           <div class="info"><div class="nombre">Navi <span class="rol">Navegador</span></div><div class="cuenta">—</div><div class="fila-chip"><span class="chip">Listo</span><span class="msg"></span></div></div>
         </div>
